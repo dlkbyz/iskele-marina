@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import confetti from 'canvas-confetti'
 
+export const dynamic = 'force-dynamic'
+
 export default function OdemeBasarili() {
   const searchParams = useSearchParams()
   const [rezervasyon, setRezervasyon] = useState(null)

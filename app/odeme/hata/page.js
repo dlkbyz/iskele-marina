@@ -3,6 +3,8 @@
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default function OdemeHata() {
   const searchParams = useSearchParams()
   const hataMesaji = searchParams.get('mesaj') || 'Ödeme işlemi sırasında bir hata oluştu.'
