@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import ReservationActions from '@/components/admin/ReservationActions'
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState([])
@@ -156,11 +155,31 @@ export default function ReservationsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm">
-                          <ReservationActions 
-                            reservation={res} 
-                            onStatusChange={handleStatusChange}
-                          />
+                        <td className="px-6 py-4 text-sm space-x-2">
+                          {res.durum === 'beklemede' && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(res.id, 'onaylandı')}
+                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                              >
+                                Onayla
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(res.id, 'iptal')}
+                                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                              >
+                                İptal
+                              </button>
+                            </>
+                          )}
+                          {res.durum === 'onaylandı' && (
+                            <button
+                              onClick={() => handleStatusChange(res.id, 'iptal')}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                            >
+                              İptal Et
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
