@@ -424,8 +424,18 @@ const hesaplaFiyat = async () => {
         kisiSayisi: yetiskin || prev.kisiSayisi
       }))
 
+      // Anasayfadan tarihlerle gelindiyse otomatik müsaitlik kontrolü yap
       if (giris && cikis) {
         hesaplaFiyat(giris, cikis)
+        // Otomatik müsaitlik kontrolü
+        checkAvailability(giris, cikis, false).then(available => {
+          if (available) {
+            setIsAvailable(true)
+            console.log('Anasayfadan gelen tarihler müsait, form açılıyor')
+          } else {
+            console.log('Anasayfadan gelen tarihler müsait değil')
+          }
+        })
       }
     }
   }, [searchParams])
