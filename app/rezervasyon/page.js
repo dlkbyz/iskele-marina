@@ -498,8 +498,22 @@ const formatIsim = (value) => {
 
 const checkAvailability = async (giris, cikis, showModal = true) => {
   try {
+    // Tarih validasyonu
+    if (!giris || !cikis) {
+      console.error('Giriş veya çıkış tarihi eksik')
+      setIsAvailable(false)
+      return false
+    }
+
     const girisDate = new Date(giris)
     const cikisDate = new Date(cikis)
+
+    // Geçersiz tarih kontrolü
+    if (isNaN(girisDate.getTime()) || isNaN(cikisDate.getTime())) {
+      console.error('Geçersiz tarih formatı')
+      setIsAvailable(false)
+      return false
+    }
 
     // Hem 'onaylandı' hem de 'beklemede' durumundaki rezervasyonları kontrol et
     const { data: existingReservations, error } = await supabase
@@ -509,7 +523,10 @@ const checkAvailability = async (giris, cikis, showModal = true) => {
 
     if (error) throw error
 
-    const conflictingReservations = existingReservations.filter(reservation => {
+    // Null/undefined kontrolü
+    const reservations = existingReservations || []
+
+    const conflictingReservations = reservations.filter(reservation => {
       const existingGiris = new Date(reservation.giris_tarihi)
       const existingCikis = new Date(reservation.cikis_tarihi)
 
@@ -542,6 +559,7 @@ const checkAvailability = async (giris, cikis, showModal = true) => {
     return !hasConflict
   } catch (error) {
     console.error('Müsaitlik kontrolü hatası:', error)
+    setIsAvailable(false)
     if (showModal) {
       setModal({
         isOpen: true,
