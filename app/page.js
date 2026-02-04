@@ -1,11 +1,44 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { generateStructuredData } from '@/lib/metadata'
 import { useLanguage } from '@/lib/LanguageContext'
+
+// Scroll animation hook
+function useScrollAnimation() {
+  const [scrollY, setScrollY] = useState(0)
+  
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+  
+  return scrollY
+}
+
+// Intersection Observer hook for fade-in animations
+function useInView(options = {}) {
+  const ref = useRef(null)
+  const [isInView, setIsInView] = useState(false)
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true)
+        observer.disconnect()
+      }
+    }, { threshold: 0.1, ...options })
+    
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+  
+  return [ref, isInView]
+}
 
 // Newsletter Form Component
 function NewsletterForm() {
@@ -88,6 +121,7 @@ export default function Home() {
   const { language, toggleLanguage, t } = useLanguage()
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const scrollY = useScrollAnimation()
 
   // ✅ Structured Data for SEO
   const structuredData = generateStructuredData('home')
@@ -398,40 +432,54 @@ export default function Home() {
       {/* MAIN */}
       <main>
         {/* HERO */}
-        <section className="relative h-screen">
-          <div className="absolute inset-0">
+        <section className="relative h-screen overflow-hidden">
+          <div 
+            className="absolute inset-0"
+            style={{
+              transform: `translateY(${scrollY * 0.5}px)`,
+              transition: 'transform 0.1s ease-out'
+            }}
+          >
             <img
               src={heroImage}
               alt="Serenity Iskele"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-110"
               onError={(e) => {
                 console.log('Hero image failed to load:', heroImage)
                 e.currentTarget.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600'
               }}
             />
-            {/* ✅ Overlay kaldırıldı - Fotoğraf artık tamamen doğal */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            {/* ✅ Enhanced gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
           </div>
 
-          {/* ✅ HERO TEXT (Metnin okunması için kart yapısı güçlendirildi) */}
+          {/* ✅ HERO TEXT with fade-in animation */}
           <div className="relative z-10 h-full flex items-center justify-center px-4 text-center -mt-6">
-            <div className="px-6 py-5 md:px-10 md:py-7 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 shadow-2xl">
+            <div 
+              className="px-6 py-5 md:px-10 md:py-7 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 shadow-2xl animate-fadeInUp"
+              style={{
+                animation: 'fadeInUp 1s ease-out'
+              }}
+            >
               <h1
-                className={`${heroTitleClass} mb-3 text-white`}
+                className={`${heroTitleClass} mb-3 text-white animate-fadeIn`}
                 style={{
                   fontFamily: 'Cormorant Garamond, Georgia, serif',
                   fontWeight: HERO_VARIANT === 'modern' ? 400 : 300,
                   letterSpacing: HERO_VARIANT === 'modern' ? '0.01em' : '0.02em',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                  animation: 'fadeIn 1.2s ease-out'
                 }}
               >
                 {t('hero.title')}
               </h1>
 
               <p
-                className={heroSubtitleClass}
+                className={`${heroSubtitleClass} animate-fadeIn`}
                 style={{
-                  textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                  textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                  animation: 'fadeIn 1.4s ease-out'
                 }}
               >
                 {t('hero.subtitle')}
@@ -597,9 +645,15 @@ export default function Home() {
               <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 lg:p-16">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
                   {homeFeatures.map((feature, i) => (
-                    <div key={i} className="flex flex-col items-center text-center group">
-                      <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-4 md:mb-6 transition-transform group-hover:scale-110 group-hover:-translate-y-2 duration-300">
-                        <span className="text-4xl">{feature.icon}</span>
+                    <div 
+                      key={i} 
+                      className="flex flex-col items-center text-center group cursor-pointer"
+                      style={{
+                        animation: `fadeInUp 0.6s ease-out ${i * 0.1}s both`
+                      }}
+                    >
+                      <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-4 md:mb-6 transition-all group-hover:scale-125 group-hover:-translate-y-3 duration-500 ease-out">
+                        <span className="text-4xl filter drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-500">{feature.icon}</span>
                       </div>
                       <h3 className="text-sm md:text-base tracking-[0.15em] uppercase text-gray-900 mb-2 font-semibold">
                         {feature.title}
@@ -753,6 +807,87 @@ export default function Home() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
         .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+        
+        @keyframes fadeIn {
+          from { 
+            opacity: 0;
+          }
+          to { 
+            opacity: 1;
+          }
+        }
+        
+        @keyframes fadeInUp {
+          from { 
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeInDown {
+          from { 
+            opacity: 0;
+            transform: translateY(-30px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 1s ease-out;
+        }
+        
+        .animate-fadeInUp {
+          animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .animate-fadeInDown {
+          animation: fadeInDown 0.8s ease-out;
+        }
+        
+        .animate-scaleIn {
+          animation: scaleIn 0.6s ease-out;
+        }
+        
+        /* Smooth scroll behavior */
+        html {
+          scroll-behavior: smooth;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #06b6d4, #3b82f6);
+          border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #0891b2, #2563eb);
+        }
       `}</style>
     </>
   )
