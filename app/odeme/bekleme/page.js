@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-export default function OdemeBekleme() {
+function OdemeBeklemeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [countdown, setCountdown] = useState(10)
@@ -142,5 +142,13 @@ export default function OdemeBekleme() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function OdemeBekleme() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+      <OdemeBeklemeContent />
+    </Suspense>
   )
 }
