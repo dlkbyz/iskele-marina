@@ -148,10 +148,12 @@ export default function Home() {
 
   const handleCheckAvailability = async () => {
     setAvailabilityMsg('')
+    const isTurkish = language === 'TR'
+    console.log('Current language:', language, 'isTurkish:', isTurkish)
 
     if (!checkIn || !checkOut) {
       setAvailabilityMsg(
-        language === 'TR' ? '⚠️ Lütfen giriş ve çıkış tarihini seçin.' : '⚠️ Please select check-in and check-out dates.'
+        isTurkish ? '⚠️ Lütfen giriş ve çıkış tarihini seçin.' : '⚠️ Please select check-in and check-out dates.'
       )
       return
     }
@@ -161,7 +163,7 @@ export default function Home() {
 
     if (outDate <= inDate) {
       setAvailabilityMsg(
-        language === 'TR'
+        isTurkish
           ? '⚠️ Çıkış tarihi giriş tarihinden sonra olmalıdır.'
           : '⚠️ Check-out must be after check-in.'
       )
@@ -183,14 +185,14 @@ export default function Home() {
       if (existingReservations && existingReservations.length > 0) {
         // Müsait değil
         setAvailabilityMsg(
-          language === 'TR'
+          isTurkish
             ? '❌ Üzgünüz, seçtiğiniz tarihler için rezervasyon mevcut.'
             : '❌ Sorry, selected dates are not available.'
         )
       } else {
         // Müsait!
         setAvailabilityMsg(
-          language === 'TR'
+          isTurkish
             ? '✅ Harika! Seçtiğiniz tarihler müsait.'
             : '✅ Great! Selected dates are available.'
         )
