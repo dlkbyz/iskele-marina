@@ -78,18 +78,24 @@ export default function ModernAdminDashboard() {
   const [previewImage, setPreviewImage] = useState(null)
 
   useEffect(() => {
+    console.log('Dashboard yükleniyor...')
     const auth = localStorage.getItem('adminAuth')
+    console.log('Auth durumu:', auth)
     if (!auth) {
+      console.log('Auth yok, /admin sayfasına yönlendiriliyor')
       router.push('/admin')
       return
     }
+    console.log('Auth var, veri yükleniyor...')
     loadData()
   }, [])
 
   const loadData = async () => {
     try {
+      console.log('loadData başlatıldı')
       setLoading(true)
       
+      console.log('Supabase sorguları başlatılıyor...')
       const [
         rezervasyonRes,
         mesajRes,
@@ -104,16 +110,30 @@ export default function ModernAdminDashboard() {
         supabase.from('newsletter_aboneler').select('*').order('created_at', { ascending: false })
       ])
 
-      if (rezervasyonRes.error) throw rezervasyonRes.error
+      console.log('Supabase yanıtları:', { rezervasyonRes, mesajRes, yorumRes, galeriRes, aboneRes })
+
+      if (rezervasyonRes.error) {
+        console.error('Rezervasyon hatası:', rezervasyonRes.error)
+        throw rezervasyonRes.error
+      }
       setRezervasyonlar(rezervasyonRes.data || [])
 
-      if (mesajRes.error) throw mesajRes.error
+      if (mesajRes.error) {
+        console.error('Mesaj hatası:', mesajRes.error)
+        throw mesajRes.error
+      }
       setMesajlar(mesajRes.data || [])
 
-      if (yorumRes.error) throw yorumRes.error
+      if (yorumRes.error) {
+        console.error('Yorum hatası:', yorumRes.error)
+        throw yorumRes.error
+      }
       setYorumlar(yorumRes.data || [])
 
-      if (galeriRes.error) throw galeriRes.error
+      if (galeriRes.error) {
+        console.error('Galeri hatası:', galeriRes.error)
+        throw galeriRes.error
+      }
       setGaleriFotolar(galeriRes.data || [])
 
       setAbone(aboneRes.data || [])
@@ -124,14 +144,19 @@ export default function ModernAdminDashboard() {
         .select('*')
         .order('created_at', { ascending: false })
       
+      console.log('Fiyat yanıtı:', fiyatRes)
+      
       if (!fiyatRes.error) {
         setFiyatlar(fiyatRes.data || [])
       }
 
       prepareChartData(rezervasyonRes.data || [])
+      console.log('Veri yükleme tamamlandı')
       setLoading(false)
     } catch (error) {
-      console.error('Hata:', error)
+      console.error('loadData hatası:', error)
+      console.error('Hata detayı:', JSON.stringify(error, null, 2))
+      showToast('Veri yüklenirken hata oluştu: ' + error.message, 'error')
       setLoading(false)
     }
   }
