@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { useCurrency } from '../context/CurrencyContext'
 import { useSearchParams } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 
 // Modal Component ekle - dosyanın başına (import'lardan sonra)
 
@@ -160,7 +162,7 @@ function Modal({ isOpen, onClose, type, data }) {
   )
 }
 
-export default function Rezervasyon() {
+function RezervasyonContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { formatPrice, convertPrice, currency, currencies } = useCurrency()
@@ -1252,5 +1254,19 @@ const closeModal = () => {
         }
       `}</style>
     </>
+  )
+}
+export default function Rezervasyon() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Yükleniyor...</p>
+        </div>
+      </div>
+    }>
+      <RezervasyonContent />
+    </Suspense>
   )
 }
