@@ -293,8 +293,7 @@ const hesaplaFiyat = async () => {
         { label: 'GALERİ', href: '/galeri' },
         { label: 'ÖZELLİKLER', href: '/ozellikler' },
         { label: 'YORUMLAR', href: '/yorumlar' },
-        { label: 'İLETİŞİM', href: '/iletisim' },
-        { label: 'REZERVASYON', href: '/rezervasyon' }
+        { label: 'İLETİŞİM', href: '/iletisim' }
       ],
       hero: {
         title: 'Rezervasyon',
@@ -349,8 +348,7 @@ const hesaplaFiyat = async () => {
         { label: 'GALLERY', href: '/galeri' },
         { label: 'FEATURES', href: '/ozellikler' },
         { label: 'REVIEWS', href: '/yorumlar' },
-        { label: 'CONTACT', href: '/iletisim' },
-        { label: 'RESERVATION', href: '/rezervasyon' }
+        { label: 'CONTACT', href: '/iletisim' }
       ],
       hero: {
         title: 'Reservation',
