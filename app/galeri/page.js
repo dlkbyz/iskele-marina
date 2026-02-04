@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -10,6 +10,7 @@ export default function Galeri() {
   const pathname = usePathname()
   const [language, setLanguage] = useState('TR')
   const [selectedImage, setSelectedImage] = useState(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const [fotolar, setFotolar] = useState([])
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -25,6 +26,42 @@ export default function Galeri() {
   useEffect(() => {
     loadFotolar()
   }, [])
+
+  // Keyboard navigation for lightbox
+  const handleKeyDown = useCallback((e) => {
+    if (!selectedImage) return
+    if (e.key === 'Escape') {
+      setSelectedImage(null)
+    } else if (e.key === 'ArrowLeft') {
+      navigateImage('prev')
+    } else if (e.key === 'ArrowRight') {
+      navigateImage('next')
+    }
+  }, [selectedImage, selectedIndex, fotolar])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
+  const navigateImage = (direction) => {
+    const newIndex = direction === 'next' 
+      ? (selectedIndex + 1) % fotolar.length 
+      : (selectedIndex - 1 + fotolar.length) % fotolar.length
+    setSelectedIndex(newIndex)
+    setSelectedImage(fotolar[newIndex].image_url)
+  }
+
+  const openLightbox = (img, index) => {
+    setSelectedImage(img.image_url)
+    setSelectedIndex(index)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeLightbox = () => {
+    setSelectedImage(null)
+    document.body.style.overflow = 'auto'
+  }
 
   const loadFotolar = async () => {
     try {
@@ -328,7 +365,7 @@ export default function Galeri() {
         </section>
 
         {/* GALLERY SECTION */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-gradient-to-b from-white to-gray-50">
           <div className="container mx-auto px-4 max-w-7xl">
             {loading ? (
               <div className="text-center py-12">
@@ -342,16 +379,23 @@ export default function Galeri() {
                 {displayImages.map((img, index) => (
                   <div
                     key={index}
-                    className="group relative overflow-hidden rounded-3xl shadow-lg hover:shadow-2xl transition duration-300 break-inside-avoid cursor-pointer"
-                    onClick={() => setSelectedImage(img.image_url)}
+                    className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 break-inside-avoid cursor-pointer transform hover:-translate-y-2"
+                    onClick={() => openLightbox(img, index)}
+                    style={{
+                      animation: `fadeInUp 0.6s ease-out ${index * 0.05}s both`
+                    }}
                   >
                     <img
                       src={img.image_url}
                       alt={img.baslik || `Gallery ${index + 1}`}
-                      className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <div className="text-white text-5xl">🔍</div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-6">
+                      <div className="text-white text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <div className="text-4xl mb-2">🔍</div>
+                        <p className="text-sm font-light tracking-wider">{language === 'TR' ? 'Görüntüle' : 'View'}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -359,6 +403,73 @@ export default function Galeri() {
             )}
           </div>
         </section>
+
+        {/* LIGHTBOX MODAL */}
+        {selectedImage && (
+          <div 
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+            onClick={closeLightbox}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 md:top-8 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Previous Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                navigateImage('prev')
+              }}
+              className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                navigateImage('next')
+              }}
+              className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Image */}
+            <div 
+              className="relative max-w-7xl max-h-[90vh] animate-scaleIn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selectedImage}
+                alt="Gallery"
+                className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+              />
+              
+              {/* Image Counter */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm">
+                {selectedIndex + 1} / {fotolar.length}
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute bottom-4 left-4 text-white/60 text-xs md:text-sm space-y-1">
+              <p>← → {language === 'TR' ? 'Yön tuşları' : 'Arrow keys'}</p>
+              <p>ESC {language === 'TR' ? 'Kapat' : 'Close'}</p>
+            </div>
+          </div>
+        )}
 
         {/* FOOTER */}
         <footer className="bg-gradient-to-b from-gray-900 to-black text-white py-16 md:py-20">
@@ -447,6 +558,50 @@ export default function Galeri() {
         
         .font-serif {
           font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+          from { 
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        
+        .animate-fadeInUp {
+          animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .animate-scaleIn {
+          animation: scaleIn 0.4s ease-out;
+        }
+        
+        /* Smooth transitions */
+        * {
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </>
