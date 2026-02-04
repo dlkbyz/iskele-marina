@@ -555,7 +555,7 @@ export default function Home() {
                 {/* Yetişkinler */}
                 <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px]">
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
-                    {t('hero.guests')}
+                    {t('reservation.adults')}
                   </label>
                   <div className="flex-1 flex items-center">
                     <select
@@ -575,7 +575,7 @@ export default function Home() {
                 {/* Çocuklar */}
                 <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px] lg:border-r-0">
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
-                    {t('hero.guests')}
+                    {t('reservation.children')}
                   </label>
                   <div className="flex-1 flex items-center">
                     <select
