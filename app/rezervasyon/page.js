@@ -516,12 +516,18 @@ const checkAvailability = async (giris, cikis, showModal = true) => {
     }
 
     // Hem 'onaylandı' hem de 'beklemede' durumundaki rezervasyonları kontrol et
+    console.log('Supabase sorgusu başlatılıyor...')
     const { data: existingReservations, error } = await supabase
       .from('rezervasyonlar')
       .select('giris_tarihi, cikis_tarihi, durum, ad, soyad')
       .in('durum', ['onaylandı', 'beklemede'])
 
-    if (error) throw error
+    console.log('Supabase sorgu sonucu:', { data: existingReservations, error })
+
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     // Null/undefined kontrolü
     const reservations = existingReservations || []
@@ -559,6 +565,9 @@ const checkAvailability = async (giris, cikis, showModal = true) => {
     return !hasConflict
   } catch (error) {
     console.error('Müsaitlik kontrolü hatası:', error)
+    console.error('Hata detayı:', JSON.stringify(error, null, 2))
+    console.error('Hata mesajı:', error.message)
+    console.error('Hata kodu:', error.code)
     setIsAvailable(false)
     if (showModal) {
       setModal({
