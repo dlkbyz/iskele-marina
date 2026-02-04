@@ -474,30 +474,6 @@ export default function Ozellikler() {
                     {/* Hover indicator */}
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                   </div>
-                  >
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-blue-500/0 to-purple-500/0 group-hover:from-cyan-500/5 group-hover:via-blue-500/5 group-hover:to-purple-500/5 rounded-3xl transition-all duration-500"></div>
-                    
-                    {/* Animated border glow */}
-                    <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute inset-[-2px] bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-3xl blur-sm opacity-30"></div>
-                    </div>
-
-                    <div className="relative z-10">
-                      <div className="text-5xl mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 inline-block">
-                        {ozellik.icon}
-                      </div>
-                      <h3 className="text-base font-bold text-gray-900 mb-3 group-hover:text-cyan-600 transition-colors duration-300">
-                        {ozellik.baslik}
-                      </h3>
-                      <p className="text-sm text-gray-600 font-light leading-relaxed">
-                        {ozellik.aciklama}
-                      </p>
-                    </div>
-
-                    {/* Decorative corner */}
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-cyan-400/0 to-blue-500/0 group-hover:from-cyan-400/10 group-hover:to-blue-500/10 rounded-bl-full transition-all duration-500"></div>
-                  </div>
                 ))}
               </div>
             </div>
