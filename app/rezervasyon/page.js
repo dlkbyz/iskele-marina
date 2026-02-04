@@ -433,6 +433,11 @@ const hesaplaFiyat = async () => {
 const handleChange = (e) => {
   const { name, value } = e.target
   
+  // Tarih değiştiğinde müsaitlik durumunu sıfırla
+  if (name === 'giris' || name === 'cikis') {
+    setIsAvailable(false)
+  }
+  
   // Telefon için özel format
   if (name === 'telefon') {
     const formatted = formatTelefon(value)
@@ -516,6 +521,9 @@ const checkAvailability = async (giris, cikis, showModal = true) => {
     })
 
     const hasConflict = conflictingReservations.length > 0
+
+    // isAvailable state'ini güncelle
+    setIsAvailable(!hasConflict)
 
     if (showModal) {
       setModal({
@@ -1010,11 +1018,27 @@ const closeModal = () => {
         </div>
       </section>
 
-      {/* MAIN FORM SECTION */}
-      <section className="pt-40 pb-20 bg-gradient-to-b from-gray-50 via-white to-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-3 gap-12">
+      {/* MAIN FORM SECTION - Sadece müsait olduğunda göster */}
+      {isAvailable && (
+        <section className="pt-40 pb-20 bg-gradient-to-b from-gray-50 via-white to-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              {/* Müsaitlik Onay Mesajı */}
+              <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-3xl">✅</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-green-800 mb-1">Seçtiğiniz Tarihler Müsait!</h3>
+                    <p className="text-green-700 text-sm">
+                      {new Date(formData.giris).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} - {new Date(formData.cikis).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihleri için rezervasyon yapabilirsiniz.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid lg:grid-cols-3 gap-12">
               {/* Sol: Form */}
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-2xl shadow-xl border-l-4 border-cyan-500 overflow-hidden p-10">
@@ -1274,6 +1298,34 @@ const closeModal = () => {
           </div>
         </div>
       </section>
+      )}
+
+      {/* Eğer henüz müsaitlik kontrolü yapılmadıysa bilgilendirme göster */}
+      {!isAvailable && (
+        <section className="pt-40 pb-20 bg-gradient-to-b from-gray-50 via-white to-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="bg-white rounded-3xl shadow-2xl p-12 border-t-4 border-cyan-500">
+                <div className="w-24 h-24 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-12 h-12 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-serif text-gray-900 mb-4">Müsaitlik Kontrolü Gerekli</h2>
+                <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                  Rezervasyon formunu doldurmadan önce lütfen yukarıdaki alanda tarih seçerek müsaitlik kontrolü yapınız.
+                </p>
+                <div className="inline-flex items-center gap-2 text-cyan-600 font-medium">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  Yukarı kaydırarak tarih seçin
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FOOTER */}
       <footer className="bg-gray-900 text-white py-12 border-t border-gray-800">
