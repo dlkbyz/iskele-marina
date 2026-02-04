@@ -1,8 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+
+// Intersection Observer hook for scroll animations
+function useInView() {
+  const ref = useRef(null)
+  const [isInView, setIsInView] = useState(false)
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+    
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+  
+  return [ref, isInView]
+}
 
 export default function Ozellikler() {
   const pathname = usePathname()
@@ -10,6 +32,7 @@ export default function Ozellikler() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [hoveredFeature, setHoveredFeature] = useState(null)
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20)
@@ -423,8 +446,34 @@ export default function Ozellikler() {
                 {evOzellikleri.map((ozellik, index) => (
                   <div
                     key={index}
-                    className="group relative bg-white p-7 rounded-3xl shadow-md border border-gray-100 hover:border-cyan-400 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="group relative bg-white p-7 rounded-3xl shadow-md border border-gray-100 hover:border-cyan-400 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 overflow-hidden cursor-pointer"
+                    style={{ 
+                      animation: `fadeInUp 0.6s ease-out ${index * 0.08}s both`
+                    }}
+                    onMouseEnter={() => setHoveredFeature(index)}
+                    onMouseLeave={() => setHoveredFeature(null)}
+                  >
+                    {/* Gradient Background on Hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
+                    {/* Animated Circle Background */}
+                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/5 rounded-full transition-all duration-700 group-hover:scale-150 group-hover:bg-cyan-500/10" />
+                    
+                    <div className="relative z-10">
+                      <div className="text-5xl mb-5 transition-all duration-500 group-hover:scale-125 group-hover:-rotate-12 inline-block">
+                        {ozellik.icon}
+                      </div>
+                      <h3 className="text-base font-bold text-gray-900 mb-2 tracking-wide group-hover:text-cyan-600 transition-colors duration-300">
+                        {ozellik.baslik}
+                      </h3>
+                      <p className="text-sm text-gray-600 font-light leading-relaxed">
+                        {ozellik.aciklama}
+                      </p>
+                    </div>
+                    
+                    {/* Hover indicator */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                  </div>
                   >
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-blue-500/0 to-purple-500/0 group-hover:from-cyan-500/5 group-hover:via-blue-500/5 group-hover:to-purple-500/5 rounded-3xl transition-all duration-500"></div>
@@ -484,20 +533,28 @@ export default function Ozellikler() {
                   {kompleksOzellikleri.map((ozellik, index) => (
                     <div
                       key={index}
-                      className="group relative bg-white/80 backdrop-blur-sm p-7 rounded-3xl shadow-md border border-white hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 overflow-hidden"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      className="group relative bg-white/90 backdrop-blur-sm p-7 rounded-3xl shadow-lg border border-white hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 overflow-hidden cursor-pointer"
+                      style={{ 
+                        animation: `fadeInUp 0.6s ease-out ${index * 0.08}s both`
+                      }}
                     >
                       {/* Dynamic gradient background */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${ozellik.gradient} opacity-0 group-hover:opacity-10 rounded-3xl transition-all duration-500`}></div>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${ozellik.gradient} opacity-0 group-hover:opacity-15 rounded-3xl transition-all duration-500`}></div>
                       
                       {/* Animated shine effect */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                        <div className={`absolute inset-[-100%] bg-gradient-to-r ${ozellik.gradient} blur-2xl opacity-20 group-hover:animate-[spin_3s_linear_infinite]`}></div>
+                        <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-r ${ozellik.gradient} blur-2xl opacity-10 group-hover:scale-150 transition-transform duration-1000`}></div>
+                      </div>
+                      
+                      {/* Floating particles effect */}
+                      <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className={`absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-gradient-to-r ${ozellik.gradient} animate-[float_3s_ease-in-out_infinite]`}></div>
+                        <div className={`absolute top-3/4 right-1/4 w-1.5 h-1.5 rounded-full bg-gradient-to-r ${ozellik.gradient} animate-[float_4s_ease-in-out_infinite]`}></div>
                       </div>
 
                       <div className="relative z-10">
-                        <div className={`inline-block p-4 rounded-2xl bg-gradient-to-br ${ozellik.gradient} mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}>
-                          <span className="text-4xl filter drop-shadow-sm">{ozellik.icon}</span>
+                        <div className={`inline-block p-4 rounded-2xl bg-gradient-to-br ${ozellik.gradient} mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-700 shadow-lg group-hover:shadow-2xl`}>
+                          <span className="text-4xl filter drop-shadow-lg">{ozellik.icon}</span>
                         </div>
                         <h3 className="text-base font-bold text-gray-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300">
                           {ozellik.baslik}
@@ -705,6 +762,37 @@ export default function Ozellikler() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeInUp {
+          from { 
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.05);
           }
         }
 
