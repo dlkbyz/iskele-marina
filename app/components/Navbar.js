@@ -44,7 +44,7 @@ export default function Navbar() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-3'}`}>
         <div className="px-5 md:px-10">
           <div className={`relative rounded-2xl border backdrop-blur-md transition-all duration-300 ${
-            isScrolled ? 'border-white/20 bg-black/55 shadow-2xl' : 'border-white/15 bg-black/20 shadow-lg'
+            isScrolled ? 'border-white/20 bg-black/70 shadow-2xl' : 'border-white/20 bg-black/55 shadow-lg'
           }`}>
             {/* Sheen overlay */}
             <div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent transition-opacity duration-300 ${
