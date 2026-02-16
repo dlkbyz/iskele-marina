@@ -41,7 +41,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-3'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
         <div className="px-5 md:px-10">
           <div className={`relative rounded-2xl border backdrop-blur-md transition-all duration-300 ${
             isScrolled ? 'border-white/20 bg-black/70 shadow-2xl' : 'border-white/20 bg-black/55 shadow-lg'
