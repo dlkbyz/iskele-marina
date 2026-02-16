@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useLanguage } from '@/lib/LanguageContext'
@@ -53,21 +53,24 @@ function StarRating({ rating, maxStars = 5, size = 'md', interactive = false, on
 
 // Intersection Observer Hook
 function useInView(options = {}) {
-  const ref = useRef(null)
   const [isInView, setIsInView] = useState(false)
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsInView(true)
-        observer.disconnect()
-      }
-    }, { threshold: 0.1, ...options })
-    
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [])
-  
+  const observerRef = useRef(null)
+
+  const ref = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+    if (node) {
+      observerRef.current = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true)
+          observerRef.current?.disconnect()
+        }
+      }, { threshold: 0.1, ...options })
+      observerRef.current.observe(node)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   return [ref, isInView]
 }
 
