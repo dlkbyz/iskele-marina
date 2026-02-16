@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useLanguage } from '@/lib/LanguageContext'
+import Navbar from '../components/Navbar'
 
 // Intersection Observer hook for scroll animations
 function useInView() {
@@ -27,30 +28,12 @@ function useInView() {
 }
 
 export default function Ozellikler() {
-  const pathname = usePathname()
-  const [language, setLanguage] = useState('TR')
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  const { language } = useLanguage()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [hoveredFeature, setHoveredFeature] = useState(null)
 
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   const content = {
-    TR: {
-      navLinks: [
-        { label: 'ANA SAYFA', href: '/' },
-        { label: 'GALERİ', href: '/galeri' },
-        { label: 'ÖZELLİKLER', href: '/ozellikler' },
-        { label: 'YORUMLAR', href: '/yorumlar' },
-        { label: 'İLETİŞİM', href: '/iletisim' }
-      ],
-      cta: { book: 'REZERVASYON YAP' },
+    tr: {
       hero: {
         title: 'Tüm Olanaklar Dahil',
         description: 'Tatil deneyiminizi unutulmaz kılacak tüm detaylar',
@@ -80,15 +63,7 @@ export default function Ozellikler() {
         beach: { value: '5dk', label: 'Plaja Mesafe' }
       }
     },
-    EN: {
-      navLinks: [
-        { label: 'HOME', href: '/' },
-        { label: 'GALLERY', href: '/galeri' },
-        { label: 'FEATURES', href: '/ozellikler' },
-        { label: 'REVIEWS', href: '/yorumlar' },
-        { label: 'CONTACT', href: '/iletisim' }
-      ],
-      cta: { book: 'BOOK NOW' },
+    en: {
       hero: {
         title: 'All Amenities Included',
         description: 'Every detail to make your vacation unforgettable',
@@ -120,242 +95,64 @@ export default function Ozellikler() {
     }
   }
 
-  const t = content[language]
-  const navLinks = t.navLinks
-  const isActive = (href) => pathname === href
+  const t = content[language] || content.tr
 
   const evOzellikleri = [
-    { icon: '🛏️', baslik: language === 'TR' ? '2 Yatak Odası' : '2 Bedrooms', aciklama: language === 'TR' ? 'Geniş ve konforlu yatak odaları' : 'Spacious and comfortable bedrooms', category: 'comfort' },
-    { icon: '🛁', baslik: language === 'TR' ? '1 Banyo' : '1 Bathroom', aciklama: language === 'TR' ? 'Modern ve temiz banyo' : 'Modern and clean bathroom', category: 'comfort' },
-    { icon: '👥', baslik: language === 'TR' ? '5 Kişilik' : 'Up to 5 Guests', aciklama: language === 'TR' ? 'Rahatça 5 kişi kalabilir' : 'Comfortable for 5 people', category: 'comfort' },
-    { icon: '📶', baslik: language === 'TR' ? 'Hızlı WiFi' : 'Fast WiFi', aciklama: language === 'TR' ? 'Fiber internet bağlantısı' : 'Fiber internet connection', category: 'tech' },
-    { icon: '❄️', baslik: language === 'TR' ? 'Klima' : 'Air Conditioning', aciklama: language === 'TR' ? 'Her odada klima mevcut' : 'AC in all rooms', category: 'comfort' },
-    { icon: '🍳', baslik: language === 'TR' ? 'Tam Donanımlı Mutfak' : 'Fully Equipped Kitchen', aciklama: language === 'TR' ? 'Buzdolabı, fırın, ocak, su ısıtıcı' : 'Fridge, oven, cooktop, kettle', category: 'kitchen' },
-    { icon: '📺', baslik: language === 'TR' ? 'Smart TV' : 'Smart TV', aciklama: language === 'TR' ? 'Netflix ve YouTube destekli' : 'Netflix and YouTube enabled', category: 'tech' },
-    { icon: '🧺', baslik: language === 'TR' ? 'Çamaşır Makinesi' : 'Washing Machine', aciklama: language === 'TR' ? 'Kendi çamaşırlarınızı yıkayın' : 'Wash your own laundry', category: 'comfort' },
-    { icon: '🏖️', baslik: language === 'TR' ? 'Balkon' : 'Balcony', aciklama: language === 'TR' ? 'Geniş ve manzaralı balkon' : 'Wide and scenic balcony', category: 'comfort' },
-    { icon: '🅿️', baslik: language === 'TR' ? 'Otopark' : 'Parking', aciklama: language === 'TR' ? 'Ücretsiz kapalı otopark' : 'Free covered parking', category: 'extra' },
+    { icon: '🛏️', baslik: language === 'tr' ? '2 Yatak Odası' : '2 Bedrooms', aciklama: language === 'tr' ? 'Geniş ve konforlu yatak odaları' : 'Spacious and comfortable bedrooms', category: 'comfort' },
+    { icon: '🛁', baslik: language === 'tr' ? '1 Banyo' : '1 Bathroom', aciklama: language === 'tr' ? 'Modern ve temiz banyo' : 'Modern and clean bathroom', category: 'comfort' },
+    { icon: '👥', baslik: language === 'tr' ? '5 Kişilik' : 'Up to 5 Guests', aciklama: language === 'tr' ? 'Rahatça 5 kişi kalabilir' : 'Comfortable for 5 people', category: 'comfort' },
+    { icon: '📶', baslik: language === 'tr' ? 'Hızlı WiFi' : 'Fast WiFi', aciklama: language === 'tr' ? 'Fiber internet bağlantısı' : 'Fiber internet connection', category: 'tech' },
+    { icon: '❄️', baslik: language === 'tr' ? 'Klima' : 'Air Conditioning', aciklama: language === 'tr' ? 'Her odada klima mevcut' : 'AC in all rooms', category: 'comfort' },
+    { icon: '🍳', baslik: language === 'tr' ? 'Tam Donanımlı Mutfak' : 'Fully Equipped Kitchen', aciklama: language === 'tr' ? 'Buzdolabı, fırın, ocak, su ısıtıcı' : 'Fridge, oven, cooktop, kettle', category: 'kitchen' },
+    { icon: '📺', baslik: language === 'tr' ? 'Smart TV' : 'Smart TV', aciklama: language === 'tr' ? 'Netflix ve YouTube destekli' : 'Netflix and YouTube enabled', category: 'tech' },
+    { icon: '🧺', baslik: language === 'tr' ? 'Çamaşır Makinesi' : 'Washing Machine', aciklama: language === 'tr' ? 'Kendi çamaşırlarınızı yıkayın' : 'Wash your own laundry', category: 'comfort' },
+    { icon: '🏖️', baslik: language === 'tr' ? 'Balkon' : 'Balcony', aciklama: language === 'tr' ? 'Geniş ve manzaralı balkon' : 'Wide and scenic balcony', category: 'comfort' },
+    { icon: '🅿️', baslik: language === 'tr' ? 'Otopark' : 'Parking', aciklama: language === 'tr' ? 'Ücretsiz kapalı otopark' : 'Free covered parking', category: 'extra' },
   ]
 
   const kompleksOzellikleri = [
-    { icon: '🏊', baslik: language === 'TR' ? 'Açık Yüzme Havuzu' : 'Outdoor Pool', aciklama: language === 'TR' ? 'Yetişkin ve çocuk havuzu' : 'Adult and children pools', gradient: 'from-blue-400 to-cyan-500' },
-    { icon: '🏊', baslik: language === 'TR' ? 'Kapalı Yüzme Havuzu' : 'Indoor Pool', aciklama: language === 'TR' ? '4 mevsim yüzme imkanı' : '4 season swimming', gradient: 'from-cyan-400 to-blue-500' },
-    { icon: '💆', baslik: language === 'TR' ? 'SPA & Sauna' : 'SPA & Sauna', aciklama: language === 'TR' ? 'Profesyonel SPA hizmetleri' : 'Professional SPA services', gradient: 'from-purple-400 to-pink-500' },
-    { icon: '🏋️', baslik: language === 'TR' ? 'Spor Salonu' : 'Gym', aciklama: language === 'TR' ? 'Modern fitness ekipmanları' : 'Modern fitness equipment', gradient: 'from-orange-400 to-red-500' },
-    { icon: '🍽️', baslik: language === 'TR' ? '4 Restoran' : '4 Restaurants', aciklama: language === 'TR' ? 'Çeşitli mutfaklar ve lezzetler' : 'Various cuisines', gradient: 'from-amber-400 to-orange-500' },
-    { icon: '☕', baslik: language === 'TR' ? 'Cafe' : 'Cafe', aciklama: language === 'TR' ? 'Kahve ve tatlı keyfi' : 'Coffee and desserts', gradient: 'from-brown-400 to-amber-600' },
-    { icon: '🛒', baslik: language === 'TR' ? 'Market' : 'Supermarket', aciklama: language === 'TR' ? 'Temel ihtiyaçlar için market' : 'Basic needs market', gradient: 'from-green-400 to-emerald-500' },
-    { icon: '👶', baslik: language === 'TR' ? 'Çocuk Oyun Alanı' : 'Kids Play Area', aciklama: language === 'TR' ? 'Güvenli ve eğlenceli alan' : 'Safe and fun area', gradient: 'from-pink-400 to-rose-500' },
-    { icon: '🔒', baslik: language === 'TR' ? '7/24 Güvenlik' : '24/7 Security', aciklama: language === 'TR' ? 'Kamera sistemi ve güvenlik' : 'Camera and security system', gradient: 'from-slate-400 to-gray-600' },
-    { icon: '🏖️', baslik: language === 'TR' ? 'Plaja 5 Dakika' : '5 Min to Beach', aciklama: language === 'TR' ? 'Yürüyerek plaja ulaşım' : 'Walking distance to beach', gradient: 'from-sky-400 to-blue-500' },
+    { icon: '🏊', baslik: language === 'tr' ? 'Açık Yüzme Havuzu' : 'Outdoor Pool', aciklama: language === 'tr' ? 'Yetişkin ve çocuk havuzu' : 'Adult and children pools', gradient: 'from-blue-400 to-cyan-500' },
+    { icon: '🏊', baslik: language === 'tr' ? 'Kapalı Yüzme Havuzu' : 'Indoor Pool', aciklama: language === 'tr' ? '4 mevsim yüzme imkanı' : '4 season swimming', gradient: 'from-cyan-400 to-blue-500' },
+    { icon: '💆', baslik: language === 'tr' ? 'SPA & Sauna' : 'SPA & Sauna', aciklama: language === 'tr' ? 'Profesyonel SPA hizmetleri' : 'Professional SPA services', gradient: 'from-purple-400 to-pink-500' },
+    { icon: '🏋️', baslik: language === 'tr' ? 'Spor Salonu' : 'Gym', aciklama: language === 'tr' ? 'Modern fitness ekipmanları' : 'Modern fitness equipment', gradient: 'from-orange-400 to-red-500' },
+    { icon: '🍽️', baslik: language === 'tr' ? '4 Restoran' : '4 Restaurants', aciklama: language === 'tr' ? 'Çeşitli mutfaklar ve lezzetler' : 'Various cuisines', gradient: 'from-amber-400 to-orange-500' },
+    { icon: '☕', baslik: language === 'tr' ? 'Cafe' : 'Cafe', aciklama: language === 'tr' ? 'Kahve ve tatlı keyfi' : 'Coffee and desserts', gradient: 'from-brown-400 to-amber-600' },
+    { icon: '🛒', baslik: language === 'tr' ? 'Market' : 'Supermarket', aciklama: language === 'tr' ? 'Temel ihtiyaçlar için market' : 'Basic needs market', gradient: 'from-green-400 to-emerald-500' },
+    { icon: '👶', baslik: language === 'tr' ? 'Çocuk Oyun Alanı' : 'Kids Play Area', aciklama: language === 'tr' ? 'Güvenli ve eğlenceli alan' : 'Safe and fun area', gradient: 'from-pink-400 to-rose-500' },
+    { icon: '🔒', baslik: language === 'tr' ? '7/24 Güvenlik' : '24/7 Security', aciklama: language === 'tr' ? 'Kamera sistemi ve güvenlik' : 'Camera and security system', gradient: 'from-slate-400 to-gray-600' },
+    { icon: '🏖️', baslik: language === 'tr' ? 'Plaja 5 Dakika' : '5 Min to Beach', aciklama: language === 'tr' ? 'Yürüyerek plaja ulaşım' : 'Walking distance to beach', gradient: 'from-sky-400 to-blue-500' },
   ]
 
   const konumAvantajlari = [
     { 
       icon: '🏖️', 
-      baslik: language === 'TR' ? 'Plaja 5 Dakika' : '5 Min to Beach', 
-      aciklama: language === 'TR' ? 'Yürüyerek kolayca ulaşabileceğiniz mesafede' : 'Easy walking distance',
+      baslik: language === 'tr' ? 'Plaja 5 Dakika' : '5 Min to Beach', 
+      aciklama: language === 'tr' ? 'Yürüyerek kolayca ulaşabileceğiniz mesafede' : 'Easy walking distance',
       color: 'from-blue-500 to-cyan-600'
     },
     { 
       icon: '🛒', 
-      baslik: language === 'TR' ? 'Market Kompleks İçinde' : 'Market Inside', 
-      aciklama: language === 'TR' ? 'İhtiyaçlarınız için market hemen yanınızda' : 'Supermarket next door',
+      baslik: language === 'tr' ? 'Market Kompleks İçinde' : 'Market Inside', 
+      aciklama: language === 'tr' ? 'İhtiyaçlarınız için market hemen yanınızda' : 'Supermarket next door',
       color: 'from-green-500 to-emerald-600'
     },
     { 
       icon: '🍽️', 
-      baslik: language === 'TR' ? 'Yemek Seçenekleri' : 'Dining Options', 
-      aciklama: language === 'TR' ? '4 farklı restoran ve cafe içeride' : '4 restaurants and cafes',
+      baslik: language === 'tr' ? 'Yemek Seçenekleri' : 'Dining Options', 
+      aciklama: language === 'tr' ? '4 farklı restoran ve cafe içeride' : '4 restaurants and cafes',
       color: 'from-orange-500 to-amber-600'
     },
     { 
       icon: '✈️', 
-      baslik: language === 'TR' ? 'Ercan Havalimanı' : 'Airport', 
-      aciklama: language === 'TR' ? 'Yaklaşık 45 dakika uzaklıkta' : 'About 45 min away',
+      baslik: language === 'tr' ? 'Ercan Havalimanı' : 'Airport', 
+      aciklama: language === 'tr' ? 'Yaklaşık 45 dakika uzaklıkta' : 'About 45 min away',
       color: 'from-purple-500 to-indigo-600'
     },
   ]
 
   return (
     <>
-      {/* TOP NAVBAR */}
-      <header
-        className={[
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          isScrolled ? 'py-2' : 'py-0'
-        ].join(' ')}
-      >
-        <div className="px-5 md:px-10">
-          <div
-            className={[
-              'relative rounded-2xl border backdrop-blur-md transition-all duration-300',
-              isScrolled ? 'border-white/20 bg-black/55 shadow-2xl' : 'border-white/15 bg-black/20 shadow-lg'
-            ].join(' ')}
-          >
-            <div
-              className={[
-                'pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent transition-opacity duration-300',
-                isScrolled ? 'opacity-100' : 'opacity-0'
-              ].join(' ')}
-            />
-            <div
-              className={[
-                'relative flex items-center justify-between transition-all duration-300',
-                isScrolled ? 'px-5 md:px-8 py-3' : 'px-5 md:px-8 py-4'
-              ].join(' ')}
-            >
-              {/* Logo */}
-              <Link href="/" className="flex items-center gap-2">
-                <span
-                  className={[
-                    'font-serif text-white tracking-wide transition-all duration-300',
-                    isScrolled ? 'text-base md:text-lg' : 'text-lg md:text-xl'
-                  ].join(' ')}
-                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                >
-                  Serenity
-                </span>
-                <span
-                  className={[
-                    'hidden md:inline text-[10px] tracking-[0.35em] uppercase transition-all duration-300',
-                    isScrolled ? 'text-cyan-100/90 text-[10px]' : 'text-cyan-200/90 text-[11px]'
-                  ].join(' ')}
-                >
-                  ISKELE
-                </span>
-              </Link>
-
-              {/* Desktop Nav */}
-              <nav className="hidden md:flex items-center gap-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={[
-                      'relative text-[12px] md:text-[13px] tracking-[0.18em] uppercase font-medium transition',
-                      isActive(link.href) ? 'text-cyan-200' : 'text-white/85 hover:text-white'
-                    ].join(' ')}
-                  >
-                    {link.label}
-                    <span
-                      className={[
-                        'absolute left-0 -bottom-2 h-[2px] bg-cyan-200 rounded-full transition-all duration-300',
-                        isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0 hover:w-full hover:opacity-100'
-                      ].join(' ')}
-                    />
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Right actions */}
-              <div className="flex items-center gap-3">
-                {/* Language */}
-                <div
-                  className={[
-                    'hidden sm:flex items-center gap-3 rounded-full px-4 py-2 transition-all duration-300',
-                    isScrolled ? 'border border-white/20 bg-white/5' : 'border border-white/15 bg-white/0'
-                  ].join(' ')}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('TR')}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'TR' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    TR
-                  </button>
-                  <span className="text-white/25">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('EN')}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'EN' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
-
-                {/* CTA */}
-                <Link
-                  href="/rezervasyon"
-                  className={[
-                    'hidden md:inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white',
-                    'text-[14px] tracking-[0.22em] uppercase font-semibold shadow-lg hover:shadow-xl transition',
-                    isScrolled ? 'px-5 py-2.5' : 'px-6 py-3',
-                    'hover:from-cyan-600 hover:to-blue-700'
-                  ].join(' ')}
-                >
-                  {t.cta.book}
-                </Link>
-
-                {/* Mobile menu button */}
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(true)}
-                  className={[
-                    'md:hidden inline-flex w-10 h-10 items-center justify-center rounded-full transition',
-                    isScrolled
-                      ? 'border border-white/20 bg-white/10 hover:bg-white/15'
-                      : 'border border-white/15 bg-white/5 hover:bg-white/10'
-                  ].join(' ')}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-gradient-to-br from-gray-900 via-slate-900 to-black border-l border-white/10 p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-8">
-              <span className="font-serif text-white text-2xl" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-                Serenity
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center justify-center"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <nav className="flex flex-col gap-2 mb-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-[14px] tracking-[0.18em] uppercase font-medium transition ${
-                    isActive(link.href) ? 'bg-white/10 text-cyan-200' : 'text-white/80 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-
-            <Link
-              href="/rezervasyon"
-              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[14px] tracking-[0.22em] uppercase font-semibold shadow-lg hover:shadow-xl transition"
-            >
-              {t.cta.book}
-            </Link>
-          </div>
-        </div>
-      )}
+      <Navbar />
 
       <main className="pt-0">
         {/* HERO SECTION - Geliştirilmiş */}
@@ -613,16 +410,16 @@ export default function Ozellikler() {
                     <span className="inline-block text-6xl mb-4 animate-bounce">✨</span>
                   </div>
                   <h2 className="text-3xl md:text-5xl font-serif mb-6" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontWeight: 300 }}>
-                    {language === 'TR' ? 'Hemen Rezervasyon Yapın' : 'Book Now'}
+                    {language === 'tr' ? 'Hemen Rezervasyon Yapın' : 'Book Now'}
                   </h2>
                   <p className="text-lg md:text-xl mb-10 text-white/95 font-light max-w-2xl mx-auto">
-                    {language === 'TR' ? 'Tüm bu olanakların tadını çıkarın ve unutulmaz bir tatil deneyimi yaşayın' : 'Enjoy all these amazing amenities and experience an unforgettable vacation'}
+                    {language === 'tr' ? 'Tüm bu olanakların tadını çıkarın ve unutulmaz bir tatil deneyimi yaşayın' : 'Enjoy all these amazing amenities and experience an unforgettable vacation'}
                   </p>
                   <Link
                     href="/rezervasyon"
                     className="group inline-flex items-center gap-3 px-12 py-5 bg-white text-cyan-600 hover:bg-gray-50 transition-all text-sm tracking-[0.2em] uppercase font-bold shadow-2xl hover:shadow-3xl rounded-full hover:scale-105 duration-300"
                   >
-                    <span>{language === 'TR' ? 'Rezervasyon Yap' : 'Book Now'}</span>
+                    <span>{language === 'tr' ? 'Rezervasyon Yap' : 'Book Now'}</span>
                     <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -645,7 +442,7 @@ export default function Ozellikler() {
                   <span className="ml-2 text-xs tracking-[0.3em] uppercase text-cyan-400">ISKELE</span>
                 </div>
                 <p className="text-sm text-gray-400 font-light leading-relaxed">
-                  {language === 'TR' 
+                  {language === 'tr' 
                     ? "Serenity Iskele'e hoş geldiniz, konfor her şeydir. Güzel oda sunumları, basit rezervasyon seçenekleri."
                     : "Welcome to Serenity Iskele, where comfort is everything. Beautiful rooms, simple booking options."}
                 </p>
@@ -653,7 +450,7 @@ export default function Ozellikler() {
 
               <div>
                 <h4 className="text-sm tracking-[0.3em] uppercase mb-8 font-bold text-cyan-400">
-                  {language === 'TR' ? 'İletişim' : 'Contact'}
+                  {language === 'tr' ? 'İletişim' : 'Contact'}
                 </h4>
                 <div className="space-y-4 text-sm text-gray-400 font-light">
                   <div className="group">
@@ -683,7 +480,7 @@ export default function Ozellikler() {
 
               <div>
                 <h4 className="text-sm tracking-[0.3em] uppercase mb-8 font-bold text-cyan-400">
-                  {language === 'TR' ? 'Sosyal Medya' : 'Get Social'}
+                  {language === 'tr' ? 'Sosyal Medya' : 'Get Social'}
                 </h4>
                 <div className="flex space-x-4">
                   <a
@@ -716,7 +513,7 @@ export default function Ozellikler() {
 
             <div className="border-t border-gray-800 pt-8 text-center">
               <p className="text-xs text-gray-500 tracking-[0.1em] uppercase font-light">
-                © 2025 Serenity Iskele. {language === 'TR' ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}
+                © 2025 Serenity Iskele. {language === 'tr' ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}
               </p>
             </div>
           </div>

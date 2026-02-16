@@ -1,27 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { useLanguage } from '@/lib/LanguageContext'
 import { supabase } from '@/lib/supabase'
+import Navbar from '../components/Navbar'
 
 export default function Galeri() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const [language, setLanguage] = useState('TR')
+  const { language } = useLanguage()
   const [selectedImage, setSelectedImage] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [fotolar, setFotolar] = useState([])
   const [loading, setLoading] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useEffect(() => {
     loadFotolar()
@@ -81,15 +70,7 @@ export default function Galeri() {
   }
 
   const content = {
-    TR: {
-      navLinks: [
-        { label: 'ANA SAYFA', href: '/' },
-        { label: 'GALERİ', href: '/galeri' },
-        { label: 'ÖZELLİKLER', href: '/ozellikler' },
-        { label: 'YORUMLAR', href: '/yorumlar' },
-        { label: 'İLETİŞİM', href: '/iletisim' }
-      ],
-      cta: { book: 'REZERVASYON YAP' },
+    tr: {
       gallery: {
         badge: 'Galeri',
         title: 'Fotoğraf Galerisi',
@@ -105,15 +86,7 @@ export default function Galeri() {
         copyright: '© 2025 Serenity Iskele'
       }
     },
-    EN: {
-      navLinks: [
-        { label: 'HOME', href: '/' },
-        { label: 'GALLERY', href: '/galeri' },
-        { label: 'FEATURES', href: '/ozellikler' },
-        { label: 'REVIEWS', href: '/yorumlar' },
-        { label: 'CONTACT', href: '/iletisim' }
-      ],
-      cta: { book: 'BOOK NOW' },
+    en: {
       gallery: {
         badge: 'Gallery',
         title: 'Photo Gallery',
@@ -131,9 +104,7 @@ export default function Galeri() {
     }
   }
 
-  const t = content[language]
-  const navLinks = t.navLinks
-  const isActive = (href) => pathname === href
+  const t = content[language] || content.tr
 
   // Fallback fotoğraflar - Profesyonel iç mekan
   const fallbackImages = [
@@ -149,177 +120,7 @@ export default function Galeri() {
 
   return (
     <>
-      {/* TOP NAVBAR */}
-      <header
-        className={[
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          isScrolled ? 'py-2' : 'py-0'
-        ].join(' ')}
-      >
-        <div className="px-5 md:px-10">
-          <div
-            className={[
-              'relative rounded-2xl border backdrop-blur-md transition-all duration-300',
-              isScrolled ? 'border-white/20 bg-black/55 shadow-2xl' : 'border-white/15 bg-black/20 shadow-lg'
-            ].join(' ')}
-          >
-            <div
-              className={[
-                'pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent transition-opacity duration-300',
-                isScrolled ? 'opacity-100' : 'opacity-0'
-              ].join(' ')}
-            />
-            <div
-              className={[
-                'relative flex items-center justify-between transition-all duration-300',
-                isScrolled ? 'px-5 md:px-8 py-3' : 'px-5 md:px-8 py-4'
-              ].join(' ')}
-            >
-              {/* Logo */}
-              <Link href="/" className="flex items-center gap-2">
-                <span
-                  className={[
-                    'font-serif text-white tracking-wide transition-all duration-300',
-                    isScrolled ? 'text-base md:text-lg' : 'text-lg md:text-xl'
-                  ].join(' ')}
-                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                >
-                  Serenity
-                </span>
-                <span
-                  className={[
-                    'hidden md:inline text-[10px] tracking-[0.35em] uppercase transition-all duration-300',
-                    isScrolled ? 'text-cyan-100/90 text-[10px]' : 'text-cyan-200/90 text-[11px]'
-                  ].join(' ')}
-                >
-                  ISKELE
-                </span>
-              </Link>
-
-              {/* Desktop Nav */}
-              <nav className="flex items-center gap-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={[
-                      'relative text-[12px] md:text-[13px] tracking-[0.18em] uppercase font-medium transition',
-                      isActive(link.href) ? 'text-cyan-200' : 'text-white/85 hover:text-white'
-                    ].join(' ')}
-                  >
-                    {link.label}
-                    <span
-                      className={[
-                        'absolute left-0 -bottom-2 h-[2px] bg-cyan-200 rounded-full transition-all duration-300',
-                        isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0 hover:w-full hover:opacity-100'
-                      ].join(' ')}
-                    />
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Right actions */}
-              <div className="flex items-center gap-3">
-                {/* Language */}
-                <div
-                  className={[
-                    'hidden sm:flex items-center gap-3 rounded-full px-4 py-2 transition-all duration-300',
-                    isScrolled ? 'border border-white/20 bg-white/5' : 'border border-white/15 bg-white/0'
-                  ].join(' ')}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('TR')}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'TR' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    TR
-                  </button>
-                  <span className="text-white/25">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('EN')}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'EN' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
-
-                {/* CTA */}
-                <Link
-                  href="/rezervasyon"
-                  className={[
-                    'hidden md:inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white',
-                    'text-[14px] tracking-[0.22em] uppercase font-semibold shadow-lg hover:shadow-xl transition',
-                    isScrolled ? 'px-5 py-2.5' : 'px-6 py-3',
-                    'hover:from-cyan-600 hover:to-blue-700'
-                  ].join(' ')}
-                >
-                  {t.cta.book}
-                </Link>
-
-                {/* Mobile menu button */}
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(true)}
-                  className={[
-                    'lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-full transition',
-                    isScrolled
-                      ? 'border border-white/20 bg-white/10 hover:bg-white/15'
-                      : 'border border-white/15 bg-white/5 hover:bg-white/10'
-                  ].join(' ')}
-                  aria-label="Open menu"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-[#0b0f17] border-l border-white/10 p-6">
-            <div className="flex items-center justify-between mb-8">
-              <span className="font-serif text-white text-2xl" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-                Serenity
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center justify-center"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <nav className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-[14px] tracking-[0.18em] uppercase font-medium transition ${
-                    isActive(link.href) ? 'bg-white/10 text-cyan-200' : 'text-white/80 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
+      <Navbar />
 
       <main className="pt-0">
         {/* HERO SECTION */}
@@ -394,7 +195,7 @@ export default function Galeri() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-6">
                       <div className="text-white text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                         <div className="text-4xl mb-2">🔍</div>
-                        <p className="text-sm font-light tracking-wider">{language === 'TR' ? 'Görüntüle' : 'View'}</p>
+                        <p className="text-sm font-light tracking-wider">{language === 'tr' ? 'Görüntüle' : 'View'}</p>
                       </div>
                     </div>
                   </div>
@@ -465,8 +266,8 @@ export default function Galeri() {
 
             {/* Instructions */}
             <div className="absolute bottom-4 left-4 text-white/60 text-xs md:text-sm space-y-1">
-              <p>← → {language === 'TR' ? 'Yön tuşları' : 'Arrow keys'}</p>
-              <p>ESC {language === 'TR' ? 'Kapat' : 'Close'}</p>
+              <p>← → {language === 'tr' ? 'Yön tuşları' : 'Arrow keys'}</p>
+              <p>ESC {language === 'tr' ? 'Kapat' : 'Close'}</p>
             </div>
           </div>
         )}
