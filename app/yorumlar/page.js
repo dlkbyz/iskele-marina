@@ -95,7 +95,6 @@ export default function Yorumlar() {
 
   const [heroRef, heroInView] = useInView()
   const [statsRef, statsInView] = useInView()
-  const [reviewsRef, reviewsInView] = useInView()
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20)
@@ -447,12 +446,7 @@ export default function Yorumlar() {
               <p className="text-xl text-gray-600">{t_local.noReviews}</p>
             </div>
           ) : (
-            <div
-              ref={reviewsRef}
-              className={`grid md:grid-cols-2 lg:grid-cols-3 gap-6 transform transition-all duration-1000 ${
-                reviewsInView ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-              }`}
-            >
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredReviews.map((yorum, index) => (
                 <div
                   key={yorum.id}
