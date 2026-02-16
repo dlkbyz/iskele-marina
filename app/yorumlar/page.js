@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { supabase } from '../../lib/supabase'
 import { useLanguage } from '@/lib/LanguageContext'
 import Footer from '../components/Footer'
 
@@ -108,14 +107,10 @@ export default function Yorumlar() {
 
   const loadYorumlar = async () => {
     try {
-      const { data, error } = await supabase
-        .from('yorumlar')
-        .select('*')
-        .eq('onaylandi', true)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setYorumlar(data || [])
+      const res = await fetch('/api/yorumlar')
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Hata')
+      setYorumlar(json.data || [])
     } catch (error) {
       console.error('Yorumlar yüklenemedi:', error)
     } finally {
@@ -129,20 +124,19 @@ export default function Yorumlar() {
     setSubmitError('')
 
     try {
-      const { error } = await supabase
-        .from('yorumlar')
-        .insert([
-          {
-            ad: formData.ad,
-            email: formData.email,
-            puan: formData.puan,
-            baslik: formData.baslik,
-            yorum: formData.yorum,
-            onaylandi: false
-          }
-        ])
-
-      if (error) throw error
+      const res = await fetch('/api/yorumlar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ad: formData.ad,
+          email: formData.email,
+          puan: formData.puan,
+          baslik: formData.baslik,
+          yorum: formData.yorum
+        })
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Hata')
 
       setSuccess(true)
       setFormData({ ad: '', email: '', puan: 5, baslik: '', yorum: '' })
