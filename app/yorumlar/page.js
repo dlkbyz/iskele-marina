@@ -109,7 +109,7 @@ export default function Yorumlar() {
 
   const loadYorumlar = async () => {
     try {
-      const res = await fetch('/api/yorumlar')
+      const res = await fetch('/api/yorumlar', { cache: 'no-store' })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Hata')
       setYorumlar(json.data || [])
