@@ -74,7 +74,7 @@ function useInView(options = {}) {
 
 export default function Yorumlar() {
   const pathname = usePathname()
-  const { language, toggleLanguage, t } = useLanguage()
+  const { language, toggleLanguage } = useLanguage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [yorumlar, setYorumlar] = useState([])
@@ -89,6 +89,7 @@ export default function Yorumlar() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const [heroRef, heroInView] = useInView()
   const [statsRef, statsInView] = useInView()
@@ -110,8 +111,8 @@ export default function Yorumlar() {
       const { data, error } = await supabase
         .from('yorumlar')
         .select('*')
-        .eq('onaylanmis', true)
-        .order('olusturulma_tarihi', { ascending: false })
+        .eq('onaylandi', true)
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setYorumlar(data || [])
@@ -125,18 +126,19 @@ export default function Yorumlar() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
+    setSubmitError('')
 
     try {
       const { error } = await supabase
         .from('yorumlar')
         .insert([
           {
-            ad_soyad: formData.ad,
+            ad: formData.ad,
             email: formData.email,
             puan: formData.puan,
             baslik: formData.baslik,
             yorum: formData.yorum,
-            onaylanmis: false
+            onaylandi: false
           }
         ])
 
@@ -147,6 +149,7 @@ export default function Yorumlar() {
       setTimeout(() => setSuccess(false), 5000)
     } catch (error) {
       console.error('Yorum gönderilemedi:', error)
+      setSubmitError(language === 'tr' ? 'Yorum gönderilemedi. Lütfen tekrar deneyin.' : 'Could not submit review. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -178,12 +181,12 @@ export default function Yorumlar() {
         recommend: 'Tavsiye Eder'
       },
       form: {
-        title: 'Deneyiminizi Paylaşın',
+        heading: 'Deneyiminizi Paylaşın',
         subtitle: 'Görüşleriniz bizim için çok değerli',
         name: 'Adınız',
         email: 'E-posta',
         rating: 'Puanınız',
-        title: 'Başlık',
+        titleField: 'Başlık',
         review: 'Yorumunuz',
         submit: 'Yorum Gönder',
         submitting: 'Gönderiliyor...',
@@ -218,12 +221,12 @@ export default function Yorumlar() {
         recommend: 'Would Recommend'
       },
       form: {
-        title: 'Share Your Experience',
+        heading: 'Share Your Experience',
         subtitle: 'Your feedback is very valuable to us',
         name: 'Your Name',
         email: 'Email',
         rating: 'Your Rating',
-        title: 'Title',
+        titleField: 'Title',
         review: 'Your Review',
         submit: 'Submit Review',
         submitting: 'Submitting...',
@@ -462,7 +465,7 @@ export default function Yorumlar() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-lg text-gray-900">{yorum.ad_soyad}</h3>
+                      <h3 className="font-bold text-lg text-gray-900">{yorum.ad}</h3>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -483,7 +486,7 @@ export default function Yorumlar() {
                   
                   {/* Date */}
                   <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
-                    {new Date(yorum.olusturulma_tarihi).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
+                    {new Date(yorum.created_at).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -501,13 +504,19 @@ export default function Yorumlar() {
         <div className="container mx-auto max-w-3xl">
           <div className="bg-white rounded-3xl p-8 shadow-2xl">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">{t_local.form.title}</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">{t_local.form.heading}</h2>
               <p className="text-gray-600">{t_local.form.subtitle}</p>
             </div>
 
             {success && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 animate-fadeIn">
                 ✅ {t_local.form.success}
+              </div>
+            )}
+
+            {submitError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
+                ❌ {submitError}
               </div>
             )}
 
@@ -556,7 +565,7 @@ export default function Yorumlar() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t_local.form.title}
+                  {t_local.form.titleField}
                 </label>
                 <input
                   type="text"
