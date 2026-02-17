@@ -22,7 +22,7 @@ export async function POST(request) {
     const supabaseAdmin = getAdminClient()
     const { error } = await supabaseAdmin
       .from('iletisim_mesajlari')
-      .insert([{ ad_soyad, email, telefon, konu, mesaj, okundu: false }])
+      .insert([{ soyad: ad_soyad, email, telefon, konu, mesaj, okundu: false }])
 
     if (error) throw error
 
