@@ -20,7 +20,7 @@ export async function POST(request) {
     // Email type'ına göre template seç
     let emailContent
     let recipientEmail
-    let adminEmail = 'info@serenityiskele.com'
+    let adminEmail = 'dilekamir@gmail.com'
 
     switch (type) {
       case 'reservation_confirmation':
