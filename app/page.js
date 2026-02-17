@@ -519,18 +519,20 @@ export default function Home() {
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
                     {t('reservation.checkIn')}
                   </label>
-                  <div className="flex-1 flex items-center">
+                  <div className="flex-1 flex items-center relative">
                     <input
                       type="date"
                       value={checkIn}
                       onChange={(e) => setCheckIn(e.target.value)}
                       min={todayStr}
-                      className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
+                    <div className="w-full border-b-2 border-cyan-300 py-2 pointer-events-none">
+                      <span className={`text-lg md:text-xl font-light ${checkIn ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {checkIn ? new Date(checkIn + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light">
-                    {checkIn ? new Date(checkIn + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                  </p>
                 </div>
 
                 {/* Çıkış Tarihi */}
@@ -538,18 +540,20 @@ export default function Home() {
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
                     {t('reservation.checkOut')}
                   </label>
-                  <div className="flex-1 flex items-center">
+                  <div className="flex-1 flex items-center relative">
                     <input
                       type="date"
                       value={checkOut}
                       onChange={(e) => setCheckOut(e.target.value)}
                       min={checkIn || todayStr}
-                      className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
+                    <div className="w-full border-b-2 border-cyan-300 py-2 pointer-events-none">
+                      <span className={`text-lg md:text-xl font-light ${checkOut ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {checkOut ? new Date(checkOut + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light">
-                    {checkOut ? new Date(checkOut + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                  </p>
                 </div>
 
                 {/* Yetişkinler */}

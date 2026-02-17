@@ -790,21 +790,22 @@ const closeModal = () => {
                   <label className="block text-xs tracking-[0.1em] uppercase text-gray-700 font-bold mb-2">
                     {t.form.checkIn} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    name="giris"
-                    value={formData.giris}
-                    onChange={handleChange}
-                    min={bugun}
-                    required
-                     lang="tr-TR"
-                    className="w-full px-3 py-2.5 border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg font-light text-gray-900 text-sm"
-                  />
-                  {formData.giris && (
-                    <p className="text-xs text-cyan-600 mt-1">
-                      {new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </p>
-                  )}
+                  <div className="relative">
+                    <input
+                      type="date"
+                      name="giris"
+                      value={formData.giris}
+                      onChange={handleChange}
+                      min={bugun}
+                      required
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
+                      <span className={`font-light text-sm ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {formData.giris ? new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Çıkış Tarihi */}
@@ -812,21 +813,22 @@ const closeModal = () => {
                   <label className="block text-xs tracking-[0.1em] uppercase text-gray-700 font-bold mb-2">
                     {t.form.checkOut} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    name="cikis"
-                    value={formData.cikis}
-                    onChange={handleChange}
-                    min={formData.giris || bugun}
-                    required
-                     lang="tr-TR"
-                    className="w-full px-3 py-2.5 border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg font-light text-gray-900 text-sm"
-                  />
-                  {formData.cikis && (
-                    <p className="text-xs text-cyan-600 mt-1">
-                      {new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </p>
-                  )}
+                  <div className="relative">
+                    <input
+                      type="date"
+                      name="cikis"
+                      value={formData.cikis}
+                      onChange={handleChange}
+                      min={formData.giris || bugun}
+                      required
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
+                      <span className={`font-light text-sm ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {formData.cikis ? new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Kişi Sayısı */}
@@ -998,40 +1000,44 @@ const closeModal = () => {
                           <label className="block text-xs tracking-[0.15em] uppercase text-gray-700 font-bold mb-3">
                             {t.form.checkIn} <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="date"
-                            name="giris"
-                            value={formData.giris}
-                            onChange={handleChange}
-                            min={bugun}
-                            required
-                            className="w-full px-4 py-3 border-2 border-gray-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg bg-gray-50 font-light text-gray-900"
-                          />
-                          {formData.giris && (
-                            <p className="text-xs text-cyan-600 mt-1">
-                              {new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                            </p>
-                          )}
+                          <div className="relative">
+                            <input
+                              type="date"
+                              name="giris"
+                              value={formData.giris}
+                              onChange={handleChange}
+                              min={bugun}
+                              required
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
+                              <span className={`font-light ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
+                                {formData.giris ? new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-xs tracking-[0.15em] uppercase text-gray-700 font-bold mb-3">
                             {t.form.checkOut} <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="date"
-                            name="cikis"
-                            value={formData.cikis}
-                            onChange={handleChange}
-                            min={formData.giris || bugun}
-                            required
-                            className="w-full px-4 py-3 border-2 border-gray-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg bg-gray-50 font-light text-gray-900"
-                          />
-                          {formData.cikis && (
-                            <p className="text-xs text-cyan-600 mt-1">
-                              {new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                            </p>
-                          )}
+                          <div className="relative">
+                            <input
+                              type="date"
+                              name="cikis"
+                              value={formData.cikis}
+                              onChange={handleChange}
+                              min={formData.giris || bugun}
+                              required
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
+                              <span className={`font-light ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
+                                {formData.cikis ? new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="md:col-span-2">
