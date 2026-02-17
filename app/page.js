@@ -303,9 +303,9 @@ export default function Home() {
                 <Image
                   src="/serenity_logo.png"
                   alt="Serenity İskele"
-                  width={320}
-                  height={128}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'} w-auto`}
+                  width={400}
+                  height={160}
+                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-20' : 'h-24'} w-auto`}
                   priority
                 />
               </Link>
