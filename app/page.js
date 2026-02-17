@@ -303,9 +303,9 @@ export default function Home() {
                 <Image
                   src="/serenity_logo.png"
                   alt="Serenity İskele"
-                  width={120}
-                  height={48}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
+                  width={200}
+                  height={80}
+                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'} w-auto`}
                   priority
                 />
               </Link>
@@ -396,9 +396,9 @@ export default function Home() {
               <Image
                 src="/serenity_logo.png"
                 alt="Serenity İskele"
-                width={110}
-                height={44}
-                className="h-10 w-auto object-contain"
+                width={160}
+                height={64}
+                className="h-14 w-auto object-contain"
               />
               <button
                 type="button"
