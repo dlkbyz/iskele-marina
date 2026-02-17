@@ -525,7 +525,7 @@ export default function Home() {
                       value={checkIn}
                       onChange={(e) => setCheckIn(e.target.value)}
                       min={todayStr}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
                     <div className="w-full border-b-2 border-cyan-300 py-2 pointer-events-none">
                       <span className={`text-lg md:text-xl font-light ${checkIn ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -546,7 +546,7 @@ export default function Home() {
                       value={checkOut}
                       onChange={(e) => setCheckOut(e.target.value)}
                       min={checkIn || todayStr}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
                     <div className="w-full border-b-2 border-cyan-300 py-2 pointer-events-none">
                       <span className={`text-lg md:text-xl font-light ${checkOut ? 'text-gray-900' : 'text-gray-400'}`}>

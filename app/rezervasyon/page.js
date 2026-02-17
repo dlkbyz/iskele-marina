@@ -798,7 +798,7 @@ const closeModal = () => {
                       onChange={handleChange}
                       min={bugun}
                       required
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
                     <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
                       <span className={`font-light text-sm ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -821,7 +821,7 @@ const closeModal = () => {
                       onChange={handleChange}
                       min={formData.giris || bugun}
                       required
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
                     <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
                       <span className={`font-light text-sm ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -1008,7 +1008,7 @@ const closeModal = () => {
                               onChange={handleChange}
                               min={bugun}
                               required
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                             />
                             <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
                               <span className={`font-light ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -1030,7 +1030,7 @@ const closeModal = () => {
                               onChange={handleChange}
                               min={formData.giris || bugun}
                               required
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                             />
                             <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
                               <span className={`font-light ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
