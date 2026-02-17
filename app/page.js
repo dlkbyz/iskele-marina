@@ -201,7 +201,7 @@ export default function Home() {
     } catch (error) {
       console.error('Availability check error:', error)
       setAvailabilityMsg(
-        language === 'TR'
+        language === 'tr'
           ? '⚠️ Kontrol sırasında bir hata oluştu. Lütfen tekrar deneyin.'
           : '⚠️ An error occurred. Please try again.'
       )
@@ -734,13 +734,13 @@ export default function Home() {
                     className="text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-8 font-light"
                     style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
                   >
-                    {language === 'TR' ? 'Galeri' : 'Gallery'}
+                    {language === 'tr' ? 'Galeri' : 'Gallery'}
                   </h3>
                   <Link
                     href="/galeri"
                     className="inline-flex items-center gap-3 text-[12px] tracking-[0.3em] uppercase text-gray-900 hover:text-cyan-600 font-bold transition group"
                   >
-                    {language === 'TR' ? 'Daha Fazla' : 'Read More'} 
+                    {language === 'tr' ? 'Daha Fazla' : 'Read More'} 
                     <span className="text-2xl group-hover:translate-x-2 transition-transform">→</span>
                   </Link>
                 </div>
@@ -754,11 +754,11 @@ export default function Home() {
                   className="text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-10 font-light leading-tight"
                   style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
                 >
-                  {language === 'TR' ? 'Hakkımızda' : 'About Us'}
+                  {language === 'tr' ? 'Hakkımızda' : 'About Us'}
                 </h3>
                 <div className="w-12 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mb-8"></div>
                 <p className="text-[15px] md:text-[16px] leading-relaxed text-gray-700 font-light mb-10">
-                  {language === 'TR'
+                  {language === 'tr'
                     ? "Denize yakın konumunun huzurlu atmosferi ve modern konforu bir araya getirir. Her misafirimiz için unutulmaz bir deneyim yaratmayı amaçlıyoruz."
                     : "Located close to the sea, combining serene atmosphere with modern comfort. We aim to create an unforgettable experience for every guest."}
                 </p>
@@ -766,13 +766,13 @@ export default function Home() {
                   <div>
                     <div className="text-4xl md:text-5xl font-light text-cyan-600 mb-3">5+</div>
                     <p className="text-xs tracking-[0.15em] uppercase text-gray-600 font-semibold">
-                      {language === 'TR' ? 'Yıl Deneyim' : 'Years Experience'}
+                      {language === 'tr' ? 'Yıl Deneyim' : 'Years Experience'}
                     </p>
                   </div>
                   <div>
                     <div className="text-4xl md:text-5xl font-light text-blue-600 mb-3">500+</div>
                     <p className="text-xs tracking-[0.15em] uppercase text-gray-600 font-semibold">
-                      {language === 'TR' ? 'Memnun Konuk' : 'Happy Guests'}
+                      {language === 'tr' ? 'Memnun Konuk' : 'Happy Guests'}
                     </p>
                   </div>
                 </div>
