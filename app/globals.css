@@ -49,3 +49,13 @@ body {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* React DatePicker - takvim her zaman üstte görünsün */
+#datepicker-portal {
+  position: relative;
+  z-index: 9999;
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}

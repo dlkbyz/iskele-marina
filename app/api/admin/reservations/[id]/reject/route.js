@@ -39,11 +39,29 @@ export async function POST(request, { params }) {
     }
 
     // 3. İptal e-maili gönder
-    await sendCancellationEmail(updated, refundAmount)
+    let emailGonderildi = false
+    try {
+      await sendCancellationEmail(updated, refundAmount)
+      emailGonderildi = true
+    } catch (emailError) {
+      console.error('Email gönderme hatası:', emailError)
+    }
+
+    // 4. Email durumunu kaydet
+    await supabase
+      .from('rezervasyonlar')
+      .update({
+        email_gonderildi: emailGonderildi,
+        email_tarihi: new Date().toISOString()
+      })
+      .eq('id', id)
 
     return Response.json({
       success: true,
-      message: 'Rezervasyon iptal edildi ve e-mail gönderildi',
+      emailGonderildi,
+      message: emailGonderildi
+        ? 'Rezervasyon iptal edildi ve e-mail gönderildi'
+        : 'Rezervasyon iptal edildi ancak e-mail gönderilemedi',
       data: updated
     })
 

@@ -96,27 +96,32 @@ export default function ModernAdminDashboard() {
       setLoading(true)
       
       console.log('Supabase sorguları başlatılıyor...')
+      
+      // Rezervasyonları API route üzerinden çek (service role key ile RLS bypass)
+      const rezervasyonFetch = fetch('/api/admin/reservations').then(res => res.json())
+      
       const [
-        rezervasyonRes,
+        rezervasyonApiRes,
         mesajRes,
         yorumRes,
         galeriRes,
         aboneRes
       ] = await Promise.all([
-        supabase.from('rezervasyonlar').select('*').order('created_at', { ascending: false }),
+        rezervasyonFetch,
         supabase.from('iletisim_mesajlari').select('*').order('created_at', { ascending: false }),
         supabase.from('yorumlar').select('*').order('created_at', { ascending: false }),
         supabase.from('galeri').select('*').order('sira', { ascending: true }),
         supabase.from('newsletter_aboneler').select('*').order('created_at', { ascending: false })
       ])
 
-      console.log('Supabase yanıtları:', { rezervasyonRes, mesajRes, yorumRes, galeriRes, aboneRes })
+      console.log('API yanıtı (rezervasyonlar):', rezervasyonApiRes)
+      console.log('Supabase yanıtları:', { mesajRes, yorumRes, galeriRes, aboneRes })
 
-      if (rezervasyonRes.error) {
-        console.error('Rezervasyon hatası:', rezervasyonRes.error)
-        throw rezervasyonRes.error
+      if (rezervasyonApiRes.error) {
+        console.error('Rezervasyon hatası:', rezervasyonApiRes.error)
+        throw new Error(rezervasyonApiRes.error)
       }
-      setRezervasyonlar(rezervasyonRes.data || [])
+      setRezervasyonlar(rezervasyonApiRes.data || [])
 
       if (mesajRes.error) {
         console.error('Mesaj hatası:', mesajRes.error)
@@ -150,7 +155,7 @@ export default function ModernAdminDashboard() {
         setFiyatlar(fiyatRes.data || [])
       }
 
-      prepareChartData(rezervasyonRes.data || [])
+      prepareChartData(rezervasyonApiRes.data || [])
       console.log('Veri yükleme tamamlandı')
       setLoading(false)
     } catch (error) {
@@ -456,38 +461,23 @@ export default function ModernAdminDashboard() {
 
     try {
       setQuickActionLoading(rezervasyon.id)
-      const { error: updateError } = await supabase
-        .from('rezervasyonlar')
-        .update({ durum: 'onaylandi' })
-        .eq('id', rezervasyon.id)
+      const res = await fetch(`/api/admin/reservations/${rezervasyon.id}/approve`, {
+        method: 'POST'
+      })
+      const result = await res.json()
 
-      if (updateError) throw updateError
+      if (!res.ok) throw new Error(result.error || 'Onaylama hatası')
 
-      try {
-        await fetch('/api/send-confirmation-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: rezervasyon.email,
-            ad: rezervasyon.ad,
-            soyad: rezervasyon.soyad,
-            giris_tarihi: rezervasyon.giris_tarihi,
-            cikis_tarihi: rezervasyon.cikis_tarihi,
-            kisi_sayisi: rezervasyon.kisi_sayisi,
-            toplam_fiyat: rezervasyon.toplam_fiyat,
-            rezervasyon_id: rezervasyon.id,
-            durum: 'onaylandi'
-          })
-        })
-      } catch (emailError) {
-        console.error('Email hatası:', emailError)
+      if (result.emailGonderildi) {
+        showToast('Rezervasyon onaylandı ve email gönderildi ✓', 'success')
+      } else {
+        showToast(`Rezervasyon onaylandı ⚠️ Email gönderilemedi: ${result.emailHata || 'Bilinmeyen hata'}`, 'error')
       }
 
-      showToast('Rezervasyon onaylandı', 'success')
       await loadData()
       setQuickActionLoading(null)
     } catch (error) {
-      showToast('Bir hata oluştu', 'error')
+      showToast(`Hata: ${error.message}`, 'error')
       setQuickActionLoading(null)
     }
   }
@@ -2046,6 +2036,7 @@ export default function ModernAdminDashboard() {
                        <table className="w-full">
                          <thead className={`${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'} border-b`}>
                            <tr>
+                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Rez. No</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Tarih</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Ad Soyad</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>İletişim</th>
@@ -2053,13 +2044,14 @@ export default function ModernAdminDashboard() {
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Kişi</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Fiyat</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Durum</th>
+                             <th className={`px-6 py-4 text-center text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Email</th>
                              <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>İşlem</th>
                            </tr>
                          </thead>
                          <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-gray-200'}`}>
                            {rezervasyonlar.length === 0 ? (
                              <tr>
-                               <td colSpan="8" className={`px-6 py-12 text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>
+                               <td colSpan="10" className={`px-6 py-12 text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>
                                  Henüz rezervasyon yok
                                </td>
                              </tr>
@@ -2069,6 +2061,9 @@ export default function ModernAdminDashboard() {
                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                                .map((rez) => (
                                <tr key={rez.id} className={`${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-gray-50'} transition duration-200`}>
+                                 <td className={`px-6 py-4 text-xs font-mono ${isDarkMode ? 'text-cyan-400' : 'text-cyan-700'}`} title={String(rez.id)}>
+                                   #{String(rez.id).slice(0, 8)}
+                                 </td>
                                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                                    {new Date(rez.created_at).toLocaleDateString('tr-TR')}
                                  </td>
@@ -2076,7 +2071,7 @@ export default function ModernAdminDashboard() {
                                    {rez.ad} {rez.soyad}
                                  </td>
                                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-                                   <div className="font-medium">{rez.email}</div>
+                                   <div className="font-medium">{rez.email || <span className={`italic text-xs ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>(E-posta yok)</span>}</div>
                                    <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{rez.telefon}</div>
                                  </td>
                                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
@@ -2098,6 +2093,24 @@ export default function ModernAdminDashboard() {
                                      {rez.durum === 'beklemede' ? '⏳ Beklemede' :
                                       rez.durum === 'onaylandi' ? '✓ Onaylandı' : '✕ İptal'}
                                    </span>
+                                 </td>
+                                 <td className="px-6 py-4 text-center">
+                                   {rez.email_gonderildi === true ? (
+                                     <span
+                                       title={`Gönderildi: ${rez.email_tarihi ? new Date(rez.email_tarihi).toLocaleString('tr-TR') : ''}`}
+                                       className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 text-green-700 text-base cursor-help"
+                                     >✓</span>
+                                   ) : rez.email_gonderildi === false && rez.email_tarihi ? (
+                                     <span
+                                       title={`Hata: ${new Date(rez.email_tarihi).toLocaleString('tr-TR')} tarihinde gönderilemedi`}
+                                       className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-600 text-base cursor-help"
+                                     >✕</span>
+                                   ) : (
+                                     <span
+                                       title="Henüz email gönderilmedi"
+                                       className={`text-lg ${isDarkMode ? 'text-slate-600' : 'text-gray-300'}`}
+                                     >—</span>
+                                   )}
                                  </td>
                                  <td className="px-6 py-4">
                                    <div className="flex gap-2">

@@ -14,11 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body>
+      <body suppressHydrationWarning>
         <LanguageProvider>
           <CurrencyProvider>
             {children}
             <WhatsAppFloat />
+            <div id="datepicker-portal" />
           </CurrencyProvider>
         </LanguageProvider>
       </body>

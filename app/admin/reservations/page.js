@@ -14,20 +14,19 @@ export default function ReservationsPage() {
     const fetchReservations = async () => {
       try {
         setLoading(true)
-        let query = supabase
-          .from('rezervasyonlar')
-          .select('*')
-          .order('created_at', { ascending: false })
+        console.log('Fetching reservations via API...')
+        const res = await fetch('/api/admin/reservations')
+        const result = await res.json()
+        console.log('Reservations API data:', result)
 
+        if (result.error) throw new Error(result.error)
+
+        let filteredData = result.data || []
         if (filter && filter !== 'tum') {
-          query = query.eq('durum', filter)
+          filteredData = filteredData.filter(r => r.durum === filter)
         }
 
-        const { data, error } = await query
-
-        if (error) throw error
-
-        setReservations(data || [])
+        setReservations(filteredData)
       } catch (error) {
         console.error('Error fetching reservations:', error)
         alert('Hata: Rezervasyonlar yüklenirken bir sorun oluştu')
@@ -125,9 +124,13 @@ export default function ReservationsPage() {
                           {res.ad} {res.soyad}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          <a href={`mailto:${res.email}`} className="text-blue-500 hover:underline">
-                            {res.email}
-                          </a>
+                          {res.email ? (
+                            <a href={`mailto:${res.email}`} className="text-blue-500 hover:underline">
+                              {res.email}
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 italic text-xs">(E-posta yok)</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {formatDate(res.giris_tarihi)} - {formatDate(res.cikis_tarihi)}

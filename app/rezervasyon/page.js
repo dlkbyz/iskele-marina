@@ -6,6 +6,7 @@ import { useCurrency } from '../context/CurrencyContext'
 import { useLanguage } from '@/lib/LanguageContext'
 import { useSearchParams } from 'next/navigation'
 import Navbar from '../components/Navbar'
+import DatePickerTR from '../components/DatePickerTR'
 
 export const dynamic = 'force-dynamic'
 
@@ -211,6 +212,7 @@ function RezervasyonContent() {
     kisiSayisi: '2',
     mesaj: ''
   })
+
 const [toplamFiyat, setToplamFiyat] = useState(0)
 const [gunSayisi, setGunSayisi] = useState(0)
 const [fiyatDetay, setFiyatDetay] = useState(null)
@@ -790,22 +792,14 @@ const closeModal = () => {
                   <label className="block text-xs tracking-[0.1em] uppercase text-gray-700 font-bold mb-2">
                     {t.form.checkIn} <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="giris"
-                      value={formData.giris}
-                      onChange={handleChange}
-                      min={bugun}
-                      required
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                    />
-                    <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
-                      <span className={`font-light text-sm ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {formData.giris ? new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                      </span>
-                    </div>
-                  </div>
+                  <DatePickerTR
+                    value={formData.giris}
+                    onChange={(val) => setFormData(prev => ({ ...prev, giris: val, cikis: prev.cikis && val >= prev.cikis ? '' : prev.cikis }))}
+                    minDate={bugun}
+                    placeholder="gg/aa/yyyy"
+                    className="w-full"
+                    inputClassName="w-full px-3 py-2.5 border-2 border-gray-300 hover:border-cyan-400 focus:border-cyan-500 rounded-lg font-light text-sm text-gray-900 bg-white outline-none cursor-pointer placeholder-gray-400"
+                  />
                 </div>
 
                 {/* Çıkış Tarihi */}
@@ -813,22 +807,14 @@ const closeModal = () => {
                   <label className="block text-xs tracking-[0.1em] uppercase text-gray-700 font-bold mb-2">
                     {t.form.checkOut} <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="cikis"
-                      value={formData.cikis}
-                      onChange={handleChange}
-                      min={formData.giris || bugun}
-                      required
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                    />
-                    <div className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg pointer-events-none">
-                      <span className={`font-light text-sm ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {formData.cikis ? new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                      </span>
-                    </div>
-                  </div>
+                  <DatePickerTR
+                    value={formData.cikis}
+                    onChange={(val) => setFormData(prev => ({ ...prev, cikis: val }))}
+                    minDate={formData.giris || bugun}
+                    placeholder="gg/aa/yyyy"
+                    className="w-full"
+                    inputClassName="w-full px-3 py-2.5 border-2 border-gray-300 hover:border-cyan-400 focus:border-cyan-500 rounded-lg font-light text-sm text-gray-900 bg-white outline-none cursor-pointer placeholder-gray-400"
+                  />
                 </div>
 
                 {/* Kişi Sayısı */}
@@ -1000,44 +986,28 @@ const closeModal = () => {
                           <label className="block text-xs tracking-[0.15em] uppercase text-gray-700 font-bold mb-3">
                             {t.form.checkIn} <span className="text-red-500">*</span>
                           </label>
-                          <div className="relative">
-                            <input
-                              type="date"
-                              name="giris"
-                              value={formData.giris}
-                              onChange={handleChange}
-                              min={bugun}
-                              required
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                            />
-                            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
-                              <span className={`font-light ${formData.giris ? 'text-gray-900' : 'text-gray-400'}`}>
-                                {formData.giris ? new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                              </span>
-                            </div>
-                          </div>
+                          <DatePickerTR
+                            value={formData.giris}
+                            onChange={(val) => setFormData(prev => ({ ...prev, giris: val, cikis: prev.cikis && val >= prev.cikis ? '' : prev.cikis }))}
+                            minDate={bugun}
+                            placeholder="gg/aa/yyyy"
+                            className="w-full"
+                            inputClassName="w-full px-4 py-3 border-2 border-gray-200 hover:border-cyan-400 focus:border-cyan-500 rounded-lg bg-gray-50 font-light text-gray-900 outline-none cursor-pointer placeholder-gray-400"
+                          />
                         </div>
 
                         <div>
                           <label className="block text-xs tracking-[0.15em] uppercase text-gray-700 font-bold mb-3">
                             {t.form.checkOut} <span className="text-red-500">*</span>
                           </label>
-                          <div className="relative">
-                            <input
-                              type="date"
-                              name="cikis"
-                              value={formData.cikis}
-                              onChange={handleChange}
-                              min={formData.giris || bugun}
-                              required
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                            />
-                            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 pointer-events-none">
-                              <span className={`font-light ${formData.cikis ? 'text-gray-900' : 'text-gray-400'}`}>
-                                {formData.cikis ? new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
-                              </span>
-                            </div>
-                          </div>
+                          <DatePickerTR
+                            value={formData.cikis}
+                            onChange={(val) => setFormData(prev => ({ ...prev, cikis: val }))}
+                            minDate={formData.giris || bugun}
+                            placeholder="gg/aa/yyyy"
+                            className="w-full"
+                            inputClassName="w-full px-4 py-3 border-2 border-gray-200 hover:border-cyan-400 focus:border-cyan-500 rounded-lg bg-gray-50 font-light text-gray-900 outline-none cursor-pointer placeholder-gray-400"
+                          />
                         </div>
 
                         <div className="md:col-span-2">
