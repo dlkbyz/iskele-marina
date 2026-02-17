@@ -60,9 +60,9 @@ export default function Navbar() {
                 <Image
                   src="/serenity_logo.png"
                   alt="Serenity İskele"
-                  width={200}
-                  height={80}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-10' : 'h-12'} w-auto`}
+                  width={320}
+                  height={128}
+                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'} w-auto`}
                   priority
                 />
               </Link>
