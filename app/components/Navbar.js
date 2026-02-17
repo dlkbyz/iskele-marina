@@ -62,7 +62,7 @@ export default function Navbar() {
                   alt="Serenity İskele"
                   width={400}
                   height={160}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-10' : 'h-14'} w-auto`}
+                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
                   priority
                 />
               </Link>
