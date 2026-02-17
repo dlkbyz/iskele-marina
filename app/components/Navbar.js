@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useLanguage } from '@/lib/LanguageContext'
 
@@ -55,18 +56,15 @@ export default function Navbar() {
               isScrolled ? 'px-5 md:px-8 py-3' : 'px-5 md:px-8 py-4'
             }`}>
               {/* Logo */}
-              <Link href="/" className="flex items-center gap-2 shrink-0">
-                <span
-                  className={`font-serif text-white tracking-wide transition-all duration-300 ${isScrolled ? 'text-base md:text-lg' : 'text-lg md:text-xl'}`}
-                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                >
-                  Serenity
-                </span>
-                <span className={`hidden md:inline text-[10px] tracking-[0.35em] uppercase transition-all duration-300 ${
-                  isScrolled ? 'text-cyan-100/90' : 'text-cyan-200/90'
-                }`}>
-                  ISKELE
-                </span>
+              <Link href="/" className="shrink-0">
+                <Image
+                  src="/serenity_logo.png"
+                  alt="Serenity İskele"
+                  width={120}
+                  height={48}
+                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
+                  priority
+                />
               </Link>
 
               {/* Desktop Nav */}
@@ -151,9 +149,13 @@ export default function Navbar() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-[#0b0f17] border-l border-white/10 p-6">
             <div className="flex items-center justify-between mb-8">
-              <span className="font-serif text-white text-2xl" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-                Serenity
-              </span>
+              <Image
+                src="/serenity_logo.png"
+                alt="Serenity İskele"
+                width={110}
+                height={44}
+                className="h-10 w-auto object-contain"
+              />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
