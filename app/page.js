@@ -528,7 +528,9 @@ export default function Home() {
                       className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light">mm/dd/yyyy</p>
+                  <p className="text-[11px] text-gray-400 mt-2 font-light">
+                    {checkIn ? new Date(checkIn + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                  </p>
                 </div>
 
                 {/* Çıkış Tarihi */}
@@ -545,7 +547,9 @@ export default function Home() {
                       className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light">mm/dd/yyyy</p>
+                  <p className="text-[11px] text-gray-400 mt-2 font-light">
+                    {checkOut ? new Date(checkOut + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gg/aa/yyyy'}
+                  </p>
                 </div>
 
                 {/* Yetişkinler */}
