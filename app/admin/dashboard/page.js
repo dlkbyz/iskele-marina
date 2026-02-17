@@ -2256,11 +2256,11 @@ export default function ModernAdminDashboard() {
                                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
                                    : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-500'
                                }`}>
-                                 {mesaj.ad.charAt(0)}{mesaj.soyad.charAt(0)}
+                                 {(mesaj.soyad || mesaj.ad_soyad || '?').charAt(0)}
                                </div>
                                <div>
                                  <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                   {mesaj.ad} {mesaj.soyad}
+                                   {mesaj.soyad || mesaj.ad_soyad || '-'}
                                  </h3>
                                  <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{mesaj.email}</p>
                                  {mesaj.telefon && (
