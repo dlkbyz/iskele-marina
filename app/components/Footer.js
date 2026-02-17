@@ -45,7 +45,7 @@ export default function Footer() {
     tr: {
       about: {
         title: 'Serenity İskele',
-        description: 'Kıbrıs İskele bölgesinde lüks villa kiralama deneyimi. Denize sıfır konumu ve modern tasarımıyla unutulmaz tatil anıları yaratın.'
+        description: 'Kıbrıs İskele bölgesinde yazlık sitede 2+1 daire kiralama. Denize yakın konumu ve modern tasarımıyla unutulmaz tatil anıları yaratın.'
       },
       quickLinks: {
         title: 'Hızlı Linkler',
@@ -87,7 +87,7 @@ export default function Footer() {
     en: {
       about: {
         title: 'Serenity Iskele',
-        description: 'Luxury villa rental experience in Cyprus Iskele region. Create unforgettable vacation memories with our beachfront location and modern design.'
+        description: '2+1 apartment rental in a summer residence in Cyprus Iskele region. Create unforgettable vacation memories with our location close to the sea and modern design.'
       },
       quickLinks: {
         title: 'Quick Links',
