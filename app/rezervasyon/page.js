@@ -322,7 +322,8 @@ const hesaplaFiyat = async () => {
         item2: 'Müsaitlik durumunu kontrol ederek onay vereceğiz',
         item3: 'Check-in: 14:00 | Check-out: 12:00',
         item4: 'Nakit veya banka transferi ile ödeme',
-        item5: 'Giriş tarihinden 7 gün öncesine kadar ücretsiz iptal'
+        item5: 'Giriş tarihinden 7 gün öncesine kadar ücretsiz iptal',
+        item6: 'Evcil hayvan kabul edilmez'
       },
       contact: {
         title: 'Sorularınız mı var?',
@@ -370,7 +371,8 @@ const hesaplaFiyat = async () => {
         item2: 'We will check availability and confirm',
         item3: 'Check-in: 2:00 PM | Check-out: 12:00 PM',
         item4: 'Payment by cash or bank transfer',
-        item5: 'Free cancellation up to 7 days before check-in'
+        item5: 'Free cancellation up to 7 days before check-in',
+        item6: 'No pets allowed'
       },
       contact: {
         title: 'Have questions?',
@@ -1102,7 +1104,7 @@ const closeModal = () => {
                       {t.info.title}
                     </h3>
                     <ul className="space-y-4 text-sm text-gray-700 font-light leading-relaxed">
-                      {[t.info.item1, t.info.item2, t.info.item3, t.info.item4, t.info.item5].map((item, idx) => (
+                      {[t.info.item1, t.info.item2, t.info.item3, t.info.item4, t.info.item5, t.info.item6].map((item, idx) => (
                         <li key={idx} className="flex items-start">
                           <span className="text-purple-600 font-bold mr-3">✓</span>
                           <span>{item}</span>
