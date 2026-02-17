@@ -701,27 +701,34 @@ const handleSubmit = async (e) => {
     }
 
     console.log('Supabase kaydı başarılı:', rezervasyonData)
-    
-    // Ödeme işlemini başlat
-    const odemeResponse = await fetch('/api/odeme/baslat', {
+
+    // Admin'e bildirim emaili gönder
+    await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        rezervasyonId: rezervasyonData[0].id,
-        kartBilgileri: {} // Gerçek entegrasyonda kart bilgileri buraya gelecek
+        type: 'admin_notification',
+        data: {
+          id: rezervasyonData[0].id,
+          ad: formData.ad,
+          soyad: formData.soyad,
+          email: formData.email,
+          telefon: formData.telefon,
+          giris_tarihi: formData.giris,
+          cikis_tarihi: formData.cikis,
+          kisi_sayisi: formData.kisiSayisi,
+          toplam_fiyat: toplamFiyat,
+          mesaj: formData.mesaj
+        }
       })
     })
 
-    const odemeData = await odemeResponse.json()
-
-    if (!odemeData.success) {
-      throw new Error(odemeData.error || 'Ödeme başlatılamadı')
-    }
-
     setLoading(false)
-
-    // Banka sayfasına yönlendir
-    window.location.href = odemeData.redirectUrl
+    setModal({
+      isOpen: true,
+      type: 'success',
+      data: { id: rezervasyonData[0].id, fiyat: toplamFiyat }
+    })
     
   } catch (error) {
     console.error('Genel hata:', error)
