@@ -800,6 +800,11 @@ const closeModal = () => {
                      lang="tr-TR"
                     className="w-full px-3 py-2.5 border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg font-light text-gray-900 text-sm"
                   />
+                  {formData.giris && (
+                    <p className="text-xs text-cyan-600 mt-1">
+                      {new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </p>
+                  )}
                 </div>
 
                 {/* Çıkış Tarihi */}
@@ -817,6 +822,11 @@ const closeModal = () => {
                      lang="tr-TR"
                     className="w-full px-3 py-2.5 border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg font-light text-gray-900 text-sm"
                   />
+                  {formData.cikis && (
+                    <p className="text-xs text-cyan-600 mt-1">
+                      {new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </p>
+                  )}
                 </div>
 
                 {/* Kişi Sayısı */}
@@ -997,6 +1007,11 @@ const closeModal = () => {
                             required
                             className="w-full px-4 py-3 border-2 border-gray-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg bg-gray-50 font-light text-gray-900"
                           />
+                          {formData.giris && (
+                            <p className="text-xs text-cyan-600 mt-1">
+                              {new Date(formData.giris + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            </p>
+                          )}
                         </div>
 
                         <div>
@@ -1012,6 +1027,11 @@ const closeModal = () => {
                             required
                             className="w-full px-4 py-3 border-2 border-gray-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition rounded-lg bg-gray-50 font-light text-gray-900"
                           />
+                          {formData.cikis && (
+                            <p className="text-xs text-cyan-600 mt-1">
+                              {new Date(formData.cikis + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            </p>
+                          )}
                         </div>
 
                         <div className="md:col-span-2">
