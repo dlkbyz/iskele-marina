@@ -11,7 +11,7 @@ function getAdminClient() {
 }
 
 export async function POST(_, { params }) {
-  const { id } = params
+  const { id } = await params
   const supabase = getAdminClient()
 
   try {
@@ -36,7 +36,7 @@ export async function POST(_, { params }) {
     const { data: updated, error: updateError } = await supabase
       .from('rezervasyonlar')
       .update({
-        durum: 'onaylandı',
+        durum: 'onaylandi',
         erisme_kodu: erisme_kodu,
         onay_tarihi: new Date().toISOString()
       })

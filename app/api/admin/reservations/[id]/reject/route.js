@@ -1,9 +1,17 @@
 // app/api/admin/reservations/[id]/reject/route.js
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { sendCancellationEmail } from '@/lib/emailService'
 
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+}
+
 export async function POST(request, { params }) {
-  const { id } = params
+  const { id } = await params
+  const supabase = getAdminClient()
   const { refundAmount = 0, reason = 'Müsaitlik sorunu' } = await request.json()
 
   try {

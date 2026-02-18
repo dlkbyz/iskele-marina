@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 export default function WhatsAppFloat() {
   const [isVisible, setIsVisible] = useState(true)
   const [showTooltip, setShowTooltip] = useState(false)
+  const pathname = usePathname()
 
   // WhatsApp numarası ve mesaj
   const phoneNumber = '905338859596' // +90 olmadan, sadece rakamlar
@@ -12,13 +14,14 @@ export default function WhatsAppFloat() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // 100px'den fazla scroll yapılınca göster
       setIsVisible(window.scrollY > 100)
     }
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  if (pathname?.startsWith('/admin')) return null
 
   const handleClick = () => {
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(defaultMessage)}`

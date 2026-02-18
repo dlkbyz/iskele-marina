@@ -316,51 +316,36 @@ export default function ModernAdminDashboard() {
     const rezervasyon = rezervasyonlar.find(r => r.id === id)
     if (!rezervasyon) return
 
-    let reason = ''
-    if (yeniDurum === 'iptal') {
-      reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için rezervasyonu iptal etme nedeniniz (opsiyonel, müşteriye gönderilecek):`, '')
-      if (reason === null) return
-    }
-
     try {
-      const { error } = await supabase
-        .from('rezervasyonlar')
-        .update({ 
-          durum: yeniDurum,
-          mesaj: yeniDurum === 'iptal' && reason ? `İptal nedeni: ${reason}` : rezervasyon.mesaj
-        })
-        .eq('id', id)
-      if (error) throw error
+      if (yeniDurum === 'onaylandi') {
+        const res = await fetch(`/api/admin/reservations/${id}/approve`, { method: 'POST' })
+        const result = await res.json()
+        if (!res.ok) throw new Error(result.error || 'Onaylama hatası')
+        loadData()
+        showToast(result.emailGonderildi ? 'Rezervasyon onaylandı ve email gönderildi ✓' : `Onaylandı ⚠️ Email gönderilemedi: ${result.emailHata || ''}`, result.emailGonderildi ? 'success' : 'error')
 
-      // Durum değişikliğine göre email gönder
-      try {
-        let emailType = 'onay' // default
-        let emailData = { ...rezervasyon, durum: yeniDurum }
-
-        if (yeniDurum === 'onaylandi') {
-          emailType = 'onay'
-        } else if (yeniDurum === 'iptal') {
-          emailType = 'iptal'
-          emailData.red_nedeni = reason
-        } else if (yeniDurum === 'tamamlandi') {
-          emailType = 'tamamlandi'
-        }
-
-        const response = await fetch('/api/send-confirmation-email', {
+      } else if (yeniDurum === 'iptal') {
+        const reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için iptal nedeni (opsiyonel):`, '')
+        if (reason === null) return
+        const res = await fetch(`/api/admin/reservations/${id}/reject`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emailData)
+          body: JSON.stringify({ reason: reason || 'Müsaitlik sorunu', refundAmount: 0 })
         })
+        const result = await res.json()
+        if (!res.ok) throw new Error(result.error || 'İptal hatası')
+        loadData()
+        showToast(result.emailGonderildi ? 'Rezervasyon iptal edildi ve email gönderildi ✓' : 'Rezervasyon iptal edildi', 'success')
 
-        if (!response.ok) {
-          console.error('Email gönderimi başarısız')
-        }
-      } catch (emailError) {
-        console.error('Email gönderilirken hata:', emailError)
+      } else {
+        const { error } = await supabase
+          .from('rezervasyonlar')
+          .update({ durum: yeniDurum })
+          .eq('id', id)
+        if (error) throw error
+        loadData()
+        showToast('Durum güncellendi', 'success')
       }
-
-      loadData()
-      showToast(`Durum ${yeniDurum === 'onaylandi' ? 'onaylandı' : yeniDurum === 'iptal' ? 'iptal edildi' : 'güncellendi'} ve email gönderildi!`, 'success')
     } catch (error) {
       showToast('Durum güncellenirken bir hata oluştu!', 'error')
     }
@@ -483,37 +468,20 @@ export default function ModernAdminDashboard() {
   }
 
   const handleQuickReject = async (rezervasyon) => {
-    const reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için rezervasyonu reddetmek istediğinizden emin misiniz?\n\nRed nedeni (opsiyonel, müşteriye gönderilecek):`, '')
+    const reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için red nedeni (opsiyonel, müşteriye gönderilecek):`, '')
     if (reason === null) return
 
     try {
       setQuickActionLoading(rezervasyon.id)
-      const { error: updateError } = await supabase
-        .from('rezervasyonlar')
-        .update({ 
-          durum: 'iptal',
-          mesaj: reason ? `Red nedeni: ${reason}` : rezervasyon.mesaj
-        })
-        .eq('id', rezervasyon.id)
+      const res = await fetch(`/api/admin/reservations/${rezervasyon.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || 'Müsaitlik sorunu', refundAmount: 0 })
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'İptal hatası')
 
-      if (updateError) throw updateError
-
-      // İptal e-postası gönder
-      try {
-        await fetch('/api/send-confirmation-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...rezervasyon,
-            durum: 'iptal',
-            red_nedeni: reason
-          })
-        })
-      } catch (emailError) {
-        console.error('Reddetme e-postası gönderilirken hata:', emailError)
-      }
-
-      showToast('Rezervasyon reddedildi', 'success')
+      showToast(result.emailGonderildi ? 'Rezervasyon reddedildi ve email gönderildi ✓' : 'Rezervasyon reddedildi', 'success')
       await loadData()
       setQuickActionLoading(null)
     } catch (error) {
