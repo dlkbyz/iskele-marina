@@ -1,12 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { X, ChevronLeft, ChevronRight, ImageOff, Search } from 'lucide-react'
 import { useLanguage } from '@/lib/LanguageContext'
 import { supabase } from '@/lib/supabase'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import { ChapterMarker, GoldDivider, Eyebrow } from '../components/SiteShell'
 
 export default function Galeri() {
   const { language } = useLanguage()
+  const tr = language === 'tr'
+
   const [selectedImage, setSelectedImage] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [fotolar, setFotolar] = useState([])
@@ -16,42 +21,6 @@ export default function Galeri() {
     loadFotolar()
   }, [])
 
-  // Keyboard navigation for lightbox
-  const handleKeyDown = useCallback((e) => {
-    if (!selectedImage) return
-    if (e.key === 'Escape') {
-      setSelectedImage(null)
-    } else if (e.key === 'ArrowLeft') {
-      navigateImage('prev')
-    } else if (e.key === 'ArrowRight') {
-      navigateImage('next')
-    }
-  }, [selectedImage, selectedIndex, fotolar])
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
-
-  const navigateImage = (direction) => {
-    const newIndex = direction === 'next' 
-      ? (selectedIndex + 1) % fotolar.length 
-      : (selectedIndex - 1 + fotolar.length) % fotolar.length
-    setSelectedIndex(newIndex)
-    setSelectedImage(fotolar[newIndex].image_url)
-  }
-
-  const openLightbox = (img, index) => {
-    setSelectedImage(img.image_url)
-    setSelectedIndex(index)
-    document.body.style.overflow = 'hidden'
-  }
-
-  const closeLightbox = () => {
-    setSelectedImage(null)
-    document.body.style.overflow = 'auto'
-  }
-
   const loadFotolar = async () => {
     try {
       const { data, error } = await supabase
@@ -59,143 +28,160 @@ export default function Galeri() {
         .select('*')
         .eq('aktif', true)
         .order('sira', { ascending: true })
-
       if (error) throw error
       setFotolar(data || [])
-    } catch (error) {
-      console.error('Hata:', error)
+    } catch (err) {
+      console.error('Galeri yüklenemedi:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const content = {
-    tr: {
-      gallery: {
-        badge: 'Galeri',
-        title: 'Fotoğraf Galerisi',
-        description: 'Serenity Iskele\'den görüntüler ve detaylar'
-      },
-      footer: {
-        about: {
-          title: 'Hakkımızda',
-          desc: "Serenity Iskele'e hoş geldiniz, konfor her şeydir. Güzel oda sunumları, basit rezervasyon seçenekleri."
-        },
-        contact: 'İletişim',
-        social: 'Sosyal Medya',
-        copyright: '© 2025 Serenity Iskele'
-      }
-    },
-    en: {
-      gallery: {
-        badge: 'Gallery',
-        title: 'Photo Gallery',
-        description: 'Views and details from Serenity Iskele'
-      },
-      footer: {
-        about: {
-          title: 'About',
-          desc: "Welcome to Serenity Iskele, where comfort is everything. Beautiful room presentations, straightforward booking options."
-        },
-        contact: 'Contact',
-        social: 'Get Social',
-        copyright: '© 2025 Serenity Iskele'
-      }
-    }
-  }
-
-  const t = content[language] || content.tr
-
-  // Fallback fotoğraflar - Profesyonel iç mekan
+  /* Fallback — kullanıcının yerel mekan görselleri */
   const fallbackImages = [
-    { image_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=1000&fit=crop', baslik: 'Living Room' },
-    { image_url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=1200&fit=crop', baslik: 'Bedroom' },
-    { image_url: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&h=900&fit=crop', baslik: 'Modern Kitchen' },
-    { image_url: 'https://images.unsplash.com/photo-1552938397-2ff2b0f5fdd4?w=800&h=600&fit=crop', baslik: 'Bathroom' },
-    { image_url: 'https://images.unsplash.com/photo-1565183938294-7563f3ce68c5?w=800&h=1000&fit=crop', baslik: 'Bedroom Design' },
-    { image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', baslik: 'Living Space' }
+    { image_url: '/salon.png', baslik: tr ? 'Yaşam Alanı' : 'Living Space' },
+    { image_url: '/yatak_odasi.png', baslik: tr ? 'Yatak Odası' : 'Bedroom' },
+    { image_url: '/living.png', baslik: tr ? 'Oturma Odası' : 'Living Room' },
+    { image_url: '/kids_bedroom.png', baslik: tr ? 'Çocuk Odası' : 'Kids Room' },
+    { image_url: '/main_bedroom1.png', baslik: tr ? 'Suite Detayları' : 'Suite Details' },
+    { image_url: '/main_bedroom.png', baslik: tr ? 'TV Duvarı' : 'TV Wall' },
+    { image_url: '/h4-rev-img-1-1536x864.jpg', baslik: tr ? 'Genel Görünüm' : 'Overview' },
+    { image_url: '/h4-rev-img-2-1536x864.jpg', baslik: tr ? 'Atmosfer' : 'Atmosphere' },
+    { image_url: '/h4-rev-img-3-1536x864.jpg', baslik: tr ? 'Detay' : 'Detail' },
   ]
 
   const displayImages = fotolar.length > 0 ? fotolar : fallbackImages
+  const heroImage = fotolar.find(f => f.kullanim_yeri === 'galeri_hero')?.image_url || '/h4-rev-img-1-1536x864.jpg'
+
+  const openLightbox = (img, index) => {
+    setSelectedImage(img.image_url)
+    setSelectedIndex(index)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeLightbox = useCallback(() => {
+    setSelectedImage(null)
+    document.body.style.overflow = 'auto'
+  }, [])
+
+  const navigateImage = useCallback(
+    (direction) => {
+      const newIndex =
+        direction === 'next'
+          ? (selectedIndex + 1) % displayImages.length
+          : (selectedIndex - 1 + displayImages.length) % displayImages.length
+      setSelectedIndex(newIndex)
+      setSelectedImage(displayImages[newIndex].image_url)
+    },
+    [selectedIndex, displayImages]
+  )
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!selectedImage) return
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') navigateImage('prev')
+      else if (e.key === 'ArrowRight') navigateImage('next')
+    },
+    [selectedImage, closeLightbox, navigateImage]
+  )
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
 
   return (
     <>
       <Navbar />
 
-      <main className="pt-0">
-        {/* HERO SECTION */}
-        <section className="relative h-80 md:h-96 mt-0">
+      <main className="bg-cream">
+        {/* ============================ HERO ============================ */}
+        <section className="relative h-[520px] md:h-[600px] overflow-hidden">
           <div className="absolute inset-0">
             <img
-              src="https://uvadqixzovxsjrzjayom.supabase.co/storage/v1/object/public/mainpage/kibris-altinkum-plaji.jpg"
-              alt="Gallery Hero"
+              src={heroImage}
+              alt="Gallery hero"
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1631049307038-da5ec5d27288?w=1920&h=1080&fit=crop"
-              }}
+              style={{ objectPosition: '50% 45%' }}
             />
-            <div className="absolute inset-0 bg-black/18" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/6 to-transparent" />
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.55) 0%, rgba(22,59,52,0.25) 45%, rgba(22,59,52,0.65) 100%)' }}
+            />
           </div>
 
-          <div className="relative z-10 h-full flex items-center justify-center px-4 text-center">
-            <div className="px-6 py-5 md:px-10 md:py-7 rounded-2xl bg-black/22 backdrop-blur-md border border-white/15 shadow-2xl">
-              <p className="text-xs tracking-[0.3em] uppercase text-white/90 mb-3 font-light">{t.gallery.badge}</p>
-              <h1
-                className="text-3xl md:text-4xl lg:text-5xl font-serif mb-3 text-white"
-                style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
-                  fontWeight: 300,
-                  letterSpacing: '0.02em',
-                  textShadow: '0 10px 34px rgba(0,0,0,0.75)'
-                }}
-              >
-                {t.gallery.title}
-              </h1>
-
-              <p
-                className="text-sm md:text-base font-medium text-white/95 tracking-wide"
-                style={{
-                  textShadow: '0 6px 22px rgba(0,0,0,0.70)'
-                }}
-              >
-                {t.gallery.description}
-              </p>
+          <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center pt-24">
+            <ChapterMarker number="01" label={tr ? 'Galeri' : 'Gallery'} tone="cream" />
+            <h1
+              className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6 max-w-3xl"
+              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+            >
+              {tr ? 'Mekândan kareler.' : 'Frames from the space.'}
+            </h1>
+            <div className="my-6">
+              <GoldDivider />
             </div>
+            <p
+              className="max-w-xl text-cream/85 text-base md:text-lg font-light"
+              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+            >
+              {tr
+                ? "Serenity İskele'nin atmosferini, sıcaklığını ve detaylarını paylaşıyoruz."
+                : "Discover the atmosphere, warmth and details of Serenity İskele."}
+            </p>
           </div>
         </section>
 
-        {/* GALLERY SECTION */}
-        <section className="py-20 bg-gradient-to-b from-white to-gray-50">
-          <div className="container mx-auto px-4 max-w-7xl">
+        {/* ============================ MASONRY ============================ */}
+        <section className="py-24 md:py-32 bg-cream">
+          <div className="container mx-auto px-6 max-w-7xl">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
-                </div>
-                <p className="text-gray-600 mt-4 font-light">Yükleniyor...</p>
+              <div className="text-center py-20">
+                <div className="inline-block w-12 h-12 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin" />
+                <p className="text-mute mt-4 font-light tracking-wider text-sm">
+                  {tr ? 'Yükleniyor…' : 'Loading…'}
+                </p>
+              </div>
+            ) : displayImages.length === 0 ? (
+              <div className="text-center py-20">
+                <ImageOff className="w-12 h-12 text-gold-500/50 mx-auto mb-4" />
+                <p className="text-mute font-light">
+                  {tr ? 'Henüz görsel yok.' : 'No images yet.'}
+                </p>
               </div>
             ) : (
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+              <div className="columns-1 md:columns-2 lg:columns-3 gap-5 md:gap-6 space-y-5 md:space-y-6">
                 {displayImages.map((img, index) => (
                   <div
                     key={index}
-                    className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 break-inside-avoid cursor-pointer transform hover:-translate-y-2"
+                    className="group relative break-inside-avoid overflow-hidden rounded-2xl shadow-[0_15px_40px_-15px_rgba(22,59,52,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(22,59,52,0.45)] transition-all duration-700 cursor-pointer border border-gold-300/20"
                     onClick={() => openLightbox(img, index)}
-                    style={{
-                      animation: `fadeInUp 0.6s ease-out ${index * 0.05}s both`
-                    }}
+                    style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s both` }}
                   >
                     <img
                       src={img.image_url}
                       alt={img.baslik || `Gallery ${index + 1}`}
-                      className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-auto object-cover transition-transform duration-[1.4s] group-hover:scale-[1.06]"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-6">
-                      <div className="text-white text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <div className="text-4xl mb-2">🔍</div>
-                        <p className="text-sm font-light tracking-wider">{language === 'tr' ? 'Görüntüle' : 'View'}</p>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-sea-900/80 via-sea-900/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 flex items-end p-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0">
+                      <div className="flex items-end justify-between w-full">
+                        <div>
+                          <Eyebrow tone="cream" className="mb-1.5">
+                            {tr ? 'Görüntüle' : 'View'}
+                          </Eyebrow>
+                          {img.baslik && (
+                            <p className="font-display text-cream text-2xl md:text-3xl font-light italic">
+                              {img.baslik}
+                            </p>
+                          )}
+                        </div>
+                        <div className="w-11 h-11 rounded-full bg-gold-500 text-sea-900 flex items-center justify-center shrink-0">
+                          <Search className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -204,207 +190,67 @@ export default function Galeri() {
             )}
           </div>
         </section>
-
-        {/* LIGHTBOX MODAL */}
-        {selectedImage && (
-          <div 
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
-            onClick={closeLightbox}
-          >
-            {/* Close Button */}
-            <button
-              onClick={closeLightbox}
-              className="absolute top-4 right-4 md:top-8 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Previous Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                navigateImage('prev')
-              }}
-              className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            {/* Next Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                navigateImage('next')
-              }}
-              className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-
-            {/* Image */}
-            <div 
-              className="relative max-w-7xl max-h-[90vh] animate-scaleIn"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={selectedImage}
-                alt="Gallery"
-                className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
-              />
-              
-              {/* Image Counter */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm">
-                {selectedIndex + 1} / {fotolar.length}
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="absolute bottom-4 left-4 text-white/60 text-xs md:text-sm space-y-1">
-              <p>← → {language === 'tr' ? 'Yön tuşları' : 'Arrow keys'}</p>
-              <p>ESC {language === 'tr' ? 'Kapat' : 'Close'}</p>
-            </div>
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <footer className="bg-gradient-to-b from-gray-900 to-black text-white py-16 md:py-20">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="grid md:grid-cols-3 gap-12 mb-12">
-              <div>
-                <h4 className="text-sm tracking-[0.3em] uppercase mb-8 font-bold text-cyan-400">{t.footer.about.title}</h4>
-                <p className="text-sm text-gray-400 font-light leading-relaxed">{t.footer.about.desc}</p>
-              </div>
-
-              <div>
-                <h4 className="text-sm tracking-[0.3em] uppercase mb-8 font-bold text-cyan-400">{t.footer.contact}</h4>
-                <div className="space-y-4 text-sm text-gray-400 font-light">
-                  <div>
-                    <p className="text-gray-500 text-xs tracking-[0.1em] uppercase mb-2">Adres</p>
-                    <p>İskele, KKTC</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs tracking-[0.1em] uppercase mb-2">Telefon</p>
-                    <a href="tel:+905331234567" className="hover:text-cyan-400 transition">
-                      +90 533 123 45 67
-                    </a>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs tracking-[0.1em] uppercase mb-2">Email</p>
-                    <a href="mailto:info@serenity-iskele.com" className="hover:text-cyan-400 transition">
-                      info@serenity-iskele.com
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm tracking-[0.3em] uppercase mb-8 font-bold text-cyan-400">{t.footer.social}</h4>
-                <div className="flex space-x-4">
-                  <a
-                    href="#"
-                    className="w-12 h-12 border border-gray-700 hover:border-cyan-500 flex items-center justify-center transition rounded-full hover:bg-cyan-500/10 group"
-                  >
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                  </a>
-                  <a
-                    href="#"
-                    className="w-12 h-12 border border-gray-700 hover:border-cyan-500 flex items-center justify-center transition rounded-full hover:bg-cyan-500/10 group"
-                  >
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-800 pt-8 text-center">
-              <p className="text-xs text-gray-500 tracking-[0.1em] uppercase font-light">{t.footer.copyright}</p>
-            </div>
-          </div>
-        </footer>
       </main>
 
-      {/* LIGHTBOX */}
+      {/* ============================ LIGHTBOX ============================ */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-[100] bg-sea-900/95 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+          onClick={closeLightbox}
         >
+          {/* Close */}
           <button
-            className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition"
-            onClick={() => setSelectedImage(null)}
+            onClick={closeLightbox}
+            className="absolute top-5 right-5 md:top-8 md:right-8 w-12 h-12 rounded-full bg-cream/10 hover:bg-gold-500 border border-gold-300/30 text-cream hover:text-sea-900 flex items-center justify-center transition-all duration-300 z-50"
+            aria-label="Close"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
-          <img
-            src={selectedImage}
-            alt="Full size"
-            className="max-w-full max-h-full object-contain rounded-lg"
+
+          {/* Prev */}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage('prev') }}
+            className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-cream/10 hover:bg-gold-500 border border-gold-300/30 text-cream hover:text-sea-900 flex items-center justify-center transition-all duration-300 z-50"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Next */}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage('next') }}
+            className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-cream/10 hover:bg-gold-500 border border-gold-300/30 text-cream hover:text-sea-900 flex items-center justify-center transition-all duration-300 z-50"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          {/* Image */}
+          <div
+            className="relative max-w-7xl max-h-[88vh] animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <img
+              src={selectedImage}
+              alt="Gallery"
+              className="max-w-full max-h-[88vh] w-auto h-auto object-contain rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
+            />
+            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 inline-flex items-center gap-3 bg-cream/10 backdrop-blur-md border border-gold-300/30 px-5 py-2.5 rounded-full">
+              <span className="text-[11px] tracking-[0.32em] uppercase text-gold-300 font-semibold">
+                {selectedIndex + 1} / {displayImages.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Help text */}
+          <div className="absolute bottom-5 left-5 text-cream/50 text-[10px] tracking-[0.22em] uppercase space-y-1">
+            <p>← → {tr ? 'Yön Tuşları' : 'Arrows'}</p>
+            <p>ESC {tr ? 'Kapat' : 'Close'}</p>
+          </div>
         </div>
       )}
 
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
-        
-        .font-serif {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes scaleIn {
-          from { 
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to { 
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-        
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out;
-        }
-        
-        .animate-scaleIn {
-          animation: scaleIn 0.4s ease-out;
-        }
-        
-        /* Smooth transitions */
-        * {
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}</style>
+      <Footer />
     </>
   )
 }

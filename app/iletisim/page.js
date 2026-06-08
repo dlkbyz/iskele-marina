@@ -1,114 +1,62 @@
 'use client'
 
 import { useState } from 'react'
+import {
+  Mail, Phone, MapPin, Clock, Send, MessageCircle, Sparkles, ChevronRight,
+} from 'lucide-react'
 import { useLanguage } from '@/lib/LanguageContext'
-import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import {
+  ChapterMarker, GoldDivider, Eyebrow, IconInstagram, IconFacebook, useHeroSlot,
+} from '../components/SiteShell'
 
 export default function Iletisim() {
   const { language } = useLanguage()
+  const tr = language === 'tr'
+  const heroImage = useHeroSlot('iletisim_hero', '/h4-rev-img-1-1536x864.jpg')
+
   const [formData, setFormData] = useState({
-    ad: '',
-    email: '',
-    telefon: '',
-    konu: '',
-    mesaj: ''
+    ad: '', email: '', telefon: '', konu: '', mesaj: '',
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
-  const content = {
-    tr: {
-      hero: {
-        badge: 'İLETİŞİM',
-        title: 'Bize Ulaşın',
-        subtitle: 'Rezervasyon, sorular veya özel istekleriniz için 7/24 yanınızdayız.'
-      },
-      info: {
-        title: 'İletişim Bilgileri',
-        items: [
-          { label: 'E-Posta', value: 'info@serenity-iskele.com', icon: 'mail' },
-          { label: 'Telefon / WhatsApp', value: '+90 533 123 45 67', icon: 'phone' },
-          { label: 'Adres', value: 'İskele, Gazimağusa, KKTC', icon: 'location' },
-          { label: 'Hizmet', value: '7/24 — Her gün', icon: 'clock' }
-        ]
-      },
-      social: {
-        title: 'Sosyal Medya',
-        follow: 'Bizi takip edin'
-      },
-      form: {
-        badge: 'MESAJ',
-        title: 'Mesaj Gönderin',
-        subtitle: 'Formu doldurun, en kısa sürede size dönüş yapalım.',
-        name: 'Ad Soyad *',
-        email: 'E-posta *',
-        phone: 'Telefon',
-        subject: 'Konu',
-        message: 'Mesajınız *',
-        send: 'Mesaj Gönder',
-        sending: 'Gönderiliyor...',
-        success: 'Mesajınız başarıyla iletildi! En kısa sürede size dönüş yapacağız.',
-        error: 'Bir hata oluştu. Lütfen tekrar deneyin.'
-      },
-      map: {
-        title: 'Konumumuz',
-        subtitle: 'Kuzey Kıbrıs, İskele'
-      },
-      book: 'REZERVASYON'
-    },
-    en: {
-      hero: {
-        badge: 'CONTACT',
-        title: 'Get in Touch',
-        subtitle: "We're available 24/7 for bookings, questions, or special requests."
-      },
-      info: {
-        title: 'Contact Details',
-        items: [
-          { label: 'Email', value: 'info@serenity-iskele.com', icon: 'mail' },
-          { label: 'Phone / WhatsApp', value: '+90 533 123 45 67', icon: 'phone' },
-          { label: 'Address', value: 'Iskele, Famagusta, TRNC', icon: 'location' },
-          { label: 'Service', value: '24/7 — Every day', icon: 'clock' }
-        ]
-      },
-      social: {
-        title: 'Social Media',
-        follow: 'Follow us'
-      },
-      form: {
-        badge: 'MESSAGE',
-        title: 'Send a Message',
-        subtitle: 'Fill in the form and we will get back to you as soon as possible.',
-        name: 'Full Name *',
-        email: 'Email Address *',
-        phone: 'Phone',
-        subject: 'Subject',
-        message: 'Your Message *',
-        send: 'Send Message',
-        sending: 'Sending...',
-        success: 'Your message has been sent! We will get back to you shortly.',
-        error: 'An error occurred. Please try again.'
-      },
-      map: {
-        title: 'Our Location',
-        subtitle: 'Northern Cyprus, Iskele'
-      },
-      book: 'BOOK NOW'
-    }
+  const formatTelefon = (raw) => {
+    let d = (raw || '').replace(/\D/g, '')
+    if (d.startsWith('90')) d = d.slice(2)
+    if (d.startsWith('0')) d = d.slice(1)
+    d = d.slice(0, 10)
+    if (!d) return ''
+    let out = '+90 ' + d.slice(0, 3)
+    if (d.length > 3) out += ' ' + d.slice(3, 6)
+    if (d.length > 6) out += ' ' + d.slice(6, 8)
+    if (d.length > 8) out += ' ' + d.slice(8, 10)
+    return out
   }
 
-  const c = content[language] || content.tr
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    if (name === 'telefon') {
+      setFormData({ ...formData, telefon: formatTelefon(value) })
+      return
+    }
+    setFormData({ ...formData, [name]: value })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (formData.telefon && !/^\+90 5\d{2} \d{3} \d{2} \d{2}$/.test(formData.telefon)) {
+      setError(tr
+        ? 'Telefon numarası +90 5XX XXX XX XX formatında olmalıdır.'
+        : 'Phone must be in +90 5XX XXX XX XX format.')
+      return
+    }
+
+    setLoading(true)
 
     try {
       const res = await fetch('/api/iletisim', {
@@ -119,304 +67,345 @@ export default function Iletisim() {
           email: formData.email,
           telefon: formData.telefon,
           konu: formData.konu,
-          mesaj: formData.mesaj
-        })
+          mesaj: formData.mesaj,
+        }),
       })
-
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || c.form.error)
+      if (!res.ok) throw new Error(data.error || 'Hata')
 
       setSuccess(true)
       setFormData({ ad: '', email: '', telefon: '', konu: '', mesaj: '' })
       setTimeout(() => setSuccess(false), 6000)
     } catch (err) {
       console.error('Form error:', err)
-      setError(err.message || c.form.error)
+      setError(err.message || (tr ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.'))
     } finally {
       setLoading(false)
     }
   }
 
-  const iconPath = (type) => {
-    switch (type) {
-      case 'mail':
-        return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      case 'phone':
-        return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-      case 'location':
-        return <>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </>
-      case 'clock':
-        return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      default:
-        return null
-    }
-  }
+  const infoItems = [
+    { Icon: Mail,   label: tr ? 'E-Posta' : 'Email',         value: 'info@serenity-iskele.com', href: 'mailto:info@serenity-iskele.com' },
+    { Icon: Phone,  label: tr ? 'Telefon / WhatsApp' : 'Phone / WhatsApp', value: '+90 533 123 45 67', href: 'tel:+905331234567' },
+    { Icon: MapPin, label: tr ? 'Adres'   : 'Address',       value: tr ? 'İskele, Gazimağusa, KKTC' : 'Iskele, Famagusta, TRNC' },
+    { Icon: Clock,  label: tr ? 'Hizmet'  : 'Service',       value: tr ? '7/24 — Her gün' : '24/7 — Every day' },
+  ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <>
       <Navbar />
 
-      {/* HERO */}
-      <section className="relative pt-36 pb-24 px-4 overflow-hidden bg-gradient-to-br from-gray-900 via-slate-800 to-cyan-900">
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-cyan-500/10 -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-blue-600/10 translate-y-1/3 -translate-x-1/4 blur-3xl pointer-events-none" />
-
-        {/* Grid lines overlay */}
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-
-        <div className="relative z-10 container mx-auto text-center">
-          <span className="inline-block bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-5 py-1.5 rounded-full text-xs font-bold tracking-widest mb-6">
-            {c.hero.badge}
-          </span>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-5 tracking-tight">
-            {c.hero.title}
-          </h1>
-          <p className="text-lg text-white/60 max-w-lg mx-auto">
-            {c.hero.subtitle}
-          </p>
-        </div>
-
-        {/* Bottom fade into next section */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
-      </section>
-
-      {/* CONTACT INFO STRIP */}
-      <section className="py-16 px-4 bg-white">
-        <div className="container mx-auto max-w-5xl">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {c.info.items.map((item, i) => (
-              <div key={i} className="group text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-50 to-blue-100 flex items-center justify-center group-hover:from-cyan-500 group-hover:to-blue-600 transition-all duration-300">
-                  <svg className="w-6 h-6 text-cyan-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {iconPath(item.icon)}
-                  </svg>
-                </div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
-                <p className="text-gray-800 font-medium text-sm">{item.value}</p>
-              </div>
-            ))}
+      <main className="bg-cream">
+        {/* ============================ HERO ============================ */}
+        <section className="relative h-[460px] md:h-[520px] overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src={heroImage}
+              alt="Contact hero"
+              className="w-full h-full object-cover"
+              style={{ objectPosition: '50% 45%' }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.6) 0%, rgba(22,59,52,0.35) 45%, rgba(22,59,52,0.7) 100%)' }}
+            />
           </div>
-        </div>
-      </section>
 
-      {/* DIVIDER */}
-      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mx-8" />
+          <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center pt-20">
+            <ChapterMarker number="04" label={tr ? 'İletişim' : 'Contact'} tone="cream" />
+            <h1
+              className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6"
+              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+            >
+              {tr ? 'Bize ulaşın' : 'Get in touch'}
+            </h1>
+            <div className="my-6">
+              <GoldDivider />
+            </div>
+            <p
+              className="max-w-xl text-cream/85 text-base md:text-lg font-light"
+              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+            >
+              {tr
+                ? 'Rezervasyon, sorular veya özel istekleriniz için 7/24 yanınızdayız.'
+                : "We're available 24/7 for bookings, questions, or special requests."}
+            </p>
+          </div>
+        </section>
 
-      {/* FORM + MAP */}
-      <section className="py-20 px-4 bg-gray-50">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-5 gap-10 items-start">
+        {/* ============================ INFO STRIP ============================ */}
+        <section className="relative -mt-12 z-20 mb-10">
+          <div className="container mx-auto px-6 max-w-6xl">
+            <div className="bg-cream border border-gold-300/40 rounded-2xl shadow-[0_25px_60px_-20px_rgba(22,59,52,0.3)] p-8 md:p-10">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {infoItems.map(({ Icon, label, value, href }, i) => (
+                  <div key={i} className="text-center group">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-sand-50 border border-gold-500/40 flex items-center justify-center group-hover:bg-gold-50 group-hover:border-gold-500 transition-all duration-500">
+                      <Icon className="w-5 h-5 text-sea-800 group-hover:text-gold-700 transition" strokeWidth={1.5} />
+                    </div>
+                    <Eyebrow className="mb-2">{label}</Eyebrow>
+                    {href ? (
+                      <a href={href} className="text-sea-900 font-medium text-sm hover:text-gold-600 transition">
+                        {value}
+                      </a>
+                    ) : (
+                      <p className="text-sea-900 font-medium text-sm">{value}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-            {/* CONTACT FORM — 3 cols */}
-            <div className="lg:col-span-3">
-              <span className="inline-block text-cyan-600 text-xs font-bold tracking-widest bg-cyan-50 px-4 py-1.5 rounded-full mb-4">
-                {c.form.badge}
-              </span>
-              <h2 className="text-4xl font-bold text-gray-900 mb-2">{c.form.title}</h2>
-              <p className="text-gray-500 mb-8">{c.form.subtitle}</p>
+        {/* ============================ FORM + SIDE ============================ */}
+        <section className="py-20 md:py-24 bg-cream">
+          <div className="container mx-auto px-6 max-w-6xl">
+            <div className="grid lg:grid-cols-5 gap-10 items-start">
+              {/* FORM */}
+              <div className="lg:col-span-3">
+                <Eyebrow className="mb-4">{tr ? 'Mesaj' : 'Message'}</Eyebrow>
+                <h2 className="font-display text-4xl md:text-5xl text-sea-900 font-light leading-tight mb-4">
+                  {tr ? 'Mesaj gönderin' : 'Send a message'}
+                </h2>
+                <div className="w-12 h-px bg-gold-500 mb-6" />
+                <p className="text-ink-soft font-light mb-10">
+                  {tr
+                    ? 'Formu doldurun, en kısa sürede size dönüş yapalım.'
+                    : 'Fill in the form and we will get back to you as soon as possible.'}
+                </p>
 
-              {success && (
-                <div className="mb-6 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 flex items-start gap-3">
-                  <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{c.form.success}</span>
-                </div>
-              )}
+                {success && (
+                  <div className="mb-6 p-5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
+                    <span>{tr
+                      ? 'Mesajınız başarıyla iletildi! En kısa sürede size dönüş yapacağız.'
+                      : 'Your message has been sent! We will get back to you shortly.'}</span>
+                  </div>
+                )}
 
-              {error && (
-                <div className="mb-6 p-5 bg-red-50 border border-red-200 rounded-2xl text-red-800 flex items-start gap-3">
-                  <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>{error}</span>
-                </div>
-              )}
+                {error && (
+                  <div className="mb-6 p-5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid sm:grid-cols-2 gap-5">
+                <form onSubmit={handleSubmit} className="space-y-7">
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 font-semibold mb-2">
+                        {tr ? 'Ad Soyad *' : 'Full Name *'}
+                      </label>
+                      <input
+                        type="text"
+                        name="ad"
+                        value={formData.ad}
+                        onChange={handleChange}
+                        required
+                        placeholder={tr ? 'Adınız Soyadınız' : 'Your full name'}
+                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none text-sea-900 font-light text-lg transition-colors placeholder-mute"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 font-semibold mb-2">
+                        {tr ? 'E-posta *' : 'Email *'}
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        placeholder="ornek@email.com"
+                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none text-sea-900 font-light text-lg transition-colors placeholder-mute"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 font-semibold mb-2">
+                        {tr ? 'Telefon' : 'Phone'}
+                      </label>
+                      <input
+                        type="tel"
+                        name="telefon"
+                        value={formData.telefon}
+                        onChange={handleChange}
+                        placeholder="+90 5XX XXX XX XX"
+                        inputMode="tel"
+                        maxLength={17}
+                        autoComplete="tel"
+                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none text-sea-900 font-light text-lg transition-colors placeholder-mute"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 font-semibold mb-2">
+                        {tr ? 'Konu' : 'Subject'}
+                      </label>
+                      <input
+                        type="text"
+                        name="konu"
+                        value={formData.konu}
+                        onChange={handleChange}
+                        placeholder={tr ? 'Konu başlığı' : 'Subject line'}
+                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none text-sea-900 font-light text-lg transition-colors placeholder-mute"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      {c.form.name}
+                    <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 font-semibold mb-2">
+                      {tr ? 'Mesajınız *' : 'Your Message *'}
                     </label>
-                    <input
-                      type="text"
-                      name="ad"
-                      value={formData.ad}
+                    <textarea
+                      name="mesaj"
+                      value={formData.mesaj}
                       onChange={handleChange}
                       required
-                      placeholder={language === 'tr' ? 'Adınız Soyadınız' : 'Your Full Name'}
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition text-gray-800 placeholder-gray-400"
+                      rows={6}
+                      placeholder={tr ? 'Mesajınızı buraya yazın…' : 'Type your message here…'}
+                      className="w-full px-4 py-3 bg-sand-50 border border-gold-300/30 focus:border-gold-500 rounded-xl outline-none text-sea-900 font-light leading-relaxed transition-colors placeholder-mute resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      {c.form.email}
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      placeholder="ornek@email.com"
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition text-gray-800 placeholder-gray-400"
-                    />
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full bg-sea-900 hover:bg-sea-800 text-cream transition-all text-[11px] tracking-[0.28em] uppercase font-semibold shadow-[0_10px_30px_rgba(22,59,52,0.25)] hover:shadow-[0_14px_40px_rgba(22,59,52,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {tr ? 'Gönderiliyor…' : 'Sending…'}
+                      </>
+                    ) : (
+                      <>
+                        {tr ? 'Mesaj Gönder' : 'Send Message'}
+                        <Send className="w-3.5 h-3.5 text-gold-300 transition-transform group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* SIDE: Dark info card + Map */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Dark contact card */}
+                <div className="bg-sea-900 rounded-2xl p-8 text-cream border border-gold-500/20 shadow-[0_25px_60px_-20px_rgba(22,59,52,0.4)]">
+                  <Eyebrow tone="cream" className="mb-6">
+                    {tr ? 'İletişim Bilgileri' : 'Contact Details'}
+                  </Eyebrow>
+
+                  <ul className="space-y-5">
+                    {infoItems.map(({ Icon, label, value, href }, i) => (
+                      <li key={i} className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-cream/10 border border-gold-500/30 flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-gold-300" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] tracking-[0.28em] uppercase text-gold-300/80 font-semibold mb-1">
+                            {label}
+                          </p>
+                          {href ? (
+                            <a href={href} className="text-cream font-medium hover:text-gold-300 transition">
+                              {value}
+                            </a>
+                          ) : (
+                            <p className="text-cream font-medium">{value}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Social */}
+                  <div className="mt-8 pt-7 border-t border-gold-500/15">
+                    <Eyebrow tone="cream" className="mb-4">
+                      {tr ? 'Bizi Takip Edin' : 'Follow Us'}
+                    </Eyebrow>
+                    <div className="flex gap-3">
+                      <a
+                        href="https://instagram.com/serenityiskele"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Instagram"
+                        className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition"
+                      >
+                        <IconInstagram className="w-4 h-4" />
+                      </a>
+                      <a
+                        href="https://facebook.com/serenityiskele"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Facebook"
+                        className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition"
+                      >
+                        <IconFacebook className="w-4 h-4" />
+                      </a>
+                      <a
+                        href="https://wa.me/905331234567"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="WhatsApp"
+                        className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      {c.form.phone}
-                    </label>
-                    <input
-                      type="tel"
-                      name="telefon"
-                      value={formData.telefon}
-                      onChange={handleChange}
-                      placeholder="+90 5XX XXX XX XX"
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition text-gray-800 placeholder-gray-400"
-                    />
+                {/* Map */}
+                <div className="rounded-2xl overflow-hidden border border-gold-300/30 bg-cream shadow-[0_15px_40px_-15px_rgba(22,59,52,0.2)]">
+                  <div className="px-6 py-4 flex items-center justify-between border-b border-gold-300/30">
+                    <div>
+                      <Eyebrow className="mb-1">{tr ? 'Konumumuz' : 'Our Location'}</Eyebrow>
+                      <p className="font-display text-xl text-sea-900 font-light">
+                        {tr ? 'Kuzey Kıbrıs, İskele' : 'Northern Cyprus, Iskele'}
+                      </p>
+                    </div>
+                    <div className="w-9 h-9 rounded-full bg-gold-500 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-sea-900" strokeWidth={1.5} />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      {c.form.subject}
-                    </label>
-                    <input
-                      type="text"
-                      name="konu"
-                      value={formData.konu}
-                      onChange={handleChange}
-                      placeholder={language === 'tr' ? 'Konu başlığı' : 'Subject line'}
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition text-gray-800 placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    {c.form.message}
-                  </label>
-                  <textarea
-                    name="mesaj"
-                    value={formData.mesaj}
-                    onChange={handleChange}
-                    required
-                    rows={5}
-                    placeholder={language === 'tr' ? 'Mesajınızı buraya yazın...' : 'Type your message here...'}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition resize-none text-gray-800 placeholder-gray-400"
+                  <iframe
+                    title="map"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26113.04699691!2d33.9!3d35.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14de1767ca494d55%3A0x324c6c7f3e347cb7!2sIskele%2C%20Cyprus!5e0!3m2!1sen!2s!4v1234567890"
+                    width="100%"
+                    height="280"
+                    style={{ border: 0, display: 'block' }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold tracking-wide hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                {/* Reservation CTA */}
+                <a
+                  href="/rezervasyon"
+                  className="group flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-gold-500 hover:bg-gold-300 text-sea-900 transition-all shadow-[0_10px_30px_rgba(201,169,97,0.35)]"
                 >
-                  {loading ? (
-                    <>
-                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      {c.form.sending}
-                    </>
-                  ) : (
-                    <>
-                      {c.form.send}
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* RIGHT COLUMN — 2 cols: info card + map */}
-            <div className="lg:col-span-2 space-y-6">
-
-              {/* Dark info card */}
-              <div className="bg-gray-900 rounded-3xl p-8 text-white">
-                <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase mb-6">{c.info.title}</h3>
-                <div className="space-y-5">
-                  {c.info.items.map((item, i) => (
-                    <div key={i} className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          {iconPath(item.icon)}
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs text-white/50 font-semibold uppercase tracking-wider mb-0.5">{item.label}</p>
-                        <p className="text-white font-medium">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Social icons inside card */}
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <p className="text-xs text-white/50 font-semibold uppercase tracking-wider mb-4">{c.social.follow}</p>
-                  <div className="flex gap-3">
-                    {[
-                      { name: 'Instagram', url: 'https://instagram.com/serenityiskele', path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z' },
-                      { name: 'Facebook', url: 'https://facebook.com/serenityiskele', path: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z' },
-                      { name: 'WhatsApp', url: 'https://wa.me/905331234567', path: 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z' }
-                    ].map((s) => (
-                      <a
-                        key={s.name}
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-cyan-500 flex items-center justify-center transition-all duration-200"
-                        title={s.name}
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d={s.path} />
-                        </svg>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Map */}
-              <div className="rounded-3xl overflow-hidden shadow-xl border border-gray-100">
-                <div className="px-6 py-4 bg-white flex items-center justify-between border-b border-gray-100">
                   <div>
-                    <p className="font-bold text-gray-900">{c.map.title}</p>
-                    <p className="text-xs text-gray-500">{c.map.subtitle}</p>
+                    <p className="text-[10px] tracking-[0.28em] uppercase font-semibold opacity-80">
+                      {tr ? 'Doğrudan' : 'Skip the form'}
+                    </p>
+                    <p className="text-base font-display font-medium">
+                      {tr ? 'Rezervasyon Yap' : 'Book Now'}
+                    </p>
                   </div>
-                  <div className="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                </div>
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26113.04699691!2d33.9!3d35.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14de1767ca494d55%3A0x324c6c7f3e347cb7!2sIskele%2C%20Cyprus!5e0!3m2!1sen!2s!4v1234567890"
-                  width="100%"
-                  height="260"
-                  style={{ border: 0, display: 'block' }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                  <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </a>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
-    </div>
+    </>
   )
 }

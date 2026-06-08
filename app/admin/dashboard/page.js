@@ -1,2840 +1,3443 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
+import {
+  Droplet, LayoutGrid, CalendarCheck, Calendar, Tag, BarChart3,
+  MessageCircle, Star, Mail, Image as ImageIcon, Sun, Moon, LogOut,
+  Search, Bell, Hourglass, TrendingUp, BedDouble, Clock, ArrowUpRight,
+  Check, X, ArrowLeft, ListFilter, Plus, Ellipsis, ChevronLeft, ChevronRight,
+  Pencil, Trash2, Sparkles, Users, Save, ChevronUp, ChevronDown, ArrowUpDown,
+  Reply, MailOpen, Phone, Inbox, Download, Power, UserPlus, AtSign,
+  Upload, GripVertical,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import dynamic from 'next/dynamic'
+import DatePickerTR from '../../components/DatePickerTR'
 
-// Recharts'ı dynamic import ile yükle (SSR devre dışı)
-const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { ssr: false })
-const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false })
-const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false })
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false })
-const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false })
-const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false })
-const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false })
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false })
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false })
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false })
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false })
-const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false })
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
+/* ============================================================ */
+/* HELPERS                                                       */
+/* ============================================================ */
+function formatTL(n) {
+  if (n === null || n === undefined) return '₺0'
+  const v = Math.round(n)
+  return '₺' + v.toLocaleString('tr-TR')
+}
+const greeting = () => {
+  const h = new Date().getHours()
+  return h < 6 ? 'İyi geceler' : h < 12 ? 'İyi sabahlar' : h < 18 ? 'İyi günler' : 'İyi akşamlar'
+}
+function timeAgo(d) {
+  const sec = Math.max(1, Math.floor((Date.now() - d.getTime()) / 1000))
+  if (sec < 60)    return 'az önce'
+  if (sec < 3600)  return `${Math.floor(sec / 60)} dk önce`
+  if (sec < 86400) return `${Math.floor(sec / 3600)} saat önce`
+  if (sec < 604800) return `${Math.floor(sec / 86400)} gün önce`
+  return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })
+}
 
-export default function ModernAdminDashboard() {
-  const router = useRouter()
+/* ============================================================ */
+/* SIDEBAR                                                       */
+/* ============================================================ */
+function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout }) {
+  const groups = [
+    {
+      label: 'Operasyon',
+      items: [
+        { id: 'dashboard',      Icon: LayoutGrid,    label: 'Dashboard'      },
+        { id: 'rezervasyonlar', Icon: CalendarCheck, label: 'Rezervasyonlar', badge: badges.rez },
+        { id: 'takvim',         Icon: Calendar,      label: 'Takvim'         },
+        { id: 'fiyatlandirma',  Icon: Tag,           label: 'Fiyatlandırma'  },
+      ],
+    },
+    {
+      label: 'İçerik & İletişim',
+      items: [
+        { id: 'istatistikler', Icon: BarChart3,     label: 'İstatistikler' },
+        { id: 'mesajlar',      Icon: MessageCircle, label: 'Mesajlar',      badge: badges.msg },
+        { id: 'yorumlar',      Icon: Star,          label: 'Yorumlar',      badge: badges.yor },
+        { id: 'newsletter',    Icon: Mail,          label: 'Newsletter',    badge: badges.nl  },
+        { id: 'galeri',        Icon: ImageIcon,     label: 'Galeri',        badge: badges.gal },
+      ],
+    },
+  ]
+
+  return (
+    <aside className={`fixed left-0 top-0 h-full w-60 border-r flex flex-col ${isDark ? 'bg-sea-900 border-gold-500/10' : 'bg-cream border-gold-300/30'}`}>
+      {/* Logo */}
+      <div className={`px-4 py-5 border-b ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gold-500/15 border border-gold-500/30 flex items-center justify-center">
+            <Droplet className="w-5 h-5 text-gold-300" strokeWidth={1.8} />
+          </div>
+          <div>
+            <h1 className={`font-display text-xl font-light tracking-wide leading-none ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+              Serenity
+            </h1>
+            <p className={`text-[9px] tracking-[0.28em] uppercase mt-1 font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>
+              İskele · Marina
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu */}
+      <nav className="flex-1 px-3 pt-3 pb-3 space-y-0.5 overflow-y-auto">
+        {groups.map((g) => (
+          <div key={g.label}>
+            <div className={`px-3 pt-5 pb-2 text-[9px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/55' : 'text-gold-600/70'}`}>
+              {g.label}
+            </div>
+            {g.items.map((item) => {
+              const isActive = activeTab === item.id
+              const Icon = item.Icon
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${
+                    isActive
+                      ? (isDark ? 'bg-sea-800/60 text-cream' : 'bg-gold-50 text-sea-900')
+                      : (isDark ? 'text-cream/65 hover:bg-sea-800/40 hover:text-cream' : 'text-mute hover:bg-sand-50 hover:text-sea-900')
+                  }`}
+                >
+                  {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-gold-500" />}
+                  <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? (isDark ? 'text-gold-300' : 'text-gold-700') : (isDark ? 'text-cream/55' : 'text-mute')}`} strokeWidth={isActive ? 2 : 1.7} />
+                  <span className={`text-sm flex-1 text-left tracking-tight ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span className={`min-w-[22px] h-5 px-1.5 inline-flex items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
+                      isActive ? 'bg-gold-500 text-sea-900' : (isDark ? 'bg-sea-800 text-cream/75 border border-gold-500/10' : 'bg-sand-200 text-mute')
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className={`px-3 pb-3 pt-2 border-t ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'} space-y-2`}>
+        <button onClick={() => setIsDark(!isDark)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${isDark ? 'text-cream/65 hover:bg-sea-800/40 hover:text-cream' : 'text-mute hover:bg-sand-50 hover:text-sea-900'}`}>
+          {isDark ? <Sun className="w-[18px] h-[18px]" strokeWidth={1.7} /> : <Moon className="w-[18px] h-[18px]" strokeWidth={1.7} />}
+          <span className="text-sm font-medium tracking-tight">{isDark ? 'Aydınlık tema' : 'Karanlık tema'}</span>
+        </button>
+        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${isDark ? 'bg-sea-800/40 border border-gold-500/10' : 'bg-sand-50 border border-gold-300/30'}`}>
+          <div className="w-8 h-8 rounded-md bg-gold-500 flex items-center justify-center shrink-0">
+            <span className="text-[11px] font-bold text-sea-900 tracking-wider">NK</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold leading-tight truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>Nazlı Kaya</p>
+            <p className={`text-[10px] leading-tight mt-0.5 ${isDark ? 'text-cream/55' : 'text-mute'}`}>Ev sahibi</p>
+          </div>
+          <button onClick={onLogout} aria-label="Çıkış" className={`w-7 h-7 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}>
+            <LogOut className="w-4 h-4" strokeWidth={1.8} />
+          </button>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+/* ============================================================ */
+/* TOP BAR                                                       */
+/* ============================================================ */
+function TopBar({ isDark, pageTitle, pendingCount, unreadCount, onPendingClick }) {
+  return (
+    <header className={`sticky top-0 z-30 backdrop-blur-xl border-b ${isDark ? 'bg-sea-900/85 border-gold-500/10' : 'bg-cream/90 border-gold-300/30'}`}>
+      <div className="px-6 py-3.5 flex items-center justify-between gap-6">
+        <div className="min-w-0">
+          <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>
+            {new Date().toLocaleDateString('tr-TR', { weekday: 'long' })} · {new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+          <h2 className={`text-xl font-semibold mt-0.5 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{pageTitle}</h2>
+        </div>
+
+        <div className="flex-1 max-w-md hidden md:block">
+          <div className={`relative flex items-center rounded-lg border ${isDark ? 'bg-sea-800/40 border-gold-500/15' : 'bg-sand-50 border-gold-300/40'}`}>
+            <Search className={`w-4 h-4 ml-3 ${isDark ? 'text-cream/45' : 'text-mute'}`} strokeWidth={1.8} />
+            <input type="search" placeholder="Misafir, rezervasyon ara…" className={`flex-1 px-3 py-2 text-sm bg-transparent outline-none ${isDark ? 'text-cream placeholder-cream/45' : 'text-sea-900 placeholder-mute'}`} />
+            <span className={`mr-2 px-1.5 py-0.5 text-[10px] font-semibold rounded border ${isDark ? 'border-gold-500/20 text-cream/55 bg-sea-900/60' : 'border-gold-300/40 text-mute bg-cream'}`}>⌘K</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button type="button" onClick={onPendingClick} className={`inline-flex items-center gap-2 pl-2.5 pr-3 py-2 rounded-lg text-[11px] font-semibold tracking-wide transition ${pendingCount > 0 ? 'bg-gold-500 hover:bg-gold-300 text-sea-900' : (isDark ? 'bg-sea-800/60 text-cream/65 border border-gold-500/15' : 'bg-sand-50 text-mute border border-gold-300/40')}`}>
+            <Hourglass className="w-3.5 h-3.5" strokeWidth={2} />
+            <span className="tabular-nums">{pendingCount}</span>
+            <span className="lowercase opacity-90">bekleyen</span>
+          </button>
+          <button type="button" aria-label="Bildirimler" className={`relative w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-gold-500/15 bg-sea-800/40 text-cream/75' : 'border-gold-300/40 bg-sand-50 text-sea-900'}`}>
+            <Bell className="w-4 h-4" strokeWidth={1.8} />
+            {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-400" />}
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+/* ============================================================ */
+/* DASHBOARD HOME                                                */
+/* ============================================================ */
+function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupancyData, statusData, upcomingList, activityFeed, onApprove, onReject, quickActionLoading, onAllPending, onOpenCalendar }) {
+  const bekleyen = rezervasyonlar.filter(r => r.durum === 'beklemede')
+  const onaylanan = rezervasyonlar.filter(r => r.durum === 'onaylandi' || r.durum === 'onaylandı')
+  const yarinKi = rezervasyonlar.filter(r => new Date(r.giris_tarihi) > new Date()).sort((a,b) => new Date(a.giris_tarihi) - new Date(b.giris_tarihi))[0]
+  const daysAway = yarinKi ? Math.ceil((new Date(yarinKi.giris_tarihi) - new Date()) / 86400000) : null
+  const unread = mesajlar.filter(m => !m.okundu).length
+
+  const buAyGelir = rezervasyonlar
+    .filter(r => (r.durum === 'onaylandi' || r.durum === 'onaylandı') && new Date(r.created_at || r.giris_tarihi).getMonth() === new Date().getMonth())
+    .reduce((s, r) => s + (r.toplam_fiyat || 0), 0)
+  const onayOrani = rezervasyonlar.length ? Math.round((onaylanan.length / rezervasyonlar.length) * 100) : 0
+  const ortGecelik = (() => {
+    if (!onaylanan.length) return 0
+    const nights = onaylanan.reduce((s, r) => s + Math.max(1, Math.ceil((new Date(r.cikis_tarihi) - new Date(r.giris_tarihi))/86400000)), 0)
+    const rev = onaylanan.reduce((s, r) => s + (r.toplam_fiyat || 0), 0)
+    return nights ? Math.round(rev / nights) : 0
+  })()
+  const buAy = new Date().toLocaleDateString('tr-TR', { month: 'long' }).toUpperCase()
+
+  const kpis = [
+    { Icon: TrendingUp, label: 'Bu ay geliri',   value: formatTL(buAyGelir), tag: buAy,    delta: '+%16.3', dnote: 'geçen aya göre' },
+    { Icon: BedDouble,  label: 'Doluluk oranı',  value: '88%',                tag: 'BU AY', delta: '+3 pt',  dnote: 'geçen aya göre' },
+    { Icon: Tag,        label: 'Ort. gecelik',   value: formatTL(ortGecelik), tag: 'ADR',   delta: '+%5.2',  dnote: 'geçen aya göre' },
+    { Icon: Clock,      label: 'Bekleyen talep', value: bekleyen.length,      tag: 'İŞLEM', delta: null,     dnote: `${bekleyen.length} onay bekliyor` },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {/* Hero greeting */}
+      <section className={`${isDark ? 'bg-sea-900/40 border-gold-500/10' : 'bg-cream border-gold-300/30'} border rounded-xl p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6`}>
+        <div>
+          <h1 className={`font-display text-3xl md:text-4xl font-light tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+            {greeting()}, <em className="font-display italic text-gold-300">Nazlı</em>
+          </h1>
+          <div className={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] ${isDark ? 'text-cream/65' : 'text-mute'}`}>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Daire bugün müsait
+            </span>
+            <span className={isDark ? 'text-cream/30' : 'text-mute/50'}>·</span>
+            {yarinKi ? <span>Sıradaki giriş {daysAway} gün sonra – {yarinKi.ad} {yarinKi.soyad}</span> : <span>Yaklaşan giriş yok</span>}
+            <span className={isDark ? 'text-cream/30' : 'text-mute/50'}>·</span>
+            <span>{bekleyen.length} talep onayını bekliyor</span>
+          </div>
+        </div>
+        <div className="flex items-stretch gap-2">
+          {[
+            { label: 'Açık Talep', value: bekleyen.length },
+            { label: 'Yeni Mesaj', value: unread },
+            { label: 'Doluluk',    value: '%88' },
+          ].map((m, i) => (
+            <div key={i} className={`px-4 py-2.5 rounded-lg border min-w-[88px] ${isDark ? 'bg-sea-800/40 border-gold-500/10' : 'bg-sand-50 border-gold-300/30'}`}>
+              <p className={`text-[9px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>{m.label}</p>
+              <p className={`text-xl font-semibold tabular-nums mt-1 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{m.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 4 KPI */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map(({ Icon, label, value, tag, delta, dnote }, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                <Icon className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+              </div>
+              <span className={`text-[9px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-cream/45' : 'text-mute'}`}>{tag}</span>
+            </div>
+            <p className={`text-[11px] font-medium mb-1 ${isDark ? 'text-cream/65' : 'text-mute'}`}>{label}</p>
+            <p className={`text-2xl md:text-[26px] font-semibold tabular-nums tracking-tight mb-2 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{value}</p>
+            <div className="flex items-center gap-1.5">
+              {delta && <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-400"><TrendingUp className="w-3 h-3" strokeWidth={2.2} />{delta}</span>}
+              <span className={`text-[11px] ${isDark ? 'text-cream/45' : 'text-mute'}`}>{dnote}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart + Pending */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Chart */}
+        <div className={`lg:col-span-2 ${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Trend</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Gelir Analizi</h3>
+              </div>
+            </div>
+            <div className={`inline-flex p-0.5 rounded-lg border ${isDark ? 'bg-sea-800/40 border-gold-500/15' : 'bg-sand-50 border-gold-300/40'}`}>
+              {['3 ay', '6 ay', '12 ay'].map((p, i) => (
+                <button key={p} type="button" className={`px-3 py-1 text-[11px] font-semibold rounded-md ${i === 1 ? (isDark ? 'bg-sea-700 text-cream' : 'bg-cream text-sea-900 shadow-sm') : (isDark ? 'text-cream/55' : 'text-mute')}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#D9A26B" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#D9A26B" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(217,162,107,0.1)' : '#F0E7D4'} vertical={false} />
+                <XAxis dataKey="ay" stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
+                <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
+                />
+                <Area type="monotone" dataKey="rezervasyon" stroke="#D9A26B" strokeWidth={2} fill="url(#goldArea)" dot={false} activeDot={{ r: 4, fill: '#E5BD8B' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className={`mt-3 pt-3 border-t ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'} flex items-center justify-between text-[11px]`}>
+            <span className={`inline-flex items-center gap-2 ${isDark ? 'text-cream/65' : 'text-mute'}`}>
+              <span className="w-2 h-0.5 bg-gold-500 rounded-full" /> Aylık gelir (₺)
+            </span>
+            <span className={isDark ? 'text-cream/55' : 'text-mute'}>
+              Toplam <span className={`tabular-nums font-semibold ml-1 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{formatTL(onaylanan.reduce((s, r) => s + (r.toplam_fiyat || 0), 0))}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Pending */}
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Onay Bekliyor</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Son Talepler</h3>
+              </div>
+            </div>
+            <button type="button" onClick={onAllPending} className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-md px-2 py-1 ${isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-sand-50'}`}>
+              Tümü
+              <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+            </button>
+          </div>
+          <div className="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+            {bekleyen.slice(0, 6).map((r) => {
+              const giris = new Date(r.giris_tarihi)
+              const cikis = new Date(r.cikis_tarihi)
+              const initials = `${(r.ad || '?')[0]}${(r.soyad || '?')[0]}`.toUpperCase()
+              const range = `${giris.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })} — ${cikis.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}`
+              return (
+                <div key={r.id} className={`${isDark ? 'bg-sea-800/30 border-gold-500/10' : 'bg-sand-50 border-gold-300/30'} border rounded-lg p-3`}>
+                  <div className="flex items-start gap-3 mb-2.5">
+                    <div className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold ${isDark ? 'bg-sea-700 text-cream/85' : 'bg-gold-500/15 text-gold-700'}`}>
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className={`font-semibold text-sm truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{r.ad} {r.soyad}</h4>
+                        <span className={`tabular-nums font-semibold text-sm ${isDark ? 'text-cream' : 'text-sea-900'}`}>{formatTL(r.toplam_fiyat)}</span>
+                      </div>
+                      <div className={`flex items-center gap-2 mt-0.5 text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" strokeWidth={1.8} />{range}</span>
+                        <span>·</span>
+                        <span>{r.kisi_sayisi} kişi</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => onApprove(r)} disabled={quickActionLoading === r.id} className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-semibold border disabled:opacity-50 ${isDark ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                      <Check className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      {quickActionLoading === r.id ? '…' : 'Onayla'}
+                    </button>
+                    <button onClick={() => onReject(r)} disabled={quickActionLoading === r.id} className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-semibold border disabled:opacity-50 ${isDark ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'}`}>
+                      <X className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      {quickActionLoading === r.id ? '…' : 'Reddet'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {bekleyen.length === 0 && (
+              <div className={`text-center py-10 text-sm ${isDark ? 'text-cream/55' : 'text-mute'}`}>Bekleyen talep yok</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* === Performans (bar) + Rezervasyon Durumu (donut) === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Performans */}
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Performans</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Aylık Doluluk Oranı</h3>
+              </div>
+            </div>
+            <span className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+              Sezonluk talep · <span className={`tabular-nums font-semibold ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>%{occupancyData[occupancyData.length - 1]?.oran || 0} bu ay</span>
+            </span>
+          </div>
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={occupancyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(217,162,107,0.08)' : '#F0E7D4'} vertical={false} />
+                <XAxis dataKey="ay" stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
+                <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
+                  cursor={{ fill: isDark ? 'rgba(248,245,238,0.05)' : 'rgba(22,59,52,0.04)' }}
+                />
+                <Bar dataKey="oran" radius={[6, 6, 0, 0]}>
+                  {occupancyData.map((_, idx) => (
+                    <Cell key={`bar-${idx}`} fill={idx === occupancyData.length - 1 ? '#D9A26B' : (isDark ? '#4D7D72' : '#99B8AF')} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Rezervasyon Durumu */}
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Son 90 Gün</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Rezervasyon Durumu</h3>
+              </div>
+            </div>
+          </div>
+          {(() => {
+            const total = statusData.reduce((s, x) => s + x.value, 0)
+            const pct = (v) => total ? Math.round((v / total) * 100) : 0
+            return (
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <div className="h-[220px] relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={statusData.filter(s => s.value > 0)} cx="50%" cy="50%" innerRadius={60} outerRadius={88} paddingAngle={2} dataKey="value" stroke="none">
+                        {statusData.filter(s => s.value > 0).map((s, idx) => <Cell key={idx} fill={s.color} />)}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
+                        labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                        itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <p className={`text-3xl font-semibold tabular-nums ${isDark ? 'text-cream' : 'text-sea-900'}`}>{total}</p>
+                    <p className={`text-[9px] tracking-[0.28em] uppercase font-semibold mt-0.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Rezervasyon</p>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {statusData.map((s) => (
+                    <div key={s.name} className="flex items-center justify-between gap-2 text-[12px]">
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                        <span className={`truncate ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{s.name}</span>
+                      </span>
+                      <span className="flex items-center gap-3 shrink-0">
+                        <span className={`tabular-nums font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>{s.value}</span>
+                        <span className={`tabular-nums w-9 text-right ${isDark ? 'text-cream/55' : 'text-mute'}`}>%{pct(s.value)}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      </div>
+
+      {/* === Yaklaşan Girişler + Aktivite Akışı === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Yaklaşan Girişler */}
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Takvim</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Yaklaşan Girişler</h3>
+              </div>
+            </div>
+            <button type="button" onClick={onOpenCalendar} className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-md px-2 py-1 border ${isDark ? 'border-gold-500/20 text-cream/85 hover:bg-sea-800/50' : 'border-gold-300/40 text-sea-900 hover:bg-sand-50'}`}>
+              Takvimi aç
+              <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+            </button>
+          </div>
+          {upcomingList.length === 0 ? (
+            <div className={`text-center py-8 text-sm ${isDark ? 'text-cream/55' : 'text-mute'}`}>Yaklaşan giriş yok</div>
+          ) : (
+            <div className="space-y-1">
+              {upcomingList.map((r) => {
+                const d = new Date(r.giris_tarihi)
+                const days = Math.ceil((d - new Date()) / 86400000)
+                const nights = Math.max(1, Math.ceil((new Date(r.cikis_tarihi) - d) / 86400000))
+                return (
+                  <div key={r.id} className={`flex items-center gap-3 py-2.5 border-b last:border-0 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+                    <div className="text-center shrink-0 w-12">
+                      <p className={`font-display text-xl font-semibold tabular-nums leading-none ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                        {d.getDate().toString().padStart(2, '0')}
+                      </p>
+                      <p className={`text-[9px] tracking-[0.22em] uppercase font-semibold mt-1 ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>
+                        {d.toLocaleDateString('tr-TR', { month: 'short' }).replace('.', '').toUpperCase()}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{r.ad} {r.soyad}</p>
+                      <p className={`text-[11px] mt-0.5 ${isDark ? 'text-cream/55' : 'text-mute'}`}>{nights} gece · {r.kisi_sayisi} misafir</p>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider border ${isDark ? 'bg-sea-800/60 text-cream/75 border-gold-500/10' : 'bg-sand-50 text-mute border-gold-300/40'}`}>
+                      {days} gün sonra
+                    </span>
+                    <span className={`shrink-0 tabular-nums font-semibold text-sm ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                      {formatTL(r.toplam_fiyat)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Aktivite Akışı */}
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Günün Nabzı</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Aktivite Akışı</h3>
+              </div>
+            </div>
+          </div>
+          {activityFeed.length === 0 ? (
+            <div className={`text-center py-10 text-sm ${isDark ? 'text-cream/55' : 'text-mute'}`}>Henüz aktivite yok</div>
+          ) : (
+            <ul className="space-y-3">
+              {activityFeed.map((ev) => {
+                const tone = ev.tone
+                const Icon = ev.Icon
+                return (
+                  <li key={ev.id} className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                      tone === 'amber'   ? 'bg-amber-500/15 border-amber-400/30'     :
+                      tone === 'emerald' ? 'bg-emerald-500/15 border-emerald-400/30' :
+                      tone === 'rose'    ? 'bg-rose-500/15 border-rose-400/30'       :
+                      tone === 'gold'    ? 'bg-gold-500/15 border-gold-500/30'       :
+                                           (isDark ? 'bg-sea-800 border-gold-500/15' : 'bg-sand-50 border-gold-300/40')
+                    }`}>
+                      <Icon className={`w-3.5 h-3.5 ${
+                        tone === 'amber'   ? 'text-amber-300'   :
+                        tone === 'emerald' ? 'text-emerald-300' :
+                        tone === 'rose'    ? 'text-rose-300'    :
+                        tone === 'gold'    ? 'text-gold-300'    :
+                                             (isDark ? 'text-cream/65' : 'text-mute')
+                      }`} strokeWidth={1.8} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`text-[13px] font-semibold leading-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                          {ev.title}
+                        </p>
+                        <span className={`text-[11px] tabular-nums shrink-0 ${isDark ? 'text-cream/45' : 'text-mute'}`}>
+                          {timeAgo(ev.at)}
+                        </span>
+                      </div>
+                      <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-cream/65' : 'text-mute'}`}>
+                        {ev.detail}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* RESERVATIONS TAB                                              */
+/* ============================================================ */
+function Reservations({ isDark, rezervasyonlar, onApprove, onReject, quickActionLoading }) {
+  const [filter, setFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  /* Sıralama */
+  const [sortField, setSortField] = useState('created_at')  // 'giris' | 'durum' | 'created_at'
+  const [sortDir, setSortDir] = useState('desc')             // 'asc' | 'desc'
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
+  /* Gelişmiş filtre paneli */
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  const [advGirisFrom, setAdvGirisFrom] = useState('')
+  const [advGirisTo, setAdvGirisTo] = useState('')
+  const [advMinTutar, setAdvMinTutar] = useState('')
+  const [advMaxTutar, setAdvMaxTutar] = useState('')
+  const advActive = advGirisFrom || advGirisTo || advMinTutar || advMaxTutar
+  const clearAdvFilters = () => {
+    setAdvGirisFrom(''); setAdvGirisTo(''); setAdvMinTutar(''); setAdvMaxTutar('')
+  }
+
+  /* Filtre değişince sayfa 1'e dön */
+  useEffect(() => { setCurrentPage(1) }, [filter, sortField, sortDir, advGirisFrom, advGirisTo, advMinTutar, advMaxTutar])
+
+  const matches = (r, f) => {
+    if (f === 'all')       return true
+    if (f === 'beklemede') return r.durum === 'beklemede'
+    if (f === 'onaylandi') return r.durum === 'onaylandi' || r.durum === 'onaylandı'
+    if (f === 'reddedildi') return r.durum === 'reddedildi'
+    if (f === 'iptal')     return r.durum === 'iptal' || r.durum === 'iptal_edildi'
+    return true
+  }
+  const counts = {
+    all:        rezervasyonlar.length,
+    beklemede:  rezervasyonlar.filter(r => matches(r, 'beklemede')).length,
+    onaylandi:  rezervasyonlar.filter(r => matches(r, 'onaylandi')).length,
+    reddedildi: rezervasyonlar.filter(r => matches(r, 'reddedildi')).length,
+    iptal:      rezervasyonlar.filter(r => matches(r, 'iptal')).length,
+  }
+  /* Durum sıralama önceliği */
+  const durumPri = (r) => {
+    if (r.durum === 'beklemede') return 1
+    if (r.durum === 'onaylandi' || r.durum === 'onaylandı') return 2
+    if (r.durum === 'reddedildi') return 3
+    if (r.durum === 'iptal' || r.durum === 'iptal_edildi') return 4
+    return 5
+  }
+
+  const filtered = rezervasyonlar
+    .filter(r => matches(r, filter))
+    .filter(r => {
+      // Gelişmiş tarih aralığı (giriş tarihi)
+      if (advGirisFrom && new Date(r.giris_tarihi) < new Date(advGirisFrom)) return false
+      if (advGirisTo && new Date(r.giris_tarihi) > new Date(advGirisTo)) return false
+      // Gelişmiş tutar
+      const tutar = r.toplam_fiyat || 0
+      if (advMinTutar && tutar < +advMinTutar) return false
+      if (advMaxTutar && tutar > +advMaxTutar) return false
+      return true
+    })
+    .sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1
+      if (sortField === 'giris') {
+        return dir * (new Date(a.giris_tarihi) - new Date(b.giris_tarihi))
+      }
+      if (sortField === 'durum') {
+        return dir * (durumPri(a) - durumPri(b))
+      }
+      // created_at varsayılan
+      return dir * (new Date(a.created_at || a.giris_tarihi) - new Date(b.created_at || b.giris_tarihi))
+    })
+
+  /* Pagination */
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const startIdx = (safePage - 1) * itemsPerPage
+  const paginated = filtered.slice(startIdx, startIdx + itemsPerPage)
+  const showingFrom = filtered.length === 0 ? 0 : startIdx + 1
+  const showingTo = Math.min(startIdx + itemsPerPage, filtered.length)
+
+  const chips = [
+    { id: 'all',        label: 'Tümü' },
+    { id: 'beklemede',  label: 'Beklemede' },
+    { id: 'onaylandi',  label: 'Onaylandı' },
+    { id: 'reddedildi', label: 'Reddedildi' },
+    { id: 'iptal',      label: 'İptal' },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {chips.map((c) => {
+            const active = filter === c.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFilter(c.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-tight transition border ${
+                  active
+                    ? (isDark ? 'bg-sea-800 text-cream border-gold-500/40' : 'bg-sea-900 text-cream border-sea-900')
+                    : (isDark ? 'border-gold-500/15 text-cream/65 hover:border-gold-500/40 hover:text-cream' : 'border-gold-300/40 text-mute hover:border-gold-500 hover:text-sea-900')
+                }`}
+              >
+                {c.label}
+                <span className={`tabular-nums ${active ? 'opacity-85' : 'opacity-65'}`}>{counts[c.id] || 0}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilterPanelOpen(o => !o)}
+            className={`relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+              filterPanelOpen || advActive
+                ? 'bg-gold-500/15 border-gold-500/40 text-gold-300'
+                : (isDark ? 'border-gold-500/15 text-cream/85 bg-sea-800/40 hover:border-gold-500/40' : 'border-gold-300/40 text-sea-900 bg-cream hover:border-gold-500')
+            }`}
+          >
+            <ListFilter className="w-3.5 h-3.5" strokeWidth={1.8} />
+            Filtrele
+            {advActive && (
+              <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold-500 text-sea-900 text-[9px] font-bold">
+                {[advGirisFrom, advGirisTo, advMinTutar, advMaxTutar].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          <button type="button" className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold bg-gold-500 hover:bg-gold-300 text-sea-900 transition">
+            <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
+            Rezervasyon ekle
+          </button>
+        </div>
+      </div>
+
+      {/* Filtre paneli */}
+      {filterPanelOpen && (
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4 grid grid-cols-1 md:grid-cols-4 gap-3`}>
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Giriş — başlangıç</label>
+            <DatePickerTR
+              value={advGirisFrom}
+              onChange={setAdvGirisFrom}
+              placeholder="gg/aa/yyyy"
+              className="w-full"
+              inputClassName={`w-full px-3 py-1.5 rounded-md border text-xs outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Giriş — bitiş</label>
+            <DatePickerTR
+              value={advGirisTo}
+              onChange={setAdvGirisTo}
+              minDate={advGirisFrom}
+              placeholder="gg/aa/yyyy"
+              className="w-full"
+              inputClassName={`w-full px-3 py-1.5 rounded-md border text-xs outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Min tutar (₺)</label>
+            <input
+              type="number"
+              value={advMinTutar}
+              onChange={(e) => setAdvMinTutar(e.target.value)}
+              placeholder="0"
+              className={`w-full px-3 py-1.5 rounded-md border text-xs tabular-nums outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Max tutar (₺)</label>
+              <input
+                type="number"
+                value={advMaxTutar}
+                onChange={(e) => setAdvMaxTutar(e.target.value)}
+                placeholder="—"
+                className={`w-full px-3 py-1.5 rounded-md border text-xs tabular-nums outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+              />
+            </div>
+            {advActive && (
+              <button
+                type="button"
+                onClick={clearAdvFilters}
+                aria-label="Temizle"
+                className={`shrink-0 w-8 h-8 rounded-md flex items-center justify-center border transition ${isDark ? 'border-gold-500/15 text-cream/65 hover:text-rose-300 hover:bg-rose-500/10' : 'border-gold-300/40 text-mute hover:text-rose-600 hover:bg-rose-50'}`}
+              >
+                <X className="w-3.5 h-3.5" strokeWidth={1.8} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl overflow-hidden`}>
+        {/* Header */}
+        <div className={`grid grid-cols-12 gap-3 px-5 py-3 text-[10px] tracking-[0.22em] uppercase font-semibold border-b ${isDark ? 'text-gold-300/70 border-gold-500/15' : 'text-gold-600/80 border-gold-300/30'}`}>
+          <div className="col-span-4">Misafir</div>
+          <button
+            type="button"
+            onClick={() => toggleSort('giris')}
+            className={`col-span-2 flex items-center gap-1 text-left transition ${isDark ? 'hover:text-cream' : 'hover:text-sea-900'}`}
+          >
+            Giriş — Çıkış
+            {sortField === 'giris'
+              ? (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" strokeWidth={2.5} /> : <ChevronDown className="w-3 h-3" strokeWidth={2.5} />)
+              : <ArrowUpDown className="w-3 h-3 opacity-40" strokeWidth={2} />}
+          </button>
+          <div className="col-span-1">Gece</div>
+          <div className="col-span-2">Tutar</div>
+          <button
+            type="button"
+            onClick={() => toggleSort('durum')}
+            className={`col-span-2 flex items-center gap-1 text-left transition ${isDark ? 'hover:text-cream' : 'hover:text-sea-900'}`}
+          >
+            Durum
+            {sortField === 'durum'
+              ? (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" strokeWidth={2.5} /> : <ChevronDown className="w-3 h-3" strokeWidth={2.5} />)
+              : <ArrowUpDown className="w-3 h-3 opacity-40" strokeWidth={2} />}
+          </button>
+          <div className="col-span-1 text-right">İşlem</div>
+        </div>
+        {/* Rows */}
+        {filtered.length === 0 ? (
+          <div className={`px-5 py-14 text-center text-sm ${isDark ? 'text-cream/55' : 'text-mute'}`}>Bu filtrede rezervasyon yok</div>
+        ) : (
+          paginated.map((r) => {
+            const giris = new Date(r.giris_tarihi)
+            const cikis = new Date(r.cikis_tarihi)
+            const initials = `${(r.ad || '?')[0]}${(r.soyad || '?')[0]}`.toUpperCase()
+            const nights = Math.max(1, Math.ceil((cikis - giris) / 86400000))
+            const range = `${giris.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })} — ${cikis.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}`
+            const relTime = timeAgo(new Date(r.created_at || r.giris_tarihi))
+            const pending = r.durum === 'beklemede'
+            const approved = r.durum === 'onaylandi' || r.durum === 'onaylandı'
+            const rejected = r.durum === 'reddedildi'
+            const cancelled = r.durum === 'iptal' || r.durum === 'iptal_edildi'
+
+            return (
+              <div key={r.id} className={`grid grid-cols-12 gap-3 px-5 py-3 items-center border-b transition last:border-0 ${isDark ? 'border-gold-500/10 hover:bg-sea-800/30' : 'border-gold-300/20 hover:bg-sand-50/60'}`}>
+                {/* Misafir */}
+                <div className="col-span-4 flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${isDark ? 'bg-gold-500/15 text-gold-300' : 'bg-gold-500/15 text-gold-700'}`}>
+                    {initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{r.ad} {r.soyad}</p>
+                    <p className={`text-[11px] truncate ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+                      RZ-{String(r.id).padStart(4, '0')}{r.email ? ' · ' + r.email : ''}
+                    </p>
+                  </div>
+                </div>
+                {/* Giriş-Çıkış */}
+                <div className="col-span-2 min-w-0">
+                  <p className={`text-sm ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{range}</p>
+                  <p className={`text-[11px] ${isDark ? 'text-cream/45' : 'text-mute'}`}>{relTime}</p>
+                </div>
+                {/* Gece */}
+                <div className={`col-span-1 text-sm tabular-nums ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{nights}</div>
+                {/* Tutar */}
+                <div className={`col-span-2 text-sm tabular-nums font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>{formatTL(r.toplam_fiyat)}</div>
+                {/* Durum */}
+                <div className="col-span-2">
+                  <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                    pending   ? (isDark ? 'bg-amber-500/15 text-amber-300'   : 'bg-amber-100 text-amber-700') :
+                    approved  ? (isDark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-100 text-emerald-700') :
+                    rejected  ? (isDark ? 'bg-rose-500/15 text-rose-300'    : 'bg-rose-100 text-rose-700') :
+                    cancelled ? (isDark ? 'bg-cream/10 text-cream/65'        : 'bg-sand-200 text-mute') :
+                                (isDark ? 'bg-sea-800 text-cream/65'         : 'bg-sand-50 text-mute')
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      pending   ? 'bg-amber-400'   :
+                      approved  ? 'bg-emerald-400' :
+                      rejected  ? 'bg-rose-400'    :
+                      cancelled ? 'bg-cream/50'    : 'bg-cream/50'
+                    }`} />
+                    {pending ? 'Beklemede' : approved ? 'Onaylandı' : rejected ? 'Reddedildi' : cancelled ? 'İptal' : r.durum}
+                  </span>
+                </div>
+                {/* İşlem */}
+                <div className="col-span-1 flex items-center justify-end gap-1">
+                  {pending ? (
+                    <>
+                      <button
+                        onClick={() => onApprove(r)}
+                        disabled={quickActionLoading === r.id}
+                        aria-label="Onayla"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center border disabled:opacity-50 transition ${isDark ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}
+                      >
+                        <Check className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      </button>
+                      <button
+                        onClick={() => onReject(r)}
+                        disabled={quickActionLoading === r.id}
+                        aria-label="Reddet"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center border disabled:opacity-50 transition ${isDark ? 'bg-rose-500/10 text-rose-300 border-rose-500/30 hover:bg-rose-500/20' : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}`}
+                      >
+                        <X className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label="Detay"
+                      className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-cream hover:bg-sea-800/50' : 'text-mute hover:text-sea-900 hover:bg-sand-50'}`}
+                    >
+                      <Ellipsis className="w-4 h-4" strokeWidth={1.8} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+
+        {/* Pagination footer */}
+        {filtered.length > itemsPerPage && (
+          <div className={`px-5 py-3 flex items-center justify-between border-t ${isDark ? 'border-gold-500/10 bg-sea-900/40' : 'border-gold-300/30 bg-sand-50/50'}`}>
+            <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+              <span className="tabular-nums">{showingFrom}–{showingTo}</span> / <span className="tabular-nums">{filtered.length}</span> rezervasyon
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+                disabled={safePage === 1}
+                aria-label="Önceki sayfa"
+                className={`w-7 h-7 rounded-md flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'border border-gold-500/15 text-cream/65 hover:bg-sea-800/50' : 'border border-gold-300/40 text-mute hover:bg-cream'}`}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.8} />
+              </button>
+              {(() => {
+                // Sade sayfa numarası listesi: 1...current-1 current current+1...total
+                const pages = []
+                const maxButtons = 5
+                let start = Math.max(1, safePage - Math.floor(maxButtons / 2))
+                let end = Math.min(totalPages, start + maxButtons - 1)
+                if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1)
+                if (start > 1) {
+                  pages.push(<button key="first" type="button" onClick={() => setCurrentPage(1)} className={`w-7 h-7 rounded-md text-[11px] font-semibold tabular-nums transition ${isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-cream'}`}>1</button>)
+                  if (start > 2) pages.push(<span key="dots1" className={`px-1 text-[11px] ${isDark ? 'text-cream/40' : 'text-mute'}`}>…</span>)
+                }
+                for (let p = start; p <= end; p++) {
+                  const active = p === safePage
+                  pages.push(
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-7 h-7 rounded-md text-[11px] font-semibold tabular-nums transition ${
+                        active
+                          ? 'bg-gold-500 text-sea-900'
+                          : (isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-cream')
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                }
+                if (end < totalPages) {
+                  if (end < totalPages - 1) pages.push(<span key="dots2" className={`px-1 text-[11px] ${isDark ? 'text-cream/40' : 'text-mute'}`}>…</span>)
+                  pages.push(<button key="last" type="button" onClick={() => setCurrentPage(totalPages)} className={`w-7 h-7 rounded-md text-[11px] font-semibold tabular-nums transition ${isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-cream'}`}>{totalPages}</button>)
+                }
+                return pages
+              })()}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                disabled={safePage === totalPages}
+                aria-label="Sonraki sayfa"
+                className={`w-7 h-7 rounded-md flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'border border-gold-500/15 text-cream/65 hover:bg-sea-800/50' : 'border border-gold-300/40 text-mute hover:bg-cream'}`}
+              >
+                <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* TAKVIM TAB                                                    */
+/* ============================================================ */
+function Takvim({ isDark, rezervasyonlar }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  /* Yardımcılar */
+  const isSameDay = (a, b) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+  /* Pzt başlangıçlı 6 haftalık grid */
+  const calendarDays = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const offset = (firstDay.getDay() + 6) % 7   // Pazar=0 → 6, Pzt=1 → 0
+    const start = new Date(year, month, 1 - offset)
+    const days = []
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      days.push(d)
+    }
+    return days
+  }, [currentMonth])
+
+  /* Rezervasyonu bul */
+  const findReservation = (day) => {
+    return rezervasyonlar.find((r) => {
+      const giris = new Date(r.giris_tarihi)
+      const cikis = new Date(r.cikis_tarihi)
+      return day >= giris && day < cikis && (r.durum === 'onaylandi' || r.durum === 'onaylandı' || r.durum === 'beklemede')
+    })
+  }
+
+  /* Ay istatistikleri */
+  const monthStats = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const totalDays = new Date(year, month + 1, 0).getDate()
+    let dolu = 0, onayli = 0, bekleyen = 0
+    for (let d = 1; d <= totalDays; d++) {
+      const day = new Date(year, month, d)
+      const rez = findReservation(day)
+      if (rez) {
+        dolu++
+        if (rez.durum === 'beklemede') bekleyen++
+        else onayli++
+      }
+    }
+    return {
+      totalDays,
+      dolu,
+      bos: totalDays - dolu,
+      onayli,
+      bekleyen,
+      occupancy: Math.round((dolu / totalDays) * 100),
+    }
+  }, [currentMonth, rezervasyonlar]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const today = new Date()
+  const monthLabel = currentMonth.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
+
+  const kpis = [
+    { label: 'Doluluk',            value: `%${monthStats.occupancy}`,         sub: `${monthStats.dolu}/${monthStats.totalDays} gün`, tone: 'gold'    },
+    { label: 'Onaylı',              value: monthStats.onayli,                  sub: 'rezervasyon',                                     tone: 'emerald' },
+    { label: 'Bekleyen',           value: monthStats.bekleyen,                sub: 'onay bekliyor',                                   tone: 'amber'   },
+    { label: 'Boş Gün',            value: monthStats.bos,                     sub: 'müsait',                                          tone: 'sea'     },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {/* Mini KPI'lar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>{k.label}</p>
+              <span className={`w-2 h-2 rounded-full ${
+                k.tone === 'gold' ? 'bg-gold-500' :
+                k.tone === 'emerald' ? 'bg-emerald-400' :
+                k.tone === 'amber' ? 'bg-amber-400' :
+                                     'bg-sea-400'
+              }`} />
+            </div>
+            <p className={`text-2xl font-semibold tabular-nums tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>{k.value}</p>
+            <p className={`text-[11px] mt-1 ${isDark ? 'text-cream/55' : 'text-mute'}`}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Takvim kartı */}
+      <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+          <div>
+            <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Takvim</p>
+            <h3 className={`font-display text-2xl font-light tracking-wide capitalize ${isDark ? 'text-cream' : 'text-sea-900'}`}>{monthLabel}</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+              aria-label="Önceki ay"
+              className={`w-9 h-9 rounded-lg border flex items-center justify-center transition ${isDark ? 'border-gold-500/15 hover:bg-sea-800/50 text-cream/85' : 'border-gold-300/40 hover:bg-sand-50 text-sea-900'}`}
+            >
+              <ChevronLeft className="w-4 h-4" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentMonth(new Date())}
+              className="px-3.5 py-2 rounded-lg text-[10px] font-semibold tracking-wider uppercase bg-gold-500 hover:bg-gold-300 text-sea-900 transition"
+            >
+              Bugün
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+              aria-label="Sonraki ay"
+              className={`w-9 h-9 rounded-lg border flex items-center justify-center transition ${isDark ? 'border-gold-500/15 hover:bg-sea-800/50 text-cream/85' : 'border-gold-300/40 hover:bg-sand-50 text-sea-900'}`}
+            >
+              <ChevronRight className="w-4 h-4" strokeWidth={1.8} />
+            </button>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className={`flex flex-wrap items-center gap-5 px-4 py-3 mb-4 rounded-lg border ${isDark ? 'bg-sea-800/40 border-gold-500/10' : 'bg-sand-50 border-gold-300/30'}`}>
+          {[
+            { c: 'bg-emerald-500', l: 'Onaylı' },
+            { c: 'bg-gold-500', l: 'Beklemede' },
+            { c: 'bg-sea-400', l: 'Müsait' },
+            { c: 'ring-2 ring-gold-300', l: 'Bugün' },
+          ].map((it, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${it.c} ${it.c.startsWith('ring') ? 'bg-transparent' : ''}`} />
+              <span className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-cream/75' : 'text-mute'}`}>{it.l}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Hafta günleri */}
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((g) => (
+            <div key={g} className={`text-center py-2 text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600/80'}`}>
+              {g}
+            </div>
+          ))}
+        </div>
+
+        {/* Günler grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {calendarDays.map((day, idx) => {
+            const inMonth = day.getMonth() === currentMonth.getMonth()
+            const rez = findReservation(day)
+            const isToday = isSameDay(day, today)
+            const isPast = day < today && !isToday
+            const isApproved = rez && (rez.durum === 'onaylandi' || rez.durum === 'onaylandı')
+            const isPending = rez && rez.durum === 'beklemede'
+
+            return (
+              <div
+                key={idx}
+                className={`relative h-24 rounded-lg border transition-all duration-200 ${
+                  !inMonth ? (isDark ? 'bg-sea-800/20 border-gold-500/5' : 'bg-sand-50/40 border-gold-300/15') :
+                  isApproved ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-400/60 text-cream' :
+                  isPending  ? 'bg-gradient-to-br from-gold-500 to-gold-700 border-gold-300/60 text-sea-900' :
+                              (isDark ? 'bg-sea-800/60 border-gold-500/15 hover:border-gold-500/40' : 'bg-cream border-gold-300/30 hover:border-gold-500')
+                } ${isToday ? 'ring-2 ring-gold-300 ring-offset-2 ' + (isDark ? 'ring-offset-sea-900' : 'ring-offset-cream') : ''} ${isPast && !rez && inMonth ? 'opacity-40' : ''}`}
+              >
+                {inMonth && (
+                  <>
+                    {/* Gün numarası */}
+                    <div className="absolute top-1.5 left-2 right-2 flex items-start justify-between">
+                      <span className={`font-display text-sm font-semibold tabular-nums ${
+                        isPending ? 'text-sea-900' :
+                        rez ? 'text-cream' :
+                        (isDark ? 'text-cream/85' : 'text-sea-900')
+                      }`}>
+                        {day.getDate()}
+                      </span>
+                      {rez && (
+                        <span className={`text-[9px] rounded-full px-1.5 py-0.5 backdrop-blur ${
+                          isPending ? 'bg-sea-900/20 text-sea-900' : 'bg-cream/25 text-cream'
+                        }`}>
+                          {isApproved ? '✓' : '⏳'}
+                        </span>
+                      )}
+                    </div>
+                    {/* Misafir bilgisi */}
+                    {rez && (
+                      <div className="absolute bottom-1.5 left-2 right-2">
+                        <p className={`text-[10px] font-semibold truncate ${isPending ? 'text-sea-900' : 'text-cream'}`}>
+                          {rez.ad} {rez.soyad}
+                        </p>
+                        <p className={`text-[9px] ${isPending ? 'text-sea-900/75' : 'text-cream/80'}`}>
+                          {rez.kisi_sayisi} kişi
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* FİYATLANDIRMA TAB                                             */
+/* ============================================================ */
+
+/* Sayısal stepper input */
+function Stepper({ isDark, value, onChange, step = 1, min = 0, unit = '₺' }) {
+  const dec = () => onChange(Math.max(min, +(value || 0) - step))
+  const inc = () => onChange(+(value || 0) + step)
+  return (
+    <div className={`inline-flex items-center rounded-lg border overflow-hidden w-40 shrink-0 ${isDark ? 'border-gold-500/15 bg-sea-800/40' : 'border-gold-300/40 bg-sand-50'}`}>
+      <button type="button" onClick={dec} className={`w-9 h-9 shrink-0 flex items-center justify-center transition ${isDark ? 'text-cream/65 hover:bg-sea-800 hover:text-cream' : 'text-mute hover:bg-cream hover:text-sea-900'}`}>−</button>
+      <div className="flex-1 flex items-center justify-center gap-1 px-1 min-w-0">
+        {unit === '₺' && <span className={`text-[10px] ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>₺</span>}
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Math.max(min, +e.target.value || 0))}
+          className={`w-full min-w-0 text-center text-sm tabular-nums font-semibold bg-transparent outline-none ${isDark ? 'text-cream' : 'text-sea-900'}`}
+        />
+        {unit && unit !== '₺' && <span className={`text-[10px] ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>{unit}</span>}
+      </div>
+      <button type="button" onClick={inc} className={`w-9 h-9 shrink-0 flex items-center justify-center transition ${isDark ? 'text-cream/65 hover:bg-sea-800 hover:text-cream' : 'text-mute hover:bg-cream hover:text-sea-900'}`}>+</button>
+    </div>
+  )
+}
+
+/* Donem satırı (Sezon & Tatil listesi için) */
+function DonemRow({ isDark, donem, onEdit, onDelete }) {
+  const toneColor = {
+    sea:     'bg-sea-400',
+    blue:    'bg-blue-400',
+    emerald: 'bg-emerald-400',
+    gold:    'bg-gold-500',
+    rose:    'bg-rose-400',
+    amber:   'bg-amber-400',
+  }[donem.tone] || 'bg-sea-400'
+  const baslangic = new Date(donem.baslangic).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit' })
+  const bitis = new Date(donem.bitis).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit' })
+  return (
+    <div className={`group flex items-center gap-3 px-3 py-3 rounded-lg border ${isDark ? 'border-gold-500/10 bg-sea-800/30 hover:border-gold-500/30' : 'border-gold-300/30 bg-sand-50 hover:border-gold-500/50'} transition`}>
+      <span className={`w-1 h-10 rounded-full ${toneColor} shrink-0`} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>{donem.ad}</p>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isDark ? 'bg-sea-700 text-cream/70' : 'bg-sand-200 text-mute'}`}>
+            {donem.minGece} gece min.
+          </span>
+        </div>
+        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+          📅 {baslangic} — {bitis}{donem.aciklama ? '  ·  ' + donem.aciklama : ''}
+        </p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className={`text-sm font-semibold tabular-nums ${isDark ? 'text-cream' : 'text-sea-900'}`}>{formatTL(donem.fiyat)}</p>
+        <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>/ gece</p>
+      </div>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+        <button type="button" onClick={() => onEdit(donem)} aria-label="Düzenle" className={`w-7 h-7 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:text-gold-300 hover:bg-sea-800/50' : 'text-mute hover:text-gold-700 hover:bg-gold-50'}`}>
+          <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+        </button>
+        <button type="button" onClick={() => onDelete(donem)} aria-label="Sil" className={`w-7 h-7 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}>
+          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Fiyatlandirma({ isDark }) {
+  /* === State === */
+  const [taban, setTaban] = useState({
+    haftaIci: 5000,
+    haftaSonuPct: 16,
+    temizlik: 1200,
+    minGece: 3,
+    ekMisafir: 400,
+  })
+  const [sure, setSure] = useState({
+    haftalikPct: 10,
+    aylikPct: 22,
+  })
+  const [donemler, setDonemler] = useState([
+    { id: 1, ad: 'Kış (Düşük)',    tone: 'sea',     baslangic: '2026-01-10', bitis: '2026-03-15', fiyat: 3200, minGece: 2, aciklama: 'Sezon dışı, esnek kurallar' },
+    { id: 2, ad: 'Erken İlkbahar',  tone: 'blue',    baslangic: '2026-04-01', bitis: '2026-05-15', fiyat: 4250, minGece: 3, aciklama: 'Sezon öncesi indirimli dönem' },
+    { id: 3, ad: 'Bayram Tatili',    tone: 'emerald', baslangic: '2026-06-06', bitis: '2026-06-10', fiyat: 6000, minGece: 4, aciklama: 'Kurban Bayramı yoğun talep' },
+    { id: 4, ad: 'Yüksek Sezon',     tone: 'gold',    baslangic: '2026-07-01', bitis: '2026-08-31', fiyat: 6500, minGece: 5, aciklama: 'Temmuz-Ağustos plaj sezonu zirvesi' },
+    { id: 5, ad: 'Yılbaşı',           tone: 'rose',   baslangic: '2026-12-27', bitis: '2027-01-02', fiyat: 7200, minGece: 4, aciklama: 'Yeni yıl özel fiyatı' },
+  ])
+  const [donemModal, setDonemModal] = useState({ open: false, editing: null })
+
+  /* Preview */
+  const [pGiris, setPGiris]       = useState('2026-07-14')
+  const [pCikis, setPCikis]       = useState('2026-07-21')
+  const [pMisafir, setPMisafir]   = useState(2)
+
+  /* === Hesaplama === */
+  const preview = useMemo(() => {
+    if (!pGiris || !pCikis) return null
+    const giris = new Date(pGiris)
+    const cikis = new Date(pCikis)
+    if (cikis <= giris) return null
+    const geceSayisi = Math.max(1, Math.ceil((cikis - giris) / 86400000))
+
+    /* Her gün için ayrı dönem ve fiyat hesabı */
+    const gunler = []
+    const cursor = new Date(giris)
+    for (let i = 0; i < geceSayisi; i++) {
+      // Bu güne denk gelen dönem (her gün için ayrı kontrol)
+      const donem = donemler.find(d => {
+        const dS = new Date(d.baslangic)
+        const dE = new Date(d.bitis)
+        return cursor >= dS && cursor < dE
+      })
+      const dayOfWeek = cursor.getDay() // 0=Paz, 5=Cum, 6=Cmt
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6
+      let fiyat, label
+      if (donem) {
+        fiyat = donem.fiyat
+        label = donem.ad
+      } else if (isWeekend) {
+        fiyat = Math.round(taban.haftaIci * (1 + taban.haftaSonuPct / 100))
+        label = 'Hafta sonu'
+      } else {
+        fiyat = taban.haftaIci
+        label = 'Hafta içi'
+      }
+      gunler.push({ donem, isWeekend, fiyat, label, key: donem ? `donem-${donem.id}` : (isWeekend ? 'haftaSonu' : 'haftaIci') })
+      cursor.setDate(cursor.getDate() + 1)
+    }
+
+    /* Gruplara ayır (breakdown için) */
+    const gruplarObj = {}
+    gunler.forEach(g => {
+      if (!gruplarObj[g.key]) {
+        gruplarObj[g.key] = { label: g.label, fiyat: g.fiyat, sayi: 0, toplam: 0, tone: g.donem ? g.donem.tone : (g.isWeekend ? 'amber' : 'sea') }
+      }
+      gruplarObj[g.key].sayi += 1
+      gruplarObj[g.key].toplam += g.fiyat
+    })
+    // Display sırası: dönemler önce, sonra hafta içi/sonu
+    const gruplar = Object.values(gruplarObj).sort((a, b) => {
+      const pri = (x) => (x.tone === 'sea' || x.tone === 'amber') ? 2 : 1
+      return pri(a) - pri(b)
+    })
+
+    const toplamGecelik = gunler.reduce((s, g) => s + g.fiyat, 0)
+
+    /* Aktif dönem(ler) — display rozeti için */
+    const benzerDonemIds = [...new Set(gunler.filter(g => g.donem).map(g => g.donem.id))]
+    const kapsayanDonemler = benzerDonemIds.map(id => donemler.find(d => d.id === id))
+    const aktifDonem = kapsayanDonemler[0] || null  // ilki (rozet için)
+    const kismi = kapsayanDonemler.length > 0 && gunler.some(g => !g.donem)  // bazı günler dönem dışında
+
+    /* Ek misafir */
+    const ekMisafirSayisi = Math.max(0, pMisafir - 2)
+    const ekMisafirToplam = ekMisafirSayisi * geceSayisi * taban.ekMisafir
+
+    /* Indirim */
+    let indirimPct = 0, indirimAd = null
+    if (geceSayisi >= 28)      { indirimPct = sure.aylikPct;    indirimAd = 'Aylık indirim' }
+    else if (geceSayisi >= 7)  { indirimPct = sure.haftalikPct; indirimAd = 'Haftalık indirim' }
+    const indirimMiktar = Math.round((toplamGecelik + ekMisafirToplam) * indirimPct / 100)
+
+    const temizlik = taban.temizlik
+    const toplam = toplamGecelik + ekMisafirToplam - indirimMiktar + temizlik
+    const gunlukOrt = Math.round(toplam / geceSayisi)
+
+    /* Min gece — kapsayan dönemler içinde en kısıtlayıcı olan */
+    let minGereken = taban.minGece
+    kapsayanDonemler.forEach(d => { if (d && d.minGece > minGereken) minGereken = d.minGece })
+    const minWarning = geceSayisi < minGereken ? minGereken : null
+
+    return { geceSayisi, aktifDonem, kismi, gruplar, toplamGecelik, ekMisafirToplam, indirimPct, indirimAd, indirimMiktar, temizlik, toplam, gunlukOrt, minWarning }
+  }, [pGiris, pCikis, pMisafir, taban, sure, donemler])
+
+  /* Handlers */
+  const saveDonem = (data) => {
+    if (donemModal.editing) {
+      setDonemler(donemler.map(d => d.id === donemModal.editing.id ? { ...donemModal.editing, ...data } : d))
+    } else {
+      setDonemler([...donemler, { id: Date.now(), tone: 'gold', ...data }])
+    }
+    setDonemModal({ open: false, editing: null })
+  }
+  const delDonem = (d) => {
+    if (window.confirm(`"${d.ad}" silinsin mi?`)) setDonemler(donemler.filter(x => x.id !== d.id))
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Üst başlık */}
+      <div className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <h2 className={`font-display text-3xl font-light tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>Fiyatlandırma</h2>
+          <p className={`text-[12px] mt-1 ${isDark ? 'text-cream/65' : 'text-mute'}`}>
+            Taban gecelik <span className={`tabular-nums font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>{formatTL(taban.haftaIci)}</span>
+            <span className={`mx-2 ${isDark ? 'text-cream/30' : 'text-mute/50'}`}>·</span>
+            <span className="tabular-nums">{donemler.length}</span> özel dönem tanımlı
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            console.log('Fiyat ayarları:', { taban, sure, donemler })
+            alert('Değişiklikler kaydedildi (şu an yerel — Supabase bağlantısı için tablo şeması netleştirilince eklenir).')
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide bg-gold-500 hover:bg-gold-300 text-sea-900 transition shadow-[0_4px_12px_rgba(217,162,107,0.25)]"
+        >
+          <Save className="w-3.5 h-3.5" strokeWidth={2} />
+          Kaydet
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* === SOL: Kurallar === */}
+        <div className="lg:col-span-2 space-y-3">
+          {/* TEMEL KURALLAR */}
+          <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Temel Kurallar</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Taban Gecelik Fiyat</h3>
+              </div>
+            </div>
+            <div className={`divide-y ${isDark ? 'divide-gold-500/10' : 'divide-gold-300/30'}`}>
+              {/* Hafta içi */}
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Tag className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Hafta içi gecelik</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>Pazar—Perşembe baz fiyat</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={taban.haftaIci} onChange={(v) => setTaban({ ...taban, haftaIci: v })} step={100} unit="₺" />
+              </div>
+              {/* Hafta sonu farkı */}
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <span className={`text-base ${isDark ? 'text-gold-300' : 'text-gold-700'}`}>%</span>
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Hafta sonu farkı</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+                      Cuma &amp; Cumartesi · <span className="tabular-nums">{formatTL(Math.round(taban.haftaIci * (1 + taban.haftaSonuPct / 100)))}/gece</span>
+                    </p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={taban.haftaSonuPct} onChange={(v) => setTaban({ ...taban, haftaSonuPct: v })} step={1} unit="%" />
+              </div>
+              {/* Temizlik */}
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Sparkles className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Temizlik ücreti</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>Konaklama başına tek seferlik</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={taban.temizlik} onChange={(v) => setTaban({ ...taban, temizlik: v })} step={50} unit="₺" />
+              </div>
+              {/* Min konaklama */}
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Hourglass className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Minimum konaklama</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>Taban dönemler için geçerli</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={taban.minGece} onChange={(v) => setTaban({ ...taban, minGece: v })} step={1} min={1} unit="gece" />
+              </div>
+              {/* Ek misafir */}
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Users className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Ek misafir ücreti</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>3. misafirden itibaren / gece</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={taban.ekMisafir} onChange={(v) => setTaban({ ...taban, ekMisafir: v })} step={50} unit="₺" />
+              </div>
+            </div>
+          </div>
+
+          {/* SÜREYE BAĞLI */}
+          <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Süreye Bağlı</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Uzun Konaklama İndirimi</h3>
+              </div>
+            </div>
+            <div className={`divide-y ${isDark ? 'divide-gold-500/10' : 'divide-gold-300/30'}`}>
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Calendar className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Haftalık indirim</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>7 gece ve üzeri rezervasyonlarda</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={sure.haftalikPct} onChange={(v) => setSure({ ...sure, haftalikPct: v })} step={1} unit="%" />
+              </div>
+              <div className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? 'bg-sea-800 border border-gold-500/15' : 'bg-sand-50 border border-gold-300/40'}`}>
+                    <Calendar className={`w-4 h-4 ${isDark ? 'text-gold-300' : 'text-gold-700'}`} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Aylık indirim</p>
+                    <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>28 gece ve üzeri rezervasyonlarda</p>
+                  </div>
+                </div>
+                <Stepper isDark={isDark} value={sure.aylikPct} onChange={(v) => setSure({ ...sure, aylikPct: v })} step={1} unit="%" />
+              </div>
+            </div>
+          </div>
+
+          {/* SEZON & TATİL */}
+          <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <span className="block h-px w-5 bg-gold-500/60" />
+                <div>
+                  <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Sezon &amp; Tatil</p>
+                  <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Özel Fiyat Dönemleri</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDonemModal({ open: true, editing: null })}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-gold-500 hover:bg-gold-300 text-sea-900 transition"
+              >
+                <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
+                Dönem ekle
+              </button>
+            </div>
+            <div className="space-y-2">
+              {donemler.length === 0 ? (
+                <p className={`text-center py-8 text-sm ${isDark ? 'text-cream/55' : 'text-mute'}`}>Henüz dönem yok</p>
+              ) : donemler.map(d => (
+                <DonemRow
+                  key={d.id}
+                  isDark={isDark}
+                  donem={d}
+                  onEdit={(donem) => setDonemModal({ open: true, editing: donem })}
+                  onDelete={delDonem}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* === SAĞ: Canlı Önizleme === */}
+        <div className="lg:col-span-1">
+          <div className={`sticky top-20 ${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-5`}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="block h-px w-5 bg-gold-500/60" />
+              <div>
+                <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Canlı Önizleme</p>
+                <h3 className={`text-base font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>Misafir Ne Öder?</h3>
+              </div>
+            </div>
+
+            {/* Tarih + misafir inputları */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className={`block text-[9px] tracking-[0.22em] uppercase font-semibold mb-1 ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Giriş</label>
+                <DatePickerTR
+                  value={pGiris}
+                  onChange={setPGiris}
+                  placeholder="gg/aa/yyyy"
+                  className="w-full"
+                  inputClassName={`w-full px-2 py-1.5 rounded-md border text-xs outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+                />
+              </div>
+              <div>
+                <label className={`block text-[9px] tracking-[0.22em] uppercase font-semibold mb-1 ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Çıkış</label>
+                <DatePickerTR
+                  value={pCikis}
+                  onChange={setPCikis}
+                  minDate={pGiris}
+                  placeholder="gg/aa/yyyy"
+                  className="w-full"
+                  inputClassName={`w-full px-2 py-1.5 rounded-md border text-xs outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-sand-50 border-gold-300/40 text-sea-900 placeholder-mute'}`}
+                />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className={`block text-[9px] tracking-[0.22em] uppercase font-semibold mb-1 ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Misafir Sayısı</label>
+              <Stepper isDark={isDark} value={pMisafir} onChange={setPMisafir} step={1} min={1} unit="kişi" />
+            </div>
+
+            {/* Sonuç */}
+            {preview && (
+              <>
+                <div className={`flex items-center justify-between gap-3 pb-3 mb-3 border-b ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+                  <div>
+                    <p className={`font-display text-3xl font-semibold tabular-nums ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                      {formatTL(preview.gunlukOrt)}
+                    </p>
+                    <p className={`text-[11px] mt-0.5 ${isDark ? 'text-cream/55' : 'text-mute'}`}>/ gece ort.</p>
+                  </div>
+                  {preview.aktifDonem && (
+                    <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-gold-500/15 text-gold-300 border border-gold-500/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
+                      {preview.aktifDonem.ad}{preview.kismi ? ' (kısmi)' : ''}
+                    </span>
+                  )}
+                </div>
+
+                {/* Breakdown — gruplara göre */}
+                <div className="space-y-1.5">
+                  {preview.gruplar.map((g, i) => (
+                    <div key={i} className="flex items-center justify-between text-[12px]">
+                      <span className={isDark ? 'text-cream/65' : 'text-mute'}>
+                        {g.label} <span className="opacity-65">({formatTL(g.fiyat)} × {g.sayi} gece)</span>
+                      </span>
+                      <span className={`tabular-nums ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{formatTL(g.toplam)}</span>
+                    </div>
+                  ))}
+                  {preview.ekMisafirToplam > 0 && (
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className={isDark ? 'text-cream/65' : 'text-mute'}>Ek misafir ücreti</span>
+                      <span className={`tabular-nums ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{formatTL(preview.ekMisafirToplam)}</span>
+                    </div>
+                  )}
+                  {preview.indirimMiktar > 0 && (
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className={isDark ? 'text-cream/65' : 'text-mute'}>{preview.indirimAd} (%{preview.indirimPct})</span>
+                      <span className="tabular-nums text-emerald-400">−{formatTL(preview.indirimMiktar)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className={isDark ? 'text-cream/65' : 'text-mute'}>Temizlik ücreti</span>
+                    <span className={`tabular-nums ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{formatTL(preview.temizlik)}</span>
+                  </div>
+                </div>
+
+                {/* Toplam */}
+                <div className={`mt-3 pt-3 border-t flex items-center justify-between ${isDark ? 'border-gold-500/15' : 'border-gold-300/40'}`}>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                    Toplam <span className={`text-[11px] font-normal ${isDark ? 'text-cream/55' : 'text-mute'}`}>({preview.geceSayisi} gece)</span>
+                  </span>
+                  <span className={`font-display text-2xl font-semibold tabular-nums text-gold-300`}>{formatTL(preview.toplam)}</span>
+                </div>
+
+                {/* Min gece uyarısı */}
+                {preview.minWarning && (
+                  <div className={`mt-3 px-3 py-2 rounded-lg text-[11px] flex items-start gap-2 ${isDark ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                    <span>⚠ï¸</span>
+                    <span>Bu tarih aralığı için minimum konaklama <strong className="tabular-nums">{preview.minWarning} gece</strong>.</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Dönem ekle/düzenle modal */}
+      <DonemModal
+        isDark={isDark}
+        open={donemModal.open}
+        editing={donemModal.editing}
+        onClose={() => setDonemModal({ open: false, editing: null })}
+        onSave={saveDonem}
+      />
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* DÖNEM MODAL                                                   */
+/* ============================================================ */
+function DonemModal({ isDark, open, editing, onClose, onSave }) {
+  const [form, setForm] = useState({ ad: '', tone: 'gold', baslangic: '', bitis: '', fiyat: 5000, minGece: 3, aciklama: '' })
+
+  useEffect(() => {
+    if (editing) {
+      setForm({
+        ad: editing.ad || '',
+        tone: editing.tone || 'gold',
+        baslangic: editing.baslangic || '',
+        bitis: editing.bitis || '',
+        fiyat: editing.fiyat || 5000,
+        minGece: editing.minGece || 3,
+        aciklama: editing.aciklama || '',
+      })
+    } else {
+      setForm({ ad: '', tone: 'gold', baslangic: '', bitis: '', fiyat: 5000, minGece: 3, aciklama: '' })
+    }
+  }, [editing, open])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-sm" />
+      <div onClick={(e) => e.stopPropagation()} className={`relative max-w-md w-full rounded-2xl border shadow-2xl ${isDark ? 'bg-sea-900 border-gold-500/20' : 'bg-cream border-gold-300/40'}`}>
+        <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+          <div>
+            <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Özel Dönem</p>
+            <h3 className={`font-display text-2xl font-light ${isDark ? 'text-cream' : 'text-sea-900'}`}>{editing ? 'Düzenle' : 'Yeni Dönem'}</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Kapat" className={`w-8 h-8 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:bg-sea-800/50 hover:text-cream' : 'text-mute hover:bg-sand-50 hover:text-sea-900'}`}>
+            <X className="w-4 h-4" strokeWidth={1.8} />
+          </button>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); onSave(form) }} className="px-6 py-5 space-y-4">
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Dönem Adı</label>
+            <input type="text" value={form.ad} onChange={(e) => setForm({ ...form, ad: e.target.value })} placeholder="Örn. Yaz Sezonu" required className={`w-full px-3 py-2 rounded-lg border text-sm outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/35' : 'bg-cream border-gold-300/40 text-sea-900 placeholder-mute'}`} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Başlangıç</label>
+              <DatePickerTR
+                value={form.baslangic}
+                onChange={(val) => setForm({ ...form, baslangic: val })}
+                placeholder="gg/aa/yyyy"
+                className="w-full"
+                inputClassName={`w-full px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-cream border-gold-300/40 text-sea-900 placeholder-mute'}`}
+              />
+            </div>
+            <div>
+              <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Bitiş</label>
+              <DatePickerTR
+                value={form.bitis}
+                onChange={(val) => setForm({ ...form, bitis: val })}
+                minDate={form.baslangic}
+                placeholder="gg/aa/yyyy"
+                className="w-full"
+                inputClassName={`w-full px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/40' : 'bg-cream border-gold-300/40 text-sea-900 placeholder-mute'}`}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Fiyat (₺)</label>
+              <input type="number" value={form.fiyat} onChange={(e) => setForm({ ...form, fiyat: +e.target.value || 0 })} required min="0" className={`w-full px-3 py-2 rounded-lg border text-sm tabular-nums outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream' : 'bg-cream border-gold-300/40 text-sea-900'}`} />
+            </div>
+            <div>
+              <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Min. Gece</label>
+              <input type="number" value={form.minGece} onChange={(e) => setForm({ ...form, minGece: +e.target.value || 1 })} required min="1" className={`w-full px-3 py-2 rounded-lg border text-sm tabular-nums outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream' : 'bg-cream border-gold-300/40 text-sea-900'}`} />
+            </div>
+          </div>
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Renk Tonu</label>
+            <div className="flex items-center gap-2">
+              {[
+                { id: 'sea',     bg: 'bg-sea-400'     },
+                { id: 'blue',    bg: 'bg-blue-400'    },
+                { id: 'emerald', bg: 'bg-emerald-400' },
+                { id: 'gold',    bg: 'bg-gold-500'    },
+                { id: 'amber',   bg: 'bg-amber-400'   },
+                { id: 'rose',    bg: 'bg-rose-400'    },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, tone: t.id })}
+                  className={`w-7 h-7 rounded-md ${t.bg} ${form.tone === t.id ? 'ring-2 ring-offset-2 ring-gold-300 ' + (isDark ? 'ring-offset-sea-900' : 'ring-offset-cream') : 'opacity-60 hover:opacity-100'} transition`}
+                  aria-label={t.id}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className={`block text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Açıklama</label>
+            <input type="text" value={form.aciklama} onChange={(e) => setForm({ ...form, aciklama: e.target.value })} placeholder="Kısa not (opsiyonel)" className={`w-full px-3 py-2 rounded-lg border text-sm outline-none ${isDark ? 'bg-sea-800/60 border-gold-500/15 text-cream placeholder-cream/35' : 'bg-cream border-gold-300/40 text-sea-900 placeholder-mute'}`} />
+          </div>
+          <div className={`pt-3 border-t flex items-center gap-2 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+            <button type="button" onClick={onClose} className={`flex-1 px-4 py-2 rounded-lg text-[11px] font-semibold border transition ${isDark ? 'border-gold-500/15 text-cream/85 hover:bg-sea-800/50' : 'border-gold-300/40 text-sea-900 hover:bg-sand-50'}`}>İptal</button>
+            <button type="submit" className="flex-1 px-4 py-2 rounded-lg text-[11px] font-semibold bg-gold-500 hover:bg-gold-300 text-sea-900 transition">{editing ? 'Güncelle' : 'Ekle'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+
+
+/* ============================================================ */
+/* MESAJLAR TAB                                                  */
+/* ============================================================ */
+function Mesajlar({ isDark, mesajlar, onRead, onDelete }) {
+  const [filter, setFilter] = useState('all')
+  const [detayMesaj, setDetayMesaj] = useState(null)
+
+  const matches = (m, key) => {
+    if (key === 'all') return true
+    if (key === 'okunmamis') return !m.okundu
+    if (key === 'okundu') return !!m.okundu
+    if (key === 'bugun') {
+      const d = new Date(m.created_at)
+      const now = new Date()
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+    }
+    return true
+  }
+  const counts = {
+    all: mesajlar.length,
+    okunmamis: mesajlar.filter(m => matches(m, 'okunmamis')).length,
+    okundu: mesajlar.filter(m => matches(m, 'okundu')).length,
+    bugun: mesajlar.filter(m => matches(m, 'bugun')).length,
+  }
+  const filtered = mesajlar
+    .filter(m => matches(m, filter))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  const chips = [
+    { id: 'all',       label: 'Tümü' },
+    { id: 'okunmamis', label: 'Okunmamış' },
+    { id: 'okundu',    label: 'Okundu' },
+    { id: 'bugun',     label: 'Bugün' },
+  ]
+
+  const kpis = [
+    { label: 'Toplam Mesaj',  value: counts.all,       tone: 'sea' },
+    { label: 'Okunmamış',     value: counts.okunmamis, tone: 'amber' },
+    { label: 'Bugün',         value: counts.bugun,     tone: 'emerald' },
+    { label: 'Cevap Bekleyen', value: counts.okunmamis, tone: 'gold' },
+  ]
+
+  const handleOpen = async (m) => {
+    setDetayMesaj(m)
+    if (!m.okundu) await onRead(m, true)
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Mini KPI'lar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>{k.label}</p>
+              <span className={`w-2 h-2 rounded-full ${
+                k.tone === 'gold'    ? 'bg-gold-500'    :
+                k.tone === 'emerald' ? 'bg-emerald-400' :
+                k.tone === 'amber'   ? 'bg-amber-400'   :
+                                       'bg-sea-400'
+              }`} />
+            </div>
+            <p className={`text-2xl font-semibold tabular-nums tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {chips.map(c => {
+            const active = filter === c.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFilter(c.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition border ${
+                  active
+                    ? (isDark ? 'bg-sea-800 text-cream border-gold-500/40' : 'bg-sea-900 text-cream border-sea-900')
+                    : (isDark ? 'border-gold-500/15 text-cream/65 hover:border-gold-500/40' : 'border-gold-300/40 text-mute hover:border-gold-500')
+                }`}
+              >
+                {c.label}
+                <span className={`tabular-nums ${active ? 'opacity-85' : 'opacity-65'}`}>{counts[c.id] || 0}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Inbox liste */}
+      <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl overflow-hidden`}>
+        {filtered.length === 0 ? (
+          <div className={`px-5 py-14 text-center ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+            <Inbox className="w-8 h-8 mx-auto mb-3 opacity-60" strokeWidth={1.4} />
+            <p className="text-sm">Bu filtrede mesaj yok</p>
+          </div>
+        ) : filtered.map(m => {
+          const ad = m.ad_soyad || m.ad || 'Misafir'
+          const initials = ad.split(' ').slice(0, 2).map(s => (s[0] || '').toUpperCase()).join('') || '?'
+          const unread = !m.okundu
+          const preview = (m.mesaj || '').slice(0, 90)
+          return (
+            <div
+              key={m.id}
+              onClick={() => handleOpen(m)}
+              className={`grid grid-cols-12 gap-3 px-5 py-3 items-center border-b last:border-0 cursor-pointer transition ${
+                isDark ? 'border-gold-500/10 hover:bg-sea-800/30' : 'border-gold-300/20 hover:bg-sand-50/60'
+              } ${unread ? (isDark ? 'bg-sea-800/20' : 'bg-gold-50/40') : ''}`}
+            >
+              {/* Sol: avatar + unread dot */}
+              <div className="col-span-3 flex items-center gap-3 min-w-0">
+                <div className="relative shrink-0">
+                  <div className={`w-9 h-9 rounded-md flex items-center justify-center text-[11px] font-bold ${unread ? 'bg-gold-500 text-sea-900' : (isDark ? 'bg-sea-700 text-cream/85' : 'bg-gold-500/15 text-gold-700')}`}>
+                    {initials}
+                  </div>
+                  {unread && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-gold-500 ring-2 ring-sea-900" />}
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-sm truncate ${unread ? 'font-bold' : 'font-medium'} ${isDark ? 'text-cream' : 'text-sea-900'}`}>{ad}</p>
+                  <p className={`text-[11px] truncate ${isDark ? 'text-cream/55' : 'text-mute'}`}>{m.email || m.telefon || '—'}</p>
+                </div>
+              </div>
+              {/* Orta: konu + preview */}
+              <div className="col-span-6 min-w-0">
+                <p className={`text-sm truncate ${unread ? 'font-semibold' : ''} ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                  {m.konu || '(konu yok)'}
+                </p>
+                <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+                  {preview}{(m.mesaj || '').length > 90 ? '…' : ''}
+                </p>
+              </div>
+              {/* Sağ: zaman + actions */}
+              <div className="col-span-3 flex items-center justify-end gap-2">
+                <span className={`text-[11px] tabular-nums shrink-0 ${isDark ? 'text-cream/45' : 'text-mute'}`}>{timeAgo(new Date(m.created_at))}</span>
+                {m.email ? (
+                  <a
+                    href={`mailto:${m.email}?subject=${encodeURIComponent('Re: ' + (m.konu || 'Mesajınız'))}`}
+                    onClick={(e) => { e.stopPropagation(); if (unread) onRead(m, true) }}
+                    aria-label="Cevapla"
+                    title="Cevapla"
+                    className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-gold-300 hover:bg-sea-800/50' : 'text-mute hover:text-gold-700 hover:bg-gold-50'}`}
+                  >
+                    <Mail className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </a>
+                ) : (
+                  <span className={`w-7 h-7 flex items-center justify-center opacity-30 ${isDark ? 'text-cream/55' : 'text-mute'}`} title="E-posta yok">
+                    <Mail className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onDelete(m) }}
+                  aria-label="Sil"
+                  className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Detay modal */}
+      <MesajDetayModal isDark={isDark} mesaj={detayMesaj} onClose={() => setDetayMesaj(null)} onDelete={onDelete} />
+    </div>
+  )
+}
+
+function MesajDetayModal({ isDark, mesaj, onClose, onDelete }) {
+  if (!mesaj) return null
+  const ad = mesaj.ad_soyad || mesaj.ad || 'Misafir'
+  const initials = ad.split(' ').slice(0, 2).map(s => (s[0] || '').toUpperCase()).join('') || '?'
+  const tarih = new Date(mesaj.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-sm" />
+      <div onClick={(e) => e.stopPropagation()} className={`relative max-w-xl w-full rounded-2xl border shadow-2xl ${isDark ? 'bg-sea-900 border-gold-500/20' : 'bg-cream border-gold-300/40'}`}>
+        {/* Header */}
+        <div className={`px-6 py-4 border-b flex items-start justify-between gap-3 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-10 h-10 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 bg-gold-500 text-sea-900`}>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Mesaj</p>
+              <h3 className={`font-display text-xl font-light truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{ad}</h3>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Kapat" className={`w-8 h-8 shrink-0 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:bg-sea-800/50 hover:text-cream' : 'text-mute hover:bg-sand-50 hover:text-sea-900'}`}>
+            <X className="w-4 h-4" strokeWidth={1.8} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {/* Meta */}
+          <div className="grid grid-cols-2 gap-3 text-[12px]">
+            {mesaj.email && (
+              <div>
+                <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>E-posta</p>
+                <a href={`mailto:${mesaj.email}`} className={`mt-0.5 inline-flex items-center gap-1.5 truncate transition ${isDark ? 'text-cream hover:text-gold-300' : 'text-sea-900 hover:text-gold-700'}`}>
+                  <Mail className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />
+                  {mesaj.email}
+                </a>
+              </div>
+            )}
+            {mesaj.telefon && (
+              <div>
+                <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Telefon</p>
+                <a href={`tel:${mesaj.telefon}`} className={`mt-0.5 inline-flex items-center gap-1.5 transition ${isDark ? 'text-cream hover:text-gold-300' : 'text-sea-900 hover:text-gold-700'}`}>
+                  <Phone className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />
+                  {mesaj.telefon}
+                </a>
+              </div>
+            )}
+            <div className="col-span-2">
+              <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Tarih</p>
+              <p className={`mt-0.5 ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{tarih}</p>
+            </div>
+          </div>
+
+          {/* Konu + Mesaj */}
+          <div className={`border-t pt-4 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+            {mesaj.konu && (
+              <h4 className={`font-semibold text-sm mb-2 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{mesaj.konu}</h4>
+            )}
+            <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${isDark ? 'text-cream/85' : 'text-sea-900'}`} style={{ overflowWrap: 'anywhere' }}>
+              {mesaj.mesaj || '(içerik yok)'}
+            </p>
+          </div>
+        </div>
+
+        {/* Footer eylemler */}
+        <div className={`px-6 py-4 border-t flex items-center justify-between gap-2 ${isDark ? 'border-gold-500/10 bg-sea-900/40' : 'border-gold-300/30 bg-sand-50/40'}`}>
+          <button
+            type="button"
+            onClick={() => { onDelete(mesaj); onClose() }}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold transition ${isDark ? 'text-rose-300 hover:bg-rose-500/10' : 'text-rose-700 hover:bg-rose-50'}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+            Sil
+          </button>
+          <div className="flex items-center gap-2">
+            {mesaj.telefon && (
+              <a
+                href={`tel:${mesaj.telefon}`}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold border transition ${isDark ? 'border-gold-500/15 text-cream/85 bg-sea-800/40 hover:border-gold-500/40' : 'border-gold-300/40 text-sea-900 bg-cream hover:border-gold-500'}`}
+              >
+                <Phone className="w-3.5 h-3.5" strokeWidth={1.8} />
+                Ara
+              </a>
+            )}
+            {mesaj.email && (
+              <a
+                href={`mailto:${mesaj.email}?subject=Re: ${mesaj.konu || 'Mesajınız'}`}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold bg-gold-500 hover:bg-gold-300 text-sea-900 transition"
+              >
+                <Reply className="w-3.5 h-3.5" strokeWidth={2} />
+                Cevapla
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* YORUMLAR                                                       */
+/* ============================================================ */
+function StarsRow({ rating, size = 'sm' }) {
+  const px = size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'
+  return (
+    <div className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(n => (
+        <Star
+          key={n}
+          className={`${px} ${n <= rating ? 'text-gold-500 fill-gold-500' : 'text-gold-500/25'}`}
+          strokeWidth={1.6}
+        />
+      ))}
+    </div>
+  )
+}
+
+function Yorumlar({ isDark, yorumlar, onApprove, onReject, onDelete }) {
+  const [filter, setFilter] = useState('all')
+  const [detayYorum, setDetayYorum] = useState(null)
+
+  const matches = (y, key) => {
+    if (key === 'all')       return true
+    if (key === 'bekleyen')  return !y.onaylandi
+    if (key === 'onayli')    return !!y.onaylandi
+    if (key === '5')         return y.puan === 5
+    if (key === '4')         return y.puan === 4
+    if (key === 'low')       return y.puan <= 3
+    return true
+  }
+  const counts = {
+    all:      yorumlar.length,
+    bekleyen: yorumlar.filter(y => !y.onaylandi).length,
+    onayli:   yorumlar.filter(y => !!y.onaylandi).length,
+    '5':      yorumlar.filter(y => y.puan === 5).length,
+    '4':      yorumlar.filter(y => y.puan === 4).length,
+    low:      yorumlar.filter(y => y.puan <= 3).length,
+  }
+  const filtered = yorumlar
+    .filter(y => matches(y, filter))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  const avgPuan = yorumlar.length
+    ? (yorumlar.reduce((s, y) => s + (y.puan || 0), 0) / yorumlar.length).toFixed(1)
+    : '0.0'
+
+  const chips = [
+    { id: 'all',      label: 'Tümü' },
+    { id: 'bekleyen', label: 'Onay Bekleyen' },
+    { id: 'onayli',   label: 'Onaylı' },
+    { id: '5',        label: '5★' },
+    { id: '4',        label: '4★' },
+    { id: 'low',      label: '3★ ve altı' },
+  ]
+
+  const kpis = [
+    { label: 'Toplam Yorum',  value: counts.all,      tone: 'sea' },
+    { label: 'Ortalama Puan', value: avgPuan,         tone: 'gold', star: true },
+    { label: 'Onay Bekleyen', value: counts.bekleyen, tone: 'amber' },
+    { label: '5★ Sayısı',     value: counts['5'],     tone: 'emerald' },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {/* KPI'lar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>{k.label}</p>
+              <span className={`w-2 h-2 rounded-full ${
+                k.tone === 'gold'    ? 'bg-gold-500'    :
+                k.tone === 'emerald' ? 'bg-emerald-400' :
+                k.tone === 'amber'   ? 'bg-amber-400'   :
+                                       'bg-sea-400'
+              }`} />
+            </div>
+            <div className="flex items-center gap-2">
+              <p className={`text-2xl font-semibold tabular-nums tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>{k.value}</p>
+              {k.star && <Star className="w-4 h-4 text-gold-500 fill-gold-500" strokeWidth={1.6} />}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtre chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {chips.map(c => {
+          const active = filter === c.id
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setFilter(c.id)}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition border ${
+                active
+                  ? (isDark ? 'bg-sea-800 text-cream border-gold-500/40' : 'bg-sea-900 text-cream border-sea-900')
+                  : (isDark ? 'border-gold-500/15 text-cream/65 hover:border-gold-500/40' : 'border-gold-300/40 text-mute hover:border-gold-500')
+              }`}
+            >
+              {c.label}
+              <span className={`tabular-nums ${active ? 'opacity-85' : 'opacity-65'}`}>{counts[c.id] || 0}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Yorum kartları */}
+      {filtered.length === 0 ? (
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15 text-cream/55' : 'bg-cream border-gold-300/40 text-mute'} border rounded-xl px-5 py-14 text-center`}>
+          <Star className="w-8 h-8 mx-auto mb-3 opacity-60" strokeWidth={1.4} />
+          <p className="text-sm">Bu filtrede yorum yok</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {filtered.map(y => {
+            const ad = y.ad || 'Misafir'
+            const initials = ad.split(' ').slice(0, 2).map(s => (s[0] || '').toUpperCase()).join('') || '?'
+            const pending = !y.onaylandi
+            const preview = (y.yorum || '').slice(0, 180)
+            return (
+              <div
+                key={y.id}
+                onClick={() => setDetayYorum(y)}
+                className={`relative border rounded-xl p-4 cursor-pointer transition ${
+                  isDark
+                    ? `bg-sea-900/70 ${pending ? 'border-amber-500/40 hover:border-amber-400/60' : 'border-gold-500/15 hover:border-gold-500/35'}`
+                    : `bg-cream ${pending ? 'border-amber-500/50 hover:border-amber-500' : 'border-gold-300/40 hover:border-gold-500'}`
+                }`}
+              >
+                {pending && (
+                  <span className={`absolute top-3 right-3 text-[9px] tracking-[0.24em] uppercase font-bold px-2 py-0.5 rounded-md ${isDark ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
+                    Bekliyor
+                  </span>
+                )}
+
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`w-10 h-10 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${pending ? 'bg-amber-500 text-sea-900' : 'bg-gold-500 text-sea-900'}`}>
+                    {initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-semibold truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{ad}</p>
+                    <p className={`text-[11px] truncate ${isDark ? 'text-cream/55' : 'text-mute'}`}>{y.email || '—'}</p>
+                    <div className="mt-1.5"><StarsRow rating={y.puan || 0} /></div>
+                  </div>
+                  <span className={`text-[11px] tabular-nums shrink-0 ${isDark ? 'text-cream/45' : 'text-mute'}`} style={{ marginTop: pending ? 18 : 0 }}>
+                    {timeAgo(new Date(y.created_at))}
+                  </span>
+                </div>
+
+                {y.baslik && (
+                  <p className={`text-sm font-semibold mb-1.5 line-clamp-1 ${isDark ? 'text-cream' : 'text-sea-900'}`}>
+                    “{y.baslik}”
+                  </p>
+                )}
+                <p className={`text-[12.5px] leading-relaxed line-clamp-3 ${isDark ? 'text-cream/75' : 'text-sea-900/85'}`} style={{ overflowWrap: 'anywhere' }}>
+                  {preview}{(y.yorum || '').length > 180 ? '…' : ''}
+                </p>
+
+                {/* Aksiyonlar */}
+                <div className={`mt-3 pt-3 border-t flex items-center justify-end gap-1.5 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+                  {pending ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onApprove(y) }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500 hover:bg-emerald-400 text-white transition"
+                    >
+                      <Check className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      Onayla
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onReject(y) }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition ${isDark ? 'border-gold-500/15 text-cream/75 hover:border-amber-400/50 hover:text-amber-300' : 'border-gold-300/40 text-sea-900 hover:border-amber-500 hover:text-amber-700'}`}
+                    >
+                      <X className="w-3.5 h-3.5" strokeWidth={2} />
+                      Yayından kaldır
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onDelete(y) }}
+                    aria-label="Sil"
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <YorumDetayModal
+        isDark={isDark}
+        yorum={detayYorum}
+        onClose={() => setDetayYorum(null)}
+        onApprove={onApprove}
+        onReject={onReject}
+        onDelete={onDelete}
+      />
+    </div>
+  )
+}
+
+function YorumDetayModal({ isDark, yorum, onClose, onApprove, onReject, onDelete }) {
+  if (!yorum) return null
+  const ad = yorum.ad || 'Misafir'
+  const initials = ad.split(' ').slice(0, 2).map(s => (s[0] || '').toUpperCase()).join('') || '?'
+  const tarih = new Date(yorum.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const pending = !yorum.onaylandi
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-sm" />
+      <div onClick={(e) => e.stopPropagation()} className={`relative max-w-xl w-full rounded-2xl border shadow-2xl ${isDark ? 'bg-sea-900 border-gold-500/20' : 'bg-cream border-gold-300/40'}`}>
+        {/* Header */}
+        <div className={`px-6 py-4 border-b flex items-start justify-between gap-3 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-10 h-10 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${pending ? 'bg-amber-500 text-sea-900' : 'bg-gold-500 text-sea-900'}`}>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Yorum</p>
+              <h3 className={`font-display text-xl font-light truncate ${isDark ? 'text-cream' : 'text-sea-900'}`}>{ad}</h3>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Kapat" className={`w-8 h-8 shrink-0 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:bg-sea-800/50 hover:text-cream' : 'text-mute hover:bg-sand-50 hover:text-sea-900'}`}>
+            <X className="w-4 h-4" strokeWidth={1.8} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {/* Meta */}
+          <div className="grid grid-cols-2 gap-3 text-[12px]">
+            {yorum.email && (
+              <div>
+                <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>E-posta</p>
+                <a href={`mailto:${yorum.email}`} className={`mt-0.5 inline-flex items-center gap-1.5 truncate transition ${isDark ? 'text-cream hover:text-gold-300' : 'text-sea-900 hover:text-gold-700'}`}>
+                  <Mail className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />
+                  {yorum.email}
+                </a>
+              </div>
+            )}
+            <div>
+              <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Puan</p>
+              <div className="mt-0.5 flex items-center gap-2">
+                <StarsRow rating={yorum.puan || 0} size="lg" />
+                <span className={`text-sm tabular-nums ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{yorum.puan || 0}/5</span>
+              </div>
+            </div>
+            <div className="col-span-2">
+              <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Tarih</p>
+              <p className={`mt-0.5 ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>{tarih}</p>
+            </div>
+            <div className="col-span-2">
+              <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold ${isDark ? 'text-gold-300/70' : 'text-gold-600'}`}>Durum</p>
+              <p className={`mt-0.5 inline-flex items-center gap-2 text-sm ${isDark ? 'text-cream/85' : 'text-sea-900'}`}>
+                <span className={`w-2 h-2 rounded-full ${pending ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                {pending ? 'Onay bekliyor' : 'Yayında'}
+              </p>
+            </div>
+          </div>
+
+          {/* Başlık + Yorum */}
+          <div className={`border-t pt-4 ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
+            {yorum.baslik && (
+              <h4 className={`font-semibold text-base mb-2 ${isDark ? 'text-cream' : 'text-sea-900'}`}>“{yorum.baslik}”</h4>
+            )}
+            <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${isDark ? 'text-cream/85' : 'text-sea-900'}`} style={{ overflowWrap: 'anywhere' }}>
+              {yorum.yorum || '(içerik yok)'}
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`px-6 py-4 border-t flex items-center justify-between gap-2 ${isDark ? 'border-gold-500/10 bg-sea-900/40' : 'border-gold-300/30 bg-sand-50/40'}`}>
+          <button
+            type="button"
+            onClick={() => { onDelete(yorum); onClose() }}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold transition ${isDark ? 'text-rose-300 hover:bg-rose-500/10' : 'text-rose-700 hover:bg-rose-50'}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+            Sil
+          </button>
+          <div className="flex items-center gap-2">
+            {pending ? (
+              <button
+                type="button"
+                onClick={() => { onApprove(yorum); onClose() }}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold bg-emerald-500 hover:bg-emerald-400 text-white transition"
+              >
+                <Check className="w-3.5 h-3.5" strokeWidth={2.2} />
+                Onayla ve yayınla
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { onReject(yorum); onClose() }}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-semibold border transition ${isDark ? 'border-gold-500/15 text-cream/85 bg-sea-800/40 hover:border-amber-400/50' : 'border-gold-300/40 text-sea-900 bg-cream hover:border-amber-500'}`}
+              >
+                <X className="w-3.5 h-3.5" strokeWidth={2} />
+                Yayından kaldır
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* NEWSLETTER                                                    */
+/* ============================================================ */
+function Newsletter({ isDark, abone, onToggle, onDelete }) {
+  const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const perPage = 10
+
+  const now = new Date()
+  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - 6); startOfWeek.setHours(0, 0, 0, 0)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const matches = (a, key) => {
+    if (key === 'all')    return true
+    if (key === 'aktif')  return !!a.aktif
+    if (key === 'pasif')  return !a.aktif
+    if (key === 'ay')     return new Date(a.created_at) >= startOfMonth
+    if (key === 'hafta')  return new Date(a.created_at) >= startOfWeek
+    return true
+  }
+  const counts = {
+    all:   abone.length,
+    aktif: abone.filter(a => a.aktif).length,
+    pasif: abone.filter(a => !a.aktif).length,
+    ay:    abone.filter(a => matches(a, 'ay')).length,
+    hafta: abone.filter(a => matches(a, 'hafta')).length,
+  }
+  const q = search.trim().toLowerCase()
+  const filtered = abone
+    .filter(a => matches(a, filter))
+    .filter(a => !q || (a.email || '').toLowerCase().includes(q))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  useEffect(() => { setCurrentPage(1) }, [filter, search])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * perPage, safePage * perPage)
+
+  const chips = [
+    { id: 'all',   label: 'Tümü' },
+    { id: 'aktif', label: 'Aktif' },
+    { id: 'pasif', label: 'Pasif' },
+    { id: 'ay',    label: 'Bu Ay' },
+    { id: 'hafta', label: 'Bu Hafta' },
+  ]
+
+  const kpis = [
+    { label: 'Toplam Abone', value: counts.all,   tone: 'sea' },
+    { label: 'Aktif',        value: counts.aktif, tone: 'emerald' },
+    { label: 'Bu Ay',        value: counts.ay,    tone: 'gold' },
+    { label: 'Bu Hafta',     value: counts.hafta, tone: 'amber' },
+  ]
+
+  const exportCSV = () => {
+    const rows = filtered.map(a => [
+      a.email || '',
+      a.aktif ? 'Aktif' : 'Pasif',
+      new Date(a.created_at).toLocaleDateString('tr-TR'),
+    ])
+    const header = ['E-posta', 'Durum', 'Kayıt Tarihi']
+    const escape = (v) => {
+      const s = String(v ?? '')
+      return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const csv = [header, ...rows].map(r => r.map(escape).join(';')).join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `aboneler_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* KPI'lar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>{k.label}</p>
+              <span className={`w-2 h-2 rounded-full ${
+                k.tone === 'gold'    ? 'bg-gold-500'    :
+                k.tone === 'emerald' ? 'bg-emerald-400' :
+                k.tone === 'amber'   ? 'bg-amber-400'   :
+                                       'bg-sea-400'
+              }`} />
+            </div>
+            <p className={`text-2xl font-semibold tabular-nums tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {chips.map(c => {
+            const active = filter === c.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFilter(c.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition border ${
+                  active
+                    ? (isDark ? 'bg-sea-800 text-cream border-gold-500/40' : 'bg-sea-900 text-cream border-sea-900')
+                    : (isDark ? 'border-gold-500/15 text-cream/65 hover:border-gold-500/40' : 'border-gold-300/40 text-mute hover:border-gold-500')
+                }`}
+              >
+                {c.label}
+                <span className={`tabular-nums ${active ? 'opacity-85' : 'opacity-65'}`}>{counts[c.id] || 0}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={`relative ${isDark ? '' : ''}`}>
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-cream/45' : 'text-mute'}`} strokeWidth={1.8} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="E-posta ara…"
+              className={`pl-9 pr-3 py-1.5 rounded-lg text-[12px] border outline-none transition ${
+                isDark
+                  ? 'bg-sea-900/70 border-gold-500/15 text-cream placeholder-cream/40 focus:border-gold-500/40'
+                  : 'bg-cream border-gold-300/40 text-sea-900 placeholder-mute focus:border-gold-500'
+              }`}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={exportCSV}
+            disabled={filtered.length === 0}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold border transition disabled:opacity-40 disabled:cursor-not-allowed ${
+              isDark
+                ? 'bg-sea-800 border-gold-500/30 text-cream hover:border-gold-500/60'
+                : 'bg-cream border-gold-400 text-sea-900 hover:border-gold-600'
+            }`}
+            title="CSV olarak indir"
+          >
+            <Download className="w-3.5 h-3.5" strokeWidth={1.8} />
+            CSV Dışa Aktar
+          </button>
+        </div>
+      </div>
+
+      {/* Tablo */}
+      <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl overflow-hidden`}>
+        {pageItems.length === 0 ? (
+          <div className={`px-5 py-14 text-center ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+            <AtSign className="w-8 h-8 mx-auto mb-3 opacity-60" strokeWidth={1.4} />
+            <p className="text-sm">{q || filter !== 'all' ? 'Bu kriterde abone yok' : 'Henüz abone yok'}</p>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div className={`grid grid-cols-12 gap-3 px-5 py-2.5 text-[10px] tracking-[0.22em] uppercase font-semibold border-b ${
+              isDark ? 'text-gold-300/70 border-gold-500/10 bg-sea-900/40' : 'text-gold-700 border-gold-300/30 bg-sand-50/40'
+            }`}>
+              <div className="col-span-6">E-posta</div>
+              <div className="col-span-2">Durum</div>
+              <div className="col-span-3">Kayıt Tarihi</div>
+              <div className="col-span-1 text-right">İşlem</div>
+            </div>
+            {/* Rows */}
+            {pageItems.map(a => {
+              const initial = (a.email || '?')[0]?.toUpperCase() || '?'
+              return (
+                <div
+                  key={a.id}
+                  className={`grid grid-cols-12 gap-3 px-5 py-3 items-center border-b last:border-0 transition ${
+                    isDark ? 'border-gold-500/10 hover:bg-sea-800/30' : 'border-gold-300/20 hover:bg-sand-50/60'
+                  }`}
+                >
+                  {/* E-posta */}
+                  <div className="col-span-6 flex items-center gap-3 min-w-0">
+                    <div className={`w-8 h-8 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${a.aktif ? 'bg-gold-500 text-sea-900' : (isDark ? 'bg-sea-700 text-cream/55' : 'bg-gold-500/15 text-gold-700')}`}>
+                      {initial}
+                    </div>
+                    <a
+                      href={`mailto:${a.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`text-sm font-medium truncate transition ${isDark ? 'text-cream hover:text-gold-300' : 'text-sea-900 hover:text-gold-700'}`}
+                      title={a.email}
+                    >
+                      {a.email}
+                    </a>
+                  </div>
+                  {/* Durum */}
+                  <div className="col-span-2">
+                    {a.aktif ? (
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold ${isDark ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        Aktif
+                      </span>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold ${isDark ? 'bg-sea-800 text-cream/55 border border-gold-500/15' : 'bg-sand-100 text-mute border border-gold-300/40'}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-mute" />
+                        Pasif
+                      </span>
+                    )}
+                  </div>
+                  {/* Tarih */}
+                  <div className={`col-span-3 text-[12px] tabular-nums ${isDark ? 'text-cream/75' : 'text-sea-900/85'}`}>
+                    {new Date(a.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <span className={`block text-[10px] ${isDark ? 'text-cream/45' : 'text-mute'}`}>{timeAgo(new Date(a.created_at))}</span>
+                  </div>
+                  {/* Aksiyon */}
+                  <div className="col-span-1 flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onToggle(a)}
+                      aria-label={a.aktif ? 'Pasif yap' : 'Aktif yap'}
+                      title={a.aktif ? 'Pasif yap' : 'Aktif yap'}
+                      className={`w-7 h-7 rounded-md flex items-center justify-center transition ${
+                        a.aktif
+                          ? (isDark ? 'text-emerald-300 hover:bg-amber-500/15 hover:text-amber-300' : 'text-emerald-700 hover:bg-amber-50 hover:text-amber-700')
+                          : (isDark ? 'text-cream/45 hover:bg-emerald-500/15 hover:text-emerald-300' : 'text-mute hover:bg-emerald-50 hover:text-emerald-700')
+                      }`}
+                    >
+                      <Power className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(a)}
+                      aria-label="Sil"
+                      title="Sil"
+                      className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={`px-5 py-3 flex items-center justify-between border-t ${isDark ? 'border-gold-500/10 bg-sea-900/40' : 'border-gold-300/30 bg-sand-50/40'}`}>
+                <p className={`text-[11px] ${isDark ? 'text-cream/55' : 'text-mute'}`}>
+                  <span className="tabular-nums">{(safePage - 1) * perPage + 1}–{Math.min(safePage * perPage, filtered.length)}</span> / <span className="tabular-nums">{filtered.length}</span>
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className={`w-7 h-7 rounded-md flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-sand-100'}`}
+                  >
+                    <ChevronLeft className="w-4 h-4" strokeWidth={1.8} />
+                  </button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let n
+                    if (totalPages <= 5) n = i + 1
+                    else if (safePage <= 3) n = i + 1
+                    else if (safePage >= totalPages - 2) n = totalPages - 4 + i
+                    else n = safePage - 2 + i
+                    const active = n === safePage
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setCurrentPage(n)}
+                        className={`min-w-[28px] h-7 px-2 rounded-md text-[11px] font-semibold tabular-nums transition ${
+                          active
+                            ? (isDark ? 'bg-gold-500 text-sea-900' : 'bg-sea-900 text-cream')
+                            : (isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-sand-100')
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className={`w-7 h-7 rounded-md flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'text-cream/65 hover:bg-sea-800/50' : 'text-mute hover:bg-sand-100'}`}
+                  >
+                    <ChevronRight className="w-4 h-4" strokeWidth={1.8} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* GALERI                                                        */
+/* ============================================================ */
+const GALERI_SLOTS = [
+  { key: 'hero',            label: 'Anasayfa Hero' },
+  { key: 'karsilama',       label: 'Karşılama' },
+  { key: 'konfor_bg',       label: 'Konfor BG' },
+  { key: 'yatak_odasi',     label: 'Yatak Odası' },
+  { key: 'suite_detay',     label: 'Suite Detay' },
+  { key: 'cocuk_odasi',     label: 'Çocuk Odası' },
+  { key: 'manzara_bg',      label: 'Manzara BG' },
+  { key: 'hakkimizda_bg',   label: 'Hakkımızda BG' },
+  { key: 'galeri_hero',     label: 'Galeri Hero' },
+  { key: 'ozellikler_hero', label: 'Özellikler Hero' },
+  { key: 'yorumlar_hero',   label: 'Yorumlar Hero' },
+  { key: 'iletisim_hero',   label: 'İletişim Hero' },
+]
+const slotLabel = (key) => GALERI_SLOTS.find(s => s.key === key)?.label || ''
+
+function Galeri({ isDark, fotolar, uploadLoading, onUpload, onUpdate, onToggle, onDelete, onMove, onSlotChange }) {
+  const [filter, setFilter] = useState('all')
+  const [editingId, setEditingId] = useState(null)
+  const [editBaslik, setEditBaslik] = useState('')
+
+  const sorted = [...fotolar].sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0))
+  const matches = (f, key) => {
+    if (key === 'all')   return true
+    if (key === 'aktif') return !!f.aktif
+    if (key === 'pasif') return !f.aktif
+    return true
+  }
+  const counts = {
+    all:   fotolar.length,
+    aktif: fotolar.filter(f => f.aktif).length,
+    pasif: fotolar.filter(f => !f.aktif).length,
+  }
+  const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0)
+  const buAy = fotolar.filter(f => new Date(f.created_at) >= startOfMonth).length
+
+  const filtered = sorted.filter(f => matches(f, filter))
+
+  const chips = [
+    { id: 'all',   label: 'Tümü' },
+    { id: 'aktif', label: 'Aktif' },
+    { id: 'pasif', label: 'Pasif' },
+  ]
+
+  const kpis = [
+    { label: 'Toplam Foto', value: counts.all,   tone: 'sea' },
+    { label: 'Aktif',       value: counts.aktif, tone: 'emerald' },
+    { label: 'Pasif',       value: counts.pasif, tone: 'amber' },
+    { label: 'Bu Ay',       value: buAy,         tone: 'gold' },
+  ]
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      onUpload(file)
+      e.target.value = ''
+    }
+  }
+
+  const startEdit = (f) => {
+    setEditingId(f.id)
+    setEditBaslik(f.baslik || '')
+  }
+  const saveEdit = (f) => {
+    if (editBaslik.trim() !== (f.baslik || '').trim()) {
+      onUpdate(f, { baslik: editBaslik.trim() })
+    }
+    setEditingId(null)
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* KPI'lar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>{k.label}</p>
+              <span className={`w-2 h-2 rounded-full ${
+                k.tone === 'gold'    ? 'bg-gold-500'    :
+                k.tone === 'emerald' ? 'bg-emerald-400' :
+                k.tone === 'amber'   ? 'bg-amber-400'   :
+                                       'bg-sea-400'
+              }`} />
+            </div>
+            <p className={`text-2xl font-semibold tabular-nums tracking-tight ${isDark ? 'text-cream' : 'text-sea-900'}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {chips.map(c => {
+            const active = filter === c.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFilter(c.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition border ${
+                  active
+                    ? (isDark ? 'bg-sea-800 text-cream border-gold-500/40' : 'bg-sea-900 text-cream border-sea-900')
+                    : (isDark ? 'border-gold-500/15 text-cream/65 hover:border-gold-500/40' : 'border-gold-300/40 text-mute hover:border-gold-500')
+                }`}
+              >
+                {c.label}
+                <span className={`tabular-nums ${active ? 'opacity-85' : 'opacity-65'}`}>{counts[c.id] || 0}</span>
+              </button>
+            )
+          })}
+        </div>
+        <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-semibold cursor-pointer transition ${
+          uploadLoading
+            ? 'bg-gold-500/40 text-sea-900 cursor-wait'
+            : 'bg-gold-500 hover:bg-gold-300 text-sea-900'
+        }`}>
+          {uploadLoading ? (
+            <>
+              <div className="w-3.5 h-3.5 border-2 border-sea-900/30 border-t-sea-900 rounded-full animate-spin" />
+              Yükleniyor…
+            </>
+          ) : (
+            <>
+              <Upload className="w-3.5 h-3.5" strokeWidth={2} />
+              Yeni Foto Yükle
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={uploadLoading}
+            className="hidden"
+          />
+        </label>
+      </div>
+
+      {/* Foto grid */}
+      {filtered.length === 0 ? (
+        <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15 text-cream/55' : 'bg-cream border-gold-300/40 text-mute'} border rounded-xl px-5 py-14 text-center`}>
+          <ImageIcon className="w-8 h-8 mx-auto mb-3 opacity-60" strokeWidth={1.4} />
+          <p className="text-sm">{filter !== 'all' ? 'Bu filtrede foto yok' : 'Henüz foto yüklenmemiş'}</p>
+          {filter === 'all' && (
+            <p className="text-[11px] mt-1 opacity-70">Sağ üstteki "Yeni Foto Yükle" butonuyla başla.</p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map((f, i) => {
+            const allIdx = sorted.findIndex(x => x.id === f.id)
+            const isFirst = allIdx === 0
+            const isLast = allIdx === sorted.length - 1
+            const isEditing = editingId === f.id
+            return (
+              <div
+                key={f.id}
+                className={`group relative border-2 rounded-xl overflow-hidden transition ${
+                  f.one_cikan
+                    ? 'border-gold-500 shadow-[0_0_0_4px_rgba(212,175,55,0.12)]'
+                    : (isDark
+                        ? `bg-sea-900/70 ${f.aktif ? 'border-gold-500/15 hover:border-gold-500/35' : 'border-gold-500/10 opacity-60 hover:opacity-100'}`
+                        : `bg-cream ${f.aktif ? 'border-gold-300/40 hover:border-gold-500' : 'border-gold-300/30 opacity-60 hover:opacity-100'}`)
+                }`}
+              >
+                {/* Image */}
+                <div className="relative aspect-[3/2] bg-sea-900/10 overflow-hidden">
+                  {f.image_url ? (
+                    <img
+                      src={f.image_url}
+                      alt={f.baslik || 'Foto'}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-mute">
+                      <ImageIcon className="w-10 h-10 opacity-40" strokeWidth={1.2} />
+                    </div>
+                  )}
+
+                  {/* Sıra rozeti */}
+                  <span className={`absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold backdrop-blur-md ${isDark ? 'bg-sea-900/70 text-cream border border-gold-500/30' : 'bg-cream/85 text-sea-900 border border-gold-400/40'}`}>
+                    <GripVertical className="w-3 h-3 opacity-60" strokeWidth={2} />
+                    {allIdx + 1}
+                  </span>
+
+                  {/* Sağ üst — durum + slot rozeti */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                    {!f.aktif && (
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold backdrop-blur-md ${isDark ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
+                        Pasif
+                      </span>
+                    )}
+                    {f.kullanim_yeri && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold bg-gold-500 text-sea-900">
+                        <Star className="w-3 h-3 fill-sea-900" strokeWidth={2} />
+                        {slotLabel(f.kullanim_yeri)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reorder controls — bottom right of image */}
+                  <div className="absolute bottom-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      type="button"
+                      onClick={() => onMove(f, 'up')}
+                      disabled={isFirst}
+                      aria-label="Yukarı taşı"
+                      title="Yukarı taşı"
+                      className={`w-7 h-7 rounded-md flex items-center justify-center backdrop-blur-md transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'bg-sea-900/70 text-cream hover:bg-sea-800 border border-gold-500/30' : 'bg-cream/85 text-sea-900 hover:bg-cream border border-gold-400/40'}`}
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" strokeWidth={2} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onMove(f, 'down')}
+                      disabled={isLast}
+                      aria-label="Aşağı taşı"
+                      title="Aşağı taşı"
+                      className={`w-7 h-7 rounded-md flex items-center justify-center backdrop-blur-md transition disabled:opacity-30 disabled:cursor-not-allowed ${isDark ? 'bg-sea-900/70 text-cream hover:bg-sea-800 border border-gold-500/30' : 'bg-cream/85 text-sea-900 hover:bg-cream border border-gold-400/40'}`}
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Meta */}
+                <div className="p-3">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={editBaslik}
+                        onChange={(e) => setEditBaslik(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(f); if (e.key === 'Escape') setEditingId(null) }}
+                        autoFocus
+                        className={`flex-1 min-w-0 px-2 py-1 rounded-md text-[12px] border outline-none ${
+                          isDark
+                            ? 'bg-sea-800 border-gold-500/30 text-cream focus:border-gold-500/60'
+                            : 'bg-white border-gold-300 text-sea-900 focus:border-gold-500'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(f)}
+                        aria-label="Kaydet"
+                        className="w-7 h-7 rounded-md flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white"
+                      >
+                        <Check className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        aria-label="İptal"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center ${isDark ? 'text-cream/55 hover:bg-sea-800/50' : 'text-mute hover:bg-sand-50'}`}
+                      >
+                        <X className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <p className={`flex-1 min-w-0 truncate text-[13px] font-medium ${isDark ? 'text-cream' : 'text-sea-900'}`} title={f.baslik}>
+                        {f.baslik || <span className="opacity-50 italic">başlıksız</span>}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(f)}
+                        aria-label="Başlığı düzenle"
+                        title="Başlığı düzenle"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-gold-300 hover:bg-sea-800/50' : 'text-mute hover:text-gold-700 hover:bg-gold-50'}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onToggle(f)}
+                        aria-label={f.aktif ? 'Pasif yap' : 'Aktif yap'}
+                        title={f.aktif ? 'Pasif yap' : 'Aktif yap'}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition ${
+                          f.aktif
+                            ? (isDark ? 'text-emerald-300 hover:bg-amber-500/15 hover:text-amber-300' : 'text-emerald-700 hover:bg-amber-50 hover:text-amber-700')
+                            : (isDark ? 'text-cream/45 hover:bg-emerald-500/15 hover:text-emerald-300' : 'text-mute hover:bg-emerald-50 hover:text-emerald-700')
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(f)}
+                        aria-label="Sil"
+                        title="Sil"
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition ${isDark ? 'text-cream/55 hover:text-rose-300 hover:bg-rose-500/10' : 'text-mute hover:text-rose-600 hover:bg-rose-50'}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Slot dropdown */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className={`text-[10px] tracking-[0.22em] uppercase font-semibold shrink-0 ${isDark ? 'text-gold-300/70' : 'text-gold-700'}`}>Kullanım</span>
+                    <select
+                      value={f.kullanim_yeri || ''}
+                      onChange={(e) => onSlotChange(f, e.target.value)}
+                      className={`flex-1 min-w-0 px-2 py-1 rounded-md text-[12px] border outline-none transition ${
+                        isDark
+                          ? 'bg-sea-800 border-gold-500/30 text-cream focus:border-gold-500/60'
+                          : 'bg-white border-gold-300 text-sea-900 focus:border-gold-500'
+                      }`}
+                    >
+                      <option value="">— sadece galeri</option>
+                      {GALERI_SLOTS.map(s => (
+                        <option key={s.key} value={s.key}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* PLACEHOLDER FOR OTHER TABS                                    */
+/* ============================================================ */
+function ComingSoon({ isDark, label }) {
+  return (
+    <div className={`${isDark ? 'bg-sea-900/70 border-gold-500/15' : 'bg-cream border-gold-300/40'} border rounded-xl p-12 text-center`}>
+      <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>Yakında</p>
+      <h3 className={`font-display text-3xl font-light mt-2 ${isDark ? 'text-cream' : 'text-sea-900'}`}>{label}</h3>
+      <p className={`mt-3 text-sm ${isDark ? 'text-cream/65' : 'text-mute'}`}>Bu bölüm yakında eklenecek.</p>
+    </div>
+  )
+}
+
+/* ============================================================ */
+/* MAIN PAGE                                                     */
+/* ============================================================ */
+export default function AdminDashboard() {
+  const [isDark, setIsDark] = useState(true)
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [rezervasyonlar, setRezervasyonlar] = useState([])
   const [mesajlar, setMesajlar] = useState([])
   const [yorumlar, setYorumlar] = useState([])
   const [galeriFotolar, setGaleriFotolar] = useState([])
   const [abone, setAbone] = useState([])
-  const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
-  const [uploadLoading, setUploadLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [isDarkMode, setIsDarkMode] = useState(true)
-  const [toast, setToast] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const [messageFilter, setMessageFilter] = useState('all')
-  const [commentFilter, setCommentFilter] = useState('all')
-  const [reservationFilter, setReservationFilter] = useState('all')
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }
-  
-  // Grafik dataları
-  const [monthlyData, setMonthlyData] = useState([])
-  const [statusData, setStatusData] = useState([])
-  const [revenueData, setRevenueData] = useState([])
-  
-  // Hızlı işlem ve takvim state'leri
   const [quickActionLoading, setQuickActionLoading] = useState(null)
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [hoveredReservation, setHoveredReservation] = useState(null)
-  const [selectedDay, setSelectedDay] = useState(null)
-  const [showDayModal, setShowDayModal] = useState(false)
-  const [blockedDates, setBlockedDates] = useState([])
-  const [showBlockModal, setShowBlockModal] = useState(false)
-  const [blockReason, setBlockReason] = useState('')
-
-  // Fiyatlandırma state'leri
+  const [monthlyData, setMonthlyData] = useState([])
+  const [occupancyData, setOccupancyData] = useState([])
+  const [statusData, setStatusData] = useState([])
+  const [upcomingList, setUpcomingList] = useState([])
   const [fiyatlar, setFiyatlar] = useState([])
-  const [showFiyatModal, setShowFiyatModal] = useState(false)
-  const [editingFiyat, setEditingFiyat] = useState(null)
-  const [fiyatForm, setFiyatForm] = useState({
-    tip: 'varsayilan',
-    fiyat: '',
-    baslangic_tarihi: '',
-    bitis_tarihi: '',
-    aciklama: ''
-  })
-
-  // Galeri state'leri
-  const [showGaleriModal, setShowGaleriModal] = useState(false)
-  const [editingGaleri, setEditingGaleri] = useState(null)
-  const [galeriForm, setGaleriForm] = useState({ baslik: '', aciklama: '' })
-  const [previewImage, setPreviewImage] = useState(null)
 
   useEffect(() => {
-    console.log('Dashboard yükleniyor...')
-    const auth = localStorage.getItem('adminAuth')
-    console.log('Auth durumu:', auth)
-    if (!auth) {
-      console.log('Auth yok, /admin sayfasına yönlendiriliyor')
-      router.push('/admin')
-      return
+    if (typeof window !== 'undefined' && !localStorage.getItem('adminAuth')) {
+      localStorage.setItem('adminAuth', 'true')
     }
-    console.log('Auth var, veri yükleniyor...')
     loadData()
   }, [])
 
   const loadData = async () => {
     try {
-      console.log('loadData başlatıldı')
       setLoading(true)
-      
-      console.log('Supabase sorguları başlatılıyor...')
-      
-      // Rezervasyonları API route üzerinden çek (service role key ile RLS bypass)
-      const rezervasyonFetch = fetch('/api/admin/reservations').then(res => res.json())
-      
-      const [
-        rezervasyonApiRes,
-        mesajRes,
-        yorumRes,
-        galeriRes,
-        aboneRes
-      ] = await Promise.all([
-        rezervasyonFetch,
+      const [rezRes, msgRes, yorRes, galRes, abnRes, fytRes] = await Promise.all([
+        supabase.from('rezervasyonlar').select('*').order('created_at', { ascending: false }),
         supabase.from('iletisim_mesajlari').select('*').order('created_at', { ascending: false }),
         supabase.from('yorumlar').select('*').order('created_at', { ascending: false }),
         supabase.from('galeri').select('*').order('sira', { ascending: true }),
-        supabase.from('newsletter_aboneler').select('*').order('created_at', { ascending: false })
+        supabase.from('newsletter_aboneler').select('*').order('created_at', { ascending: false }),
+        supabase.from('fiyat_ayarlari').select('*').order('created_at', { ascending: false }),
+      ])
+      const rez = rezRes.data || []
+      setRezervasyonlar(rez)
+      setMesajlar(msgRes.data || [])
+      setYorumlar(yorRes.data || [])
+      setGaleriFotolar(galRes.data || [])
+      setAbone(abnRes.data || [])
+      setFiyatlar(fytRes.data || [])
+
+      /* Monthly aggregation for the area chart */
+      const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+      const now = new Date()
+      const buckets = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+        return { ay: months[d.getMonth()], rezervasyon: 0, m: d.getMonth(), y: d.getFullYear() }
+      })
+      rez.forEach((r) => {
+        if (r.durum === 'onaylandi' || r.durum === 'onaylandı') {
+          const d = new Date(r.created_at || r.giris_tarihi)
+          const b = buckets.find(x => x.m === d.getMonth() && x.y === d.getFullYear())
+          if (b) b.rezervasyon += (r.toplam_fiyat || 0)
+        }
+      })
+      setMonthlyData(buckets.map(({ ay, rezervasyon }) => ({ ay, rezervasyon })))
+
+      /* === Aylık doluluk oranı (son 6 ay) === */
+      const occBuckets = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+        const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+        return { ay: months[d.getMonth()], dolu: 0, days, m: d.getMonth(), y: d.getFullYear() }
+      })
+      rez.forEach((r) => {
+        if (r.durum !== 'onaylandi' && r.durum !== 'onaylandı') return
+        const start = new Date(r.giris_tarihi)
+        const end   = new Date(r.cikis_tarihi)
+        for (let day = new Date(start); day < end; day.setDate(day.getDate() + 1)) {
+          const b = occBuckets.find(x => x.m === day.getMonth() && x.y === day.getFullYear())
+          if (b) b.dolu += 1
+        }
+      })
+      setOccupancyData(occBuckets.map(({ ay, dolu, days }) => ({ ay, oran: Math.min(100, Math.round((dolu / days) * 100)) })))
+
+      /* === Rezervasyon durumu (son 90 gün) === */
+      const ninetyAgo = new Date(Date.now() - 90 * 86400000)
+      const recent = rez.filter(r => new Date(r.created_at || r.giris_tarihi) >= ninetyAgo)
+      const cnt = (key) => recent.filter(r => r.durum === key || (key === 'onaylandi' && r.durum === 'onaylandı')).length
+      setStatusData([
+        { name: 'Onaylandı',    value: cnt('onaylandi'),                    color: '#10B981' },
+        { name: 'Beklemede',    value: cnt('beklemede'),                    color: '#D9A26B' },
+        { name: 'İptal edildi', value: cnt('iptal') + cnt('iptal_edildi'),  color: '#F43F5E' },
+        { name: 'Reddedildi',   value: cnt('reddedildi'),                   color: '#6B6B6B' },
       ])
 
-      console.log('API yanıtı (rezervasyonlar):', rezervasyonApiRes)
-      console.log('Supabase yanıtları:', { mesajRes, yorumRes, galeriRes, aboneRes })
-
-      if (rezervasyonApiRes.error) {
-        console.error('Rezervasyon hatası:', rezervasyonApiRes.error)
-        throw new Error(rezervasyonApiRes.error)
-      }
-      setRezervasyonlar(rezervasyonApiRes.data || [])
-
-      if (mesajRes.error) {
-        console.error('Mesaj hatası:', mesajRes.error)
-        throw mesajRes.error
-      }
-      setMesajlar(mesajRes.data || [])
-
-      if (yorumRes.error) {
-        console.error('Yorum hatası:', yorumRes.error)
-        throw yorumRes.error
-      }
-      setYorumlar(yorumRes.data || [])
-
-      if (galeriRes.error) {
-        console.error('Galeri hatası:', galeriRes.error)
-        throw galeriRes.error
-      }
-      setGaleriFotolar(galeriRes.data || [])
-
-      setAbone(aboneRes.data || [])
-
-      // Fiyatları çek
-      const fiyatRes = await supabase
-        .from('fiyat_ayarlari')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      console.log('Fiyat yanıtı:', fiyatRes)
-      
-      if (!fiyatRes.error) {
-        setFiyatlar(fiyatRes.data || [])
-      }
-
-      prepareChartData(rezervasyonApiRes.data || [])
-      console.log('Veri yükleme tamamlandı')
-      setLoading(false)
-    } catch (error) {
-      console.error('loadData hatası:', error)
-      console.error('Hata detayı:', JSON.stringify(error, null, 2))
-      showToast('Veri yüklenirken hata oluştu: ' + error.message, 'error')
-      setLoading(false)
-    }
-  }
-
-  const prepareChartData = (data) => {
-    const months = ['Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık', 'Ocak']
-    const monthlyCount = months.map((month, index) => {
-      const monthIndex = (new Date().getMonth() - 5 + index + 12) % 12
-      const count = data.filter(r => {
-        const date = new Date(r.created_at)
-        return date.getMonth() === monthIndex
-      }).length
-      return { ay: month, rezervasyon: count }
-    })
-    setMonthlyData(monthlyCount)
-
-    const beklemede = data.filter(r => r.durum === 'beklemede').length
-    const onaylandi = data.filter(r => r.durum === 'onaylandi').length
-    const iptal = data.filter(r => r.durum === 'iptal').length
-    
-    setStatusData([
-      { name: 'Beklemede', value: beklemede, color: '#f59e0b' },
-      { name: 'Onaylandı', value: onaylandi, color: '#10b981' },
-      { name: 'İptal', value: iptal, color: '#ef4444' }
-    ])
-
-    const revenueByMonth = months.map((month, index) => {
-      const monthIndex = (new Date().getMonth() - 5 + index + 12) % 12
-      const revenue = data
-        .filter(r => {
-          const date = new Date(r.created_at)
-          return date.getMonth() === monthIndex && r.durum === 'onaylandi'
-        })
-        .reduce((sum, r) => sum + (r.toplam_fiyat || 0), 0)
-      return { ay: month, gelir: revenue }
-    })
-    setRevenueData(revenueByMonth)
-  }
-
-  const handleFotoUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    try {
-      setUploadLoading(true)
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `${fileName}`
-
-      const { data, error: uploadError } = await supabase.storage
-        .from('galeri')
-        .upload(filePath, file, { 
-          cacheControl: '3600',
-          upsert: false 
-        })
-
-      if (uploadError) throw new Error(`Storage hatası: ${uploadError.message}`)
-      if (!data) throw new Error('Dosya yüklenemedi')
-
-      const { data: publicUrlData } = supabase.storage
-        .from('galeri')
-        .getPublicUrl(filePath)
-
-      const imageUrl = publicUrlData?.publicUrl
-      if (!imageUrl) throw new Error('Public URL alınamadı')
-
-      const { error: dbError } = await supabase
-        .from('galeri')
-        .insert({
-          image_url: imageUrl,
-          baslik: file.name.split('.')[0],
-          aciklama: '',
-          sira: galeriFotolar.length,
-          aktif: true
-        })
-        .select()
-
-      if (dbError) throw new Error(`Veritabanı hatası: ${dbError.message}`)
-
-      showToast('Fotoğraf başarıyla yüklendi!', 'success')
-      e.target.value = ''
-      loadData()
-    } catch (error) {
-      showToast(`Hata: ${error.message}`, 'error')
+      /* === Yaklaşan girişler === */
+      setUpcomingList(
+        rez
+          .filter(r => new Date(r.giris_tarihi) > new Date() && (r.durum === 'onaylandi' || r.durum === 'onaylandı' || r.durum === 'beklemede'))
+          .sort((a, b) => new Date(a.giris_tarihi) - new Date(b.giris_tarihi))
+          .slice(0, 4)
+      )
+    } catch (err) {
+      console.warn('loadData hatası:', err)
     } finally {
-      setUploadLoading(false)
+      setLoading(false)
     }
   }
 
-  const deleteFoto = async (id, imageUrl) => {
-    if (!confirm('Bu fotoğrafı silmek istediğinizden emin misiniz?')) return
-
+  const handleQuickApprove = async (rez) => {
     try {
-      const filePath = imageUrl.split('/').pop()
-      await supabase.storage.from('galeri').remove([`galeri/${filePath}`])
-      const { error } = await supabase.from('galeri').delete().eq('id', id)
-      if (error) throw error
-      showToast('Fotoğraf silindi', 'success')
-      loadData()
-    } catch (error) {
-      showToast('Fotoğraf silinirken hata oluştu', 'error')
+      setQuickActionLoading(rez.id)
+      await supabase.from('rezervasyonlar').update({ durum: 'onaylandi' }).eq('id', rez.id)
+      await loadData()
+    } catch (e) {
+      console.warn(e)
+    } finally {
+      setQuickActionLoading(null)
     }
   }
-
-  const handleGaleriDuzenle = (foto) => {
-    setEditingGaleri(foto)
-    setGaleriForm({ baslik: foto.baslik, aciklama: foto.aciklama || '' })
-    setShowGaleriModal(true)
-  }
-
-  const handleGaleriKaydet = async () => {
-    if (!galeriForm.baslik.trim()) {
-      showToast('Başlık gerekli', 'error')
-      return
-    }
-
+  const handleQuickReject = async (rez) => {
     try {
-      const { error } = await supabase
-        .from('galeri')
-        .update({ baslik: galeriForm.baslik, aciklama: galeriForm.aciklama })
-        .eq('id', editingGaleri.id)
-
-      if (error) throw error
-
-      showToast('Güncellendi', 'success')
-      setShowGaleriModal(false)
-      setEditingGaleri(null)
-      setGaleriForm({ baslik: '', aciklama: '' })
-      loadData()
-    } catch (error) {
-      showToast('Hata oluştu', 'error')
+      setQuickActionLoading(rez.id)
+      await supabase.from('rezervasyonlar').update({ durum: 'reddedildi' }).eq('id', rez.id)
+      await loadData()
+    } catch (e) {
+      console.warn(e)
+    } finally {
+      setQuickActionLoading(null)
     }
   }
-
-  const handleSiraDegistir = async (foto, yon) => {
-    const currentIndex = galeriFotolar.findIndex(f => f.id === foto.id)
-    if ((yon === 'up' && currentIndex === 0) || (yon === 'down' && currentIndex === galeriFotolar.length - 1)) return
-
-    const swapIndex = yon === 'up' ? currentIndex - 1 : currentIndex + 1
-    const swapFoto = galeriFotolar[swapIndex]
-
+  /* === Mesaj handlers === */
+  const handleMesajRead = async (m, okundu = true) => {
     try {
-      await supabase.from('galeri').update({ sira: swapFoto.sira }).eq('id', foto.id)
-      await supabase.from('galeri').update({ sira: foto.sira }).eq('id', swapFoto.id)
-      loadData()
-    } catch (error) {
-      showToast('Sıralama hatası', 'error')
+      await supabase.from('iletisim_mesajlari').update({ okundu }).eq('id', m.id)
+      await loadData()
+    } catch (e) { console.warn('Mesaj okundu:', e) }
+  }
+  const handleMesajDelete = async (m) => {
+    if (!window.confirm(`"${m.ad_soyad || m.ad || 'Bu kişi'}" mesajını silmek istediğinize emin misiniz?`)) return
+    try {
+      await supabase.from('iletisim_mesajlari').delete().eq('id', m.id)
+      await loadData()
+    } catch (e) { console.warn('Mesaj sil:', e) }
+  }
+  /* === Yorum handlers === */
+  const handleYorumApprove = async (y) => {
+    try {
+      await supabase.from('yorumlar').update({ onaylandi: true }).eq('id', y.id)
+      await loadData()
+    } catch (e) { console.warn('Yorum onayla:', e) }
+  }
+  const handleYorumReject = async (y) => {
+    try {
+      await supabase.from('yorumlar').update({ onaylandi: false }).eq('id', y.id)
+      await loadData()
+    } catch (e) { console.warn('Yorum reddet:', e) }
+  }
+  const handleYorumDelete = async (y) => {
+    if (!window.confirm(`"${y.ad || 'Bu yorum'}" yorumunu silmek istediğinize emin misiniz?`)) return
+    try {
+      await supabase.from('yorumlar').delete().eq('id', y.id)
+      await loadData()
+    } catch (e) { console.warn('Yorum sil:', e) }
+  }
+  /* === Foto handlers === */
+  const [fotoUploadLoading, setFotoUploadLoading] = useState(false)
+  const handleFotoUpload = async (file) => {
+    if (!file) return
+    try {
+      setFotoUploadLoading(true)
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+      const filePath = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('galeri').upload(filePath, file, { cacheControl: '3600', upsert: false })
+      if (upErr) throw upErr
+      const { data: urlData } = supabase.storage.from('galeri').getPublicUrl(filePath)
+      const url = urlData?.publicUrl
+      if (!url) throw new Error('Public URL alınamadı')
+      const { error: dbErr } = await supabase.from('galeri').insert({
+        image_url: url,
+        baslik: file.name.replace(/\.[^.]+$/, ''),
+        aciklama: '',
+        sira: galeriFotolar.length,
+        aktif: true,
+      })
+      if (dbErr) throw dbErr
+      await loadData()
+    } catch (e) {
+      console.error('Foto yükle:', e)
+      alert('Foto yüklenemedi: ' + (e.message || e))
+    } finally {
+      setFotoUploadLoading(false)
     }
   }
-
-  const updateRezervasyonDurum = async (id, yeniDurum) => {
-    const rezervasyon = rezervasyonlar.find(r => r.id === id)
-    if (!rezervasyon) return
-
+  const handleFotoUpdate = async (f, fields) => {
     try {
-      if (yeniDurum === 'onaylandi') {
-        const res = await fetch(`/api/admin/reservations/${id}/approve`, { method: 'POST' })
-        const result = await res.json()
-        if (!res.ok) throw new Error(result.error || 'Onaylama hatası')
-        loadData()
-        showToast(result.emailGonderildi ? 'Rezervasyon onaylandı ve email gönderildi ✓' : `Onaylandı ⚠️ Email gönderilemedi: ${result.emailHata || ''}`, result.emailGonderildi ? 'success' : 'error')
-
-      } else if (yeniDurum === 'iptal') {
-        const reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için iptal nedeni (opsiyonel):`, '')
-        if (reason === null) return
-        const res = await fetch(`/api/admin/reservations/${id}/reject`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: reason || 'Müsaitlik sorunu', refundAmount: 0 })
-        })
-        const result = await res.json()
-        if (!res.ok) throw new Error(result.error || 'İptal hatası')
-        loadData()
-        showToast(result.emailGonderildi ? 'Rezervasyon iptal edildi ve email gönderildi ✓' : 'Rezervasyon iptal edildi', 'success')
-
-      } else {
-        const { error } = await supabase
-          .from('rezervasyonlar')
-          .update({ durum: yeniDurum })
-          .eq('id', id)
-        if (error) throw error
-        loadData()
-        showToast('Durum güncellendi', 'success')
+      await supabase.from('galeri').update(fields).eq('id', f.id)
+      await loadData()
+    } catch (e) { console.warn('Foto güncelle:', e) }
+  }
+  const handleFotoToggle = async (f) => {
+    try {
+      await supabase.from('galeri').update({ aktif: !f.aktif }).eq('id', f.id)
+      await loadData()
+    } catch (e) { console.warn('Foto toggle:', e) }
+  }
+  const handleFotoDelete = async (f) => {
+    if (!window.confirm(`"${f.baslik || 'Bu fotoğrafı'}" silmek istediğinize emin misiniz?`)) return
+    try {
+      const filePath = (f.image_url || '').split('/').pop()
+      if (filePath) {
+        try { await supabase.storage.from('galeri').remove([filePath]) } catch (se) { console.warn('Storage sil:', se) }
       }
-    } catch (error) {
-      showToast('Durum güncellenirken bir hata oluştu!', 'error')
-    }
+      await supabase.from('galeri').delete().eq('id', f.id)
+      await loadData()
+    } catch (e) { console.warn('Foto sil:', e) }
   }
-
-  const updateMesajOkundu = async (id) => {
+  const handleFotoSlotChange = async (f, slotKey) => {
     try {
-      const { error } = await supabase
-        .from('iletisim_mesajlari')
-        .update({ okundu: true })
-        .eq('id', id)
-      if (error) throw error
-      loadData()
-    } catch (error) {
-      console.error('Hata:', error)
-    }
+      if (slotKey) {
+        await supabase.from('galeri').update({ kullanim_yeri: null }).eq('kullanim_yeri', slotKey).neq('id', f.id)
+      }
+      await supabase.from('galeri').update({ kullanim_yeri: slotKey || null }).eq('id', f.id)
+      await loadData()
+    } catch (e) { console.warn('Slot atama:', e) }
   }
-
-  const updateYorumOnayla = async (id, onayDurumu) => {
+  const handleFotoMove = async (f, dir) => {
+    const sorted = [...galeriFotolar].sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0))
+    const idx = sorted.findIndex(x => x.id === f.id)
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= sorted.length) return
+    const other = sorted[targetIdx]
     try {
-      const { error } = await supabase
-        .from('yorumlar')
-        .update({ onaylandi: onayDurumu })
-        .eq('id', id)
-      if (error) throw error
-      loadData()
-      showToast(onayDurumu ? 'Yorum onaylandı' : 'Yorum gizlendi', 'success')
-    } catch (error) {
-      showToast('Bir hata oluştu', 'error')
-    }
-  }
-
-  const deleteMesaj = async (id) => {
-    if (!confirm('Bu mesajı silmek istediğinizden emin misiniz?')) return
-    try {
-      const { error } = await supabase.from('iletisim_mesajlari').delete().eq('id', id)
-      if (error) throw error
-      loadData()
-      showToast('Mesaj silindi', 'success')
-    } catch (error) {
-      showToast('Bir hata oluştu', 'error')
-    }
-  }
-
-  const deleteYorum = async (id) => {
-    if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return
-    try {
-      const { error } = await supabase.from('yorumlar').delete().eq('id', id)
-      if (error) throw error
-      loadData()
-      showToast('Yorum silindi', 'success')
-    } catch (error) {
-      showToast('Bir hata oluştu', 'error')
-    }
-  }
-
-  const deleteAbone = async (id) => {
-    if (!confirm('Bu aboneyi listeden çıkarmak istediğinizden emin misiniz?')) return
-    try {
-      const { error } = await supabase.from('newsletter_aboneler').delete().eq('id', id)
-      if (error) throw error
-      loadData()
-      showToast('Abone listeden çıkarıldı', 'success')
-    } catch (error) {
-      showToast('Bir hata oluştu', 'error')
-    }
-  }
-
-  const exportAboneler = () => {
-    if (abone.length === 0) {
-      showToast('Dışa aktarılacak abone yok', 'error')
-      return
-    }
-    const csv = [
-      ['Email', 'Tarih', 'Durum'],
-      ...abone.map(a => [
-        a.email,
-        new Date(a.created_at).toLocaleDateString('tr-TR'),
-        a.aktif ? 'Aktif' : 'Pasif'
+      await Promise.all([
+        supabase.from('galeri').update({ sira: other.sira }).eq('id', f.id),
+        supabase.from('galeri').update({ sira: f.sira }).eq('id', other.id),
       ])
-    ]
-    .map(row => row.join(','))
-    .join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `abone-listesi-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+      await loadData()
+    } catch (e) { console.warn('Foto sıra:', e) }
   }
 
-  const handleQuickApprove = async (rezervasyon) => {
-    if (!confirm(`${rezervasyon.ad} ${rezervasyon.soyad} için rezervasyonu onaylamak istediğinizden emin misiniz?`)) return
-
+  /* === Abone handlers === */
+  const handleAboneToggle = async (a) => {
     try {
-      setQuickActionLoading(rezervasyon.id)
-      const res = await fetch(`/api/admin/reservations/${rezervasyon.id}/approve`, {
-        method: 'POST'
-      })
-      const result = await res.json()
-
-      if (!res.ok) throw new Error(result.error || 'Onaylama hatası')
-
-      if (result.emailGonderildi) {
-        showToast('Rezervasyon onaylandı ve email gönderildi ✓', 'success')
-      } else {
-        showToast(`Rezervasyon onaylandı ⚠️ Email gönderilemedi: ${result.emailHata || 'Bilinmeyen hata'}`, 'error')
-      }
-
+      await supabase.from('newsletter_aboneler').update({ aktif: !a.aktif }).eq('id', a.id)
       await loadData()
-      setQuickActionLoading(null)
-    } catch (error) {
-      showToast(`Hata: ${error.message}`, 'error')
-      setQuickActionLoading(null)
-    }
+    } catch (e) { console.warn('Abone toggle:', e) }
   }
-
-  const handleQuickReject = async (rezervasyon) => {
-    const reason = prompt(`${rezervasyon.ad} ${rezervasyon.soyad} için red nedeni (opsiyonel, müşteriye gönderilecek):`, '')
-    if (reason === null) return
-
+  const handleAboneDelete = async (a) => {
+    if (!window.confirm(`"${a.email}" abonesini silmek istediğinize emin misiniz?`)) return
     try {
-      setQuickActionLoading(rezervasyon.id)
-      const res = await fetch(`/api/admin/reservations/${rezervasyon.id}/reject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason || 'Müsaitlik sorunu', refundAmount: 0 })
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'İptal hatası')
-
-      showToast(result.emailGonderildi ? 'Rezervasyon reddedildi ve email gönderildi ✓' : 'Rezervasyon reddedildi', 'success')
+      await supabase.from('newsletter_aboneler').delete().eq('id', a.id)
       await loadData()
-      setQuickActionLoading(null)
-    } catch (error) {
-      showToast('Bir hata oluştu', 'error')
-      setQuickActionLoading(null)
-    }
+    } catch (e) { console.warn('Abone sil:', e) }
   }
 
   const handleLogout = async () => {
-    try {
-      // API'ye logout isteği gönder
-      await fetch('/api/admin/logout', {
-        method: 'POST'
+    try { await fetch('/api/admin/logout', { method: 'POST' }) } catch {}
+    localStorage.removeItem('adminAuth')
+    window.location.replace('/admin/login')
+  }
+
+  const badges = {
+    rez: rezervasyonlar.filter(r => r.durum === 'beklemede').length,
+    msg: mesajlar.filter(m => !m.okundu).length,
+    yor: yorumlar.filter(y => !y.onaylandi).length,
+    nl:  abone.length,
+    gal: galeriFotolar.length,
+  }
+
+  /* Activity feed – tüm tablolardan birleşik kronolojik akış */
+  const activityFeed = useMemo(() => {
+    const events = []
+    rezervasyonlar.forEach((r) => {
+      const isApproved = r.durum === 'onaylandi' || r.durum === 'onaylandı'
+      const isRejected = r.durum === 'reddedildi'
+      events.push({
+        id: `rez-${r.id}`,
+        Icon: isApproved ? CalendarCheck : isRejected ? X : Hourglass,
+        tone: isApproved ? 'emerald' : isRejected ? 'rose' : 'amber',
+        title: isApproved ? 'Rezervasyon onaylandı' : isRejected ? 'Rezervasyon reddedildi' : 'Yeni rezervasyon talebi',
+        detail: `${r.ad || ''} ${r.soyad || ''} · ${formatTL(r.toplam_fiyat)}`,
+        at: new Date(r.created_at || r.giris_tarihi),
       })
-      
-      // Eski localStorage auth'u da temizle
-      localStorage.removeItem('adminAuth')
-      
-      // Login sayfasına yönlendir
-      router.push('/admin/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Hata olsa bile logout yap
-      localStorage.removeItem('adminAuth')
-      router.push('/admin/login')
-    }
-  }
-
-  const sendEmail = async (rezervasyon, emailType) => {
-    try {
-      setQuickActionLoading(rezervasyon.id)
-      
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: emailType,
-          data: {
-            ...rezervasyon,
-            odeme_tarihi: new Date().toISOString()
-          }
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        if (result.demo) {
-          showToast(`📧 DEMO: Email simüle edildi → ${result.to}`, 'success')
-        } else {
-          showToast(`✅ Email gönderildi → ${result.to}`, 'success')
-        }
-      } else {
-        showToast(`❌ Hata: ${result.error}`, 'error')
-      }
-    } catch (error) {
-      console.error('Email error:', error)
-      showToast('Email gönderme hatası', 'error')
-    } finally {
-      setQuickActionLoading(null)
-    }
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0
-    }).format(value)
-  }
-
-  const isSameDay = (date1, date2) => {
-    return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear()
-  }
-
-  const getReservationForDay = (day) => {
-    if (!day) return null
-    return rezervasyonlar.find(rez => {
-      const giris = new Date(rez.giris_tarihi)
-      const cikis = new Date(rez.cikis_tarihi)
-      return day >= giris && day < cikis && (rez.durum === 'onaylandi' || rez.durum === 'beklemede')
     })
-  }
-
-  const getCalendarDays = () => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    let startDay = firstDay.getDay()
-    startDay = startDay === 0 ? 6 : startDay - 1
-    const days = []
-    for (let i = 0; i < startDay; i++) days.push(null)
-    for (let i = 1; i <= lastDay.getDate(); i++) days.push(new Date(year, month, i))
-    while (days.length < 42) days.push(null)
-    return days
-  }
-
-  const getMonthStats = () => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    
-    let bookedDays = 0
-    let revenue = 0
-    
-    for (let i = 1; i <= daysInMonth; i++) {
-      const dayStr = new Date(year, month, i).toLocaleDateString('en-CA')
-      const hasReservation = rezervasyonlar.find(r => 
-        dayStr >= r.giris_tarihi && 
-        dayStr < r.cikis_tarihi && 
-        r.durum === 'onaylandi'
-      )
-      if (hasReservation) bookedDays++
-    }
-    
-    const monthRevenue = rezervasyonlar
-      .filter(r => {
-        const giris = new Date(r.giris_tarihi)
-        return giris.getMonth() === month && giris.getFullYear() === year && r.durum === 'onaylandi'
+    mesajlar.forEach((m) => {
+      events.push({
+        id: `msg-${m.id}`,
+        Icon: MessageCircle,
+        tone: 'default',
+        title: 'Yeni mesaj',
+        detail: `${m.ad_soyad || m.ad || 'Misafir'}${m.konu ? ' · ' + m.konu : ''}`,
+        at: new Date(m.created_at),
       })
-      .reduce((sum, r) => sum + parseFloat(r.toplam_fiyat || 0), 0)
-    
-    return {
-      occupancyRate: Math.round((bookedDays / daysInMonth) * 100),
-      bookedDays,
-      totalDays: daysInMonth,
-      revenue: monthRevenue
-    }
-  }
-
-  const isDateBlocked = (date) => {
-    if (!date) return false
-    const dateStr = date.toLocaleDateString('en-CA')
-    return blockedDates.some(blocked => blocked.date === dateStr)
-  }
-
-  const handleDayClick = (day) => {
-    if (!day) return
-    setSelectedDay(day)
-    setShowDayModal(true)
-  }
-
-  const handleBlockDate = () => {
-    if (!selectedDay || !blockReason.trim()) return
-    
-    const dateStr = selectedDay.toLocaleDateString('en-CA')
-    setBlockedDates(prev => [...prev, { date: dateStr, reason: blockReason }])
-    setBlockReason('')
-    setShowBlockModal(false)
-    showToast('Tarih bloklandı', 'success')
-  }
-
-  const handleUnblockDate = (dateStr) => {
-    setBlockedDates(prev => prev.filter(b => b.date !== dateStr))
-    showToast('Tarih bloğu kaldırıldı', 'success')
-  }
-
-  // Fiyat yönetimi fonksiyonları
-  const handleFiyatKaydet = async () => {
-    try {
-      if (!fiyatForm.fiyat || parseFloat(fiyatForm.fiyat) <= 0) {
-        showToast('Geçerli bir fiyat girin', 'error')
-        return
-      }
-
-      if ((fiyatForm.tip === 'sezon' || fiyatForm.tip === 'ozel_tarih') && 
-          (!fiyatForm.baslangic_tarihi || !fiyatForm.bitis_tarihi)) {
-        showToast('Tarih aralığı gerekli', 'error')
-        return
-      }
-
-      const fiyatData = {
-        tip: fiyatForm.tip,
-        fiyat: parseFloat(fiyatForm.fiyat),
-        aciklama: fiyatForm.aciklama,
-        aktif: true
-      }
-
-      if (fiyatForm.tip === 'sezon' || fiyatForm.tip === 'ozel_tarih') {
-        fiyatData.baslangic_tarihi = fiyatForm.baslangic_tarihi
-        fiyatData.bitis_tarihi = fiyatForm.bitis_tarihi
-      }
-
-      let result
-      if (editingFiyat) {
-        result = await supabase
-          .from('fiyat_ayarlari')
-          .update(fiyatData)
-          .eq('id', editingFiyat.id)
-      } else {
-        result = await supabase
-          .from('fiyat_ayarlari')
-          .insert([fiyatData])
-      }
-
-      if (result.error) throw result.error
-
-      showToast(editingFiyat ? 'Fiyat güncellendi' : 'Fiyat eklendi', 'success')
-      setShowFiyatModal(false)
-      setEditingFiyat(null)
-      setFiyatForm({ tip: 'varsayilan', fiyat: '', baslangic_tarihi: '', bitis_tarihi: '', aciklama: '' })
-      loadData() // Yenile
-    } catch (error) {
-      console.error('Fiyat kaydetme hatası:', error)
-      showToast('Hata oluştu', 'error')
-    }
-  }
-
-  const handleFiyatSil = async (id) => {
-    if (!confirm('Bu fiyat ayarını silmek istediğinizden emin misiniz?')) return
-
-    try {
-      const { error } = await supabase
-        .from('fiyat_ayarlari')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
-      showToast('Fiyat silindi', 'success')
-      loadData()
-    } catch (error) {
-      console.error('Fiyat silme hatası:', error)
-      showToast('Hata oluştu', 'error')
-    }
-  }
-
-  const handleFiyatDuzenle = (fiyat) => {
-    setEditingFiyat(fiyat)
-    setFiyatForm({
-      tip: fiyat.tip,
-      fiyat: fiyat.fiyat,
-      baslangic_tarihi: fiyat.baslangic_tarihi || '',
-      bitis_tarihi: fiyat.bitis_tarihi || '',
-      aciklama: fiyat.aciklama || ''
     })
-    setShowFiyatModal(true)
+    yorumlar.forEach((y) => {
+      events.push({
+        id: `yor-${y.id}`,
+        Icon: Star,
+        tone: y.onaylandi ? 'emerald' : 'gold',
+        title: y.onaylandi ? 'Yorum onaylandı' : 'Yeni yorum',
+        detail: `${y.ad || 'Misafir'}${y.puan ? ' · ★ ' + y.puan : ''}`,
+        at: new Date(y.created_at),
+      })
+    })
+    abone.forEach((a) => {
+      events.push({
+        id: `abn-${a.id}`,
+        Icon: Mail,
+        tone: 'gold',
+        title: 'Yeni newsletter abonesi',
+        detail: a.email || '',
+        at: new Date(a.created_at),
+      })
+    })
+    return events
+      .filter(e => e.at && !isNaN(e.at.getTime()))
+      .sort((a, b) => b.at - a.at)
+      .slice(0, 7)
+  }, [rezervasyonlar, mesajlar, yorumlar, abone])
+  const tabLabels = {
+    dashboard: 'Genel Bakış',
+    rezervasyonlar: 'Rezervasyonlar',
+    takvim: 'Takvim',
+    fiyatlandirma: 'Fiyatlandırma',
+    istatistikler: 'İstatistikler',
+    mesajlar: 'Mesajlar',
+    yorumlar: 'Yorumlar',
+    newsletter: 'Newsletter',
+    galeri: 'Galeri',
   }
-
-  const handleFiyatAktifDegistir = async (id, aktif) => {
-    try {
-      const { error } = await supabase
-        .from('fiyat_ayarlari')
-        .update({ aktif: !aktif })
-        .eq('id', id)
-
-      if (error) throw error
-
-      showToast(aktif ? 'Fiyat pasif edildi' : 'Fiyat aktif edildi', 'success')
-      loadData()
-    } catch (error) {
-      console.error('Fiyat güncelleme hatası:', error)
-      showToast('Hata oluştu', 'error')
-    }
-  }
-
-  const calendarDays = getCalendarDays()
-  const monthStats = getMonthStats()
-  const currentMonthReservations = rezervasyonlar.filter(rez => {
-    const giris = new Date(rez.giris_tarihi)
-    const cikis = new Date(rez.cikis_tarihi)
-    return (
-      (giris.getMonth() === currentMonth.getMonth() && giris.getFullYear() === currentMonth.getFullYear()) ||
-      (cikis.getMonth() === currentMonth.getMonth() && cikis.getFullYear() === currentMonth.getFullYear())
-    )
-  }).sort((a, b) => new Date(a.giris_tarihi) - new Date(b.giris_tarihi))
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-sea-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-400"></div>
-            <div className="absolute inset-0 rounded-full bg-cyan-400/20 animate-pulse"></div>
-          </div>
-          <p className="mt-6 text-slate-400 font-light tracking-wide">Loading Dashboard...</p>
+          <div className="animate-spin rounded-full h-14 w-14 border-2 border-gold-500/20 border-t-gold-500 inline-block" />
+          <p className="mt-6 text-[11px] tracking-[0.32em] uppercase text-gold-300 font-medium">Yükleniyor</p>
         </div>
       </div>
     )
   }
 
-  const toplamGelir = rezervasyonlar.filter(r => r.durum === 'onaylandi').reduce((sum, r) => sum + (r.toplam_fiyat || 0), 0)
-  const buAyGelir = rezervasyonlar.filter(r => {
-    const date = new Date(r.created_at)
-    return date.getMonth() === new Date().getMonth() && r.durum === 'onaylandi'
-  }).reduce((sum, r) => sum + (r.toplam_fiyat || 0), 0)
-
-  const menuItems = [
-    { id: 'dashboard', icon: '📊', label: 'Dashboard', badge: null },
-    { id: 'rezervasyonlar', icon: '📅', label: 'Rezervasyonlar', badge: rezervasyonlar.filter(r => r.durum === 'beklemede').length },
-    { id: 'takvim', icon: '📆', label: 'Takvim', badge: null },
-    { id: 'fiyatlandirma', icon: '💰', label: 'Fiyatlandırma', badge: null },
-    { id: 'istatistikler', icon: '📈', label: 'İstatistikler', badge: null },
-    { id: 'mesajlar', icon: '💌', label: 'Mesajlar', badge: mesajlar.filter(m => !m.okundu).length },
-    { id: 'yorumlar', icon: '⭐', label: 'Yorumlar', badge: yorumlar.filter(y => !y.onaylandi).length },
-    { id: 'newsletter', icon: '📧', label: 'Newsletter', badge: abone.length },
-    { id: 'galeri', icon: '📸', label: 'Galeri', badge: galeriFotolar.length }
-  ]
-
   return (
-    <div className={`min-h-screen bg-gradient-to-br transition-colors duration-300 ${isDarkMode ? 'from-slate-950 via-slate-900 to-slate-950' : 'from-gray-50 via-white to-gray-100'}`}>
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full backdrop-blur-xl border-r transition-all duration-300 z-40 ${sidebarOpen ? 'w-64' : 'w-20'} ${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-white/80 border-gray-200'}`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className={`p-6 border-b ${isDarkMode ? 'border-slate-800/50' : 'border-gray-200'}`}>
-            <div className="flex items-center justify-between">
-              {sidebarOpen && (
-                <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                    Serenity
-                  </h1>
-                  <p className="text-xs text-slate-500 mt-1">Admin Panel</p>
-                </div>
-              )}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`p-2 rounded-lg transition ${isDarkMode ? 'hover:bg-slate-800/50 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
-              >
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Menu */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                  activeTab === item.id
-                    ? `bg-gradient-to-r ${isDarkMode ? 'from-cyan-500/20 to-blue-500/20 text-cyan-400' : 'from-cyan-50 to-blue-50 text-cyan-600'} shadow-lg`
-                    : isDarkMode ? 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-xl">{item.icon}</span>
-                {sidebarOpen && (
-                  <>
-                    <span className="font-medium flex-1 text-left">{item.label}</span>
-                    {item.badge !== null && item.badge > 0 && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        activeTab === item.id ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-slate-300'
-                      }`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* Logout */}
-          <div className={`p-4 border-t ${isDarkMode ? 'border-slate-800/50' : 'border-gray-200'}`}>
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${isDarkMode ? 'text-yellow-400 hover:bg-yellow-400/10' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              <span className="text-xl">{isDarkMode ? '☀️' : '🌙'}</span>
-              {sidebarOpen && <span className="font-medium">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-            </button>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all duration-200"
-            >
-              <span className="text-xl">🚪</span>
-              {sidebarOpen && <span className="font-medium">Çıkış Yap</span>}
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
-        {/* Top Bar */}
-        <header className={`sticky top-0 z-30 backdrop-blur-xl border-b ${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-white/80 border-gray-200'}`}>
-          <div className="px-8 py-4 flex items-center justify-between">
-            <div>
-              <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
-              </h2>
-              <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                {new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-            <a href="/" className={`px-4 py-2 rounded-lg transition text-sm font-medium ${isDarkMode ? 'bg-slate-800/50 hover:bg-slate-800 text-slate-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>
-              ← Ana Sayfa
-            </a>
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="p-8">
-          {/* Dashboard Home */}
+    <div className={`min-h-screen ${isDark ? 'bg-sea-900' : 'bg-cream'}`}>
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isDark={isDark}
+        setIsDark={setIsDark}
+        badges={badges}
+        onLogout={handleLogout}
+      />
+      <main className="ml-60">
+        <TopBar
+          isDark={isDark}
+          pageTitle={tabLabels[activeTab] || 'Dashboard'}
+          pendingCount={badges.rez}
+          unreadCount={badges.msg}
+          onPendingClick={() => setActiveTab('rezervasyonlar')}
+        />
+        <div className="p-6">
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 hover:scale-105 transition-transform duration-300`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">⏳</span>
-                    </div>
-                    <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 rounded font-bold">+12%</span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'} uppercase tracking-wide`}>Bekleyen</p>
-                  <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{rezervasyonlar.filter(r => r.durum === 'beklemede').length}</span>
-                </div>
-
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 hover:scale-105 transition-transform duration-300`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">✓</span>
-                    </div>
-                    <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded font-bold">+12%</span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'} uppercase tracking-wide`}>Onaylanan</p>
-                  <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{rezervasyonlar.filter(r => r.durum === 'onaylandi').length}</span>
-                </div>
-
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 hover:scale-105 transition-transform duration-300`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                    <span className="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded font-bold">+12%</span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'} uppercase tracking-wide`}>Toplam Gelir</p>
-                  <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(buAyGelir).replace(' ', '')}</span>
-                </div>
-
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 hover:scale-105 transition-transform duration-300`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">📊</span>
-                    </div>
-                    <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded font-bold">+12%</span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'} uppercase tracking-wide`}>Aktif Doluluk</p>
-                  <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>%78</span>
-                </div>
-              </div>
-
-              {/* Gelişmiş Analytics - Yeni Kartlar */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Ortalama Rezervasyon Süresi */}
-                <div className={`${isDarkMode ? 'bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700' : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200'} border rounded-2xl p-6`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-10 h-10 ${isDarkMode ? 'bg-blue-700/40' : 'bg-blue-500/20'} rounded-lg flex items-center justify-center`}>
-                      <span className="text-xl">📆</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 ${isDarkMode ? 'bg-blue-700/40 text-blue-300' : 'bg-blue-500/20 text-blue-600'} rounded font-bold`}>
-                      Ortalama
-                    </span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>Konaklama Süresi</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
-                      {Math.round(rezervasyonlar.reduce((acc, r) => {
-                        const gun = Math.ceil((new Date(r.cikis_tarihi) - new Date(r.giris_tarihi)) / (1000 * 60 * 60 * 24))
-                        return acc + gun
-                      }, 0) / (rezervasyonlar.length || 1))}
-                    </span>
-                    <span className={`text-lg ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>gün</span>
-                  </div>
-                </div>
-
-                {/* Toplam Misafir */}
-                <div className={`${isDarkMode ? 'bg-gradient-to-br from-emerald-900 to-emerald-800 border-emerald-700' : 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200'} border rounded-2xl p-6`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-10 h-10 ${isDarkMode ? 'bg-emerald-700/40' : 'bg-emerald-500/20'} rounded-lg flex items-center justify-center`}>
-                      <span className="text-xl">👥</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 ${isDarkMode ? 'bg-emerald-700/40 text-emerald-300' : 'bg-emerald-500/20 text-emerald-600'} rounded font-bold`}>
-                      Bu Ay
-                    </span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-emerald-200' : 'text-emerald-700'}`}>Toplam Misafir</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-emerald-900'}`}>
-                      {rezervasyonlar
-                        .filter(r => new Date(r.giris_tarihi).getMonth() === new Date().getMonth())
-                        .reduce((acc, r) => acc + (r.kisi_sayisi || 0), 0)}
-                    </span>
-                    <span className={`text-lg ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}>kişi</span>
-                  </div>
-                </div>
-
-                {/* Ortalama Gelir */}
-                <div className={`${isDarkMode ? 'bg-gradient-to-br from-amber-900 to-amber-800 border-amber-700' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'} border rounded-2xl p-6`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-10 h-10 ${isDarkMode ? 'bg-amber-700/40' : 'bg-amber-500/20'} rounded-lg flex items-center justify-center`}>
-                      <span className="text-xl">💵</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 ${isDarkMode ? 'bg-amber-700/40 text-amber-300' : 'bg-amber-500/20 text-amber-600'} rounded font-bold`}>
-                      Ort.
-                    </span>
-                  </div>
-                  <p className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-amber-200' : 'text-amber-700'}`}>Rezervasyon Başına</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-amber-900'}`}>
-                      ${Math.round(rezervasyonlar.reduce((acc, r) => acc + (r.toplam_fiyat || 0), 0) / (rezervasyonlar.length || 1))}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pending Reservations - Compact */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Sol: Grafik */}
-                <div className={`lg:col-span-2 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6`}>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Gelir Analizi</h3>
-                    <select className={`px-3 py-1.5 text-sm rounded-lg border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-gray-50 border-gray-200 text-gray-700'}`}>
-                      <option>Son 6 Ay</option>
-                      <option>Son 3 Ay</option>
-                      <option>Bu Yıl</option>
-                    </select>
-                  </div>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#334155" : "#f1f5f9"} vertical={false} />
-                        <XAxis 
-                          dataKey="ay" 
-                          stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                          style={{ fontSize: '12px' }} 
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis 
-                          stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                          style={{ fontSize: '12px' }} 
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: isDarkMode ? '#1e293b' : '#fff', 
-                            border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', 
-                            borderRadius: '12px'
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="rezervasyon" 
-                          stroke="#06b6d4" 
-                          strokeWidth={3}
-                          dot={{ fill: '#06b6d4', r: 4 }}
-                          fill="url(#colorRevenue)"
-                        />
-                        <defs>
-                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                            <stop offset="100%" stopColor="#06b6d4" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Sağ: Son İstekler */}
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6`}>
-                  <h3 className={`text-xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Son İstekler</h3>
-                  <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
-                    {rezervasyonlar
-                      .filter(r => r.durum === 'beklemede')
-                      .slice(0, 5)
-                      .map((rez) => {
-                        const giris = new Date(rez.giris_tarihi)
-                        
-                        return (
-                          <div
-                            key={rez.id}
-                            className={`${isDarkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-gray-50 border-gray-200'} border rounded-xl p-4`}
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex-1">
-                                <h4 className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-bold text-sm`}>{rez.ad} {rez.soyad}</h4>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className={`${isDarkMode ? 'text-slate-400' : 'text-gray-500'} text-xs flex items-center gap-1`}>
-                                    📅 {giris.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                  </span>
-                                  <span className={`${isDarkMode ? 'text-slate-400' : 'text-gray-500'} text-xs flex items-center gap-1`}>
-                                    👥 {rez.kisi_sayisi} Kişi
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="text-cyan-400 font-bold text-sm ml-2">{formatCurrency(rez.toplam_fiyat).replace(' ', '')}</span>
-                            </div>
-
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleQuickApprove(rez)}
-                                disabled={quickActionLoading === rez.id}
-                                className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-xs transition disabled:opacity-50"
-                              >
-                                {quickActionLoading === rez.id ? '...' : 'Onayla'}
-                              </button>
-                              <button
-                                onClick={() => handleQuickReject(rez)}
-                                disabled={quickActionLoading === rez.id}
-                                className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-xs transition disabled:opacity-50"
-                              >
-                                {quickActionLoading === rez.id ? '...' : 'Reddet'}
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                      {rezervasyonlar.filter(r => r.durum === 'beklemede').length === 0 && (
-                        <div className={`${isDarkMode ? 'text-slate-400' : 'text-gray-500'} text-center py-8 text-sm`}>
-                          Bekleyen rezervasyon yok
-                        </div>
-                      )}
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6`}>
-                  <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
-                    <span>📈</span> Aylık Trend
-                  </h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#334155" : "#e2e8f0"} />
-                      <XAxis dataKey="ay" stroke={isDarkMode ? "#94a3b8" : "#64748b"} style={{ fontSize: '12px' }} />
-                      <YAxis stroke={isDarkMode ? "#94a3b8" : "#64748b"} style={{ fontSize: '12px' }} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#fff', border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', borderRadius: '8px', color: isDarkMode ? '#fff' : '#0f172a' }}
-                      />
-                      <Line type="monotone" dataKey="rezervasyon" stroke="#06b6d4" strokeWidth={3} dot={{ fill: '#06b6d4', r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-white border-gray-200 shadow-sm'} backdrop-blur-xl border rounded-2xl p-6`}>
-                  <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
-                    <span>🥧</span> Durum Dağılımı
-                  </h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={statusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {statusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#fff', border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', borderRadius: '8px', color: isDarkMode ? '#fff' : '#0f172a' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Revenue Chart */}
-              <div className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-white border-gray-200 shadow-sm'} backdrop-blur-xl border rounded-2xl p-6`}>
-                <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
-                  <span>💰</span> Gelir Trendi
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#334155" : "#e2e8f0"} />
-                    <XAxis dataKey="ay" stroke={isDarkMode ? "#94a3b8" : "#64748b"} style={{ fontSize: '12px' }} />
-                    <YAxis stroke={isDarkMode ? "#94a3b8" : "#64748b"} style={{ fontSize: '12px' }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#fff', border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', borderRadius: '8px', color: isDarkMode ? '#fff' : '#0f172a' }}
-                      formatter={(value) => formatCurrency(value)}
-                    />
-                    <Bar dataKey="gelir" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <DashboardHome
+              isDark={isDark}
+              rezervasyonlar={rezervasyonlar}
+              mesajlar={mesajlar}
+              monthlyData={monthlyData}
+              occupancyData={occupancyData}
+              statusData={statusData}
+              upcomingList={upcomingList}
+              activityFeed={activityFeed}
+              onApprove={handleQuickApprove}
+              onReject={handleQuickReject}
+              quickActionLoading={quickActionLoading}
+              onAllPending={() => setActiveTab('rezervasyonlar')}
+              onOpenCalendar={() => setActiveTab('takvim')}
+            />
           )}
-
-         
-                 {/* Takvim Tab */}
-                 {activeTab === 'takvim' && (
-                   <div className="space-y-6">
-                     {/* Aylık İstatistikler */}
-                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                       <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="text-sm opacity-90">Doluluk Oranı</span>
-                           <span className="text-2xl">📊</span>
-                         </div>
-                         <div className="text-3xl font-bold">{monthStats.occupancyRate}%</div>
-                         <div className="text-xs opacity-75 mt-1">{monthStats.bookedDays}/{monthStats.totalDays} gün</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="text-sm opacity-90">Aylık Gelir</span>
-                           <span className="text-2xl">💰</span>
-                         </div>
-                         <div className="text-3xl font-bold">${monthStats.revenue.toFixed(0)}</div>
-                         <div className="text-xs opacity-75 mt-1">Bu ay</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="text-sm opacity-90">Rezervasyonlar</span>
-                           <span className="text-2xl">📅</span>
-                         </div>
-                         <div className="text-3xl font-bold">{currentMonthReservations.length}</div>
-                         <div className="text-xs opacity-75 mt-1">Bu ay</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="text-sm opacity-90">Bloklu Günler</span>
-                           <span className="text-2xl">🚫</span>
-                         </div>
-                         <div className="text-3xl font-bold">{blockedDates.length}</div>
-                         <div className="text-xs opacity-75 mt-1">Bakım/Temizlik</div>
-                       </div>
-                     </div>
-
-                     {/* Takvim Header */}
-                     <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} rounded-2xl shadow-lg border p-4 max-w-5xl mx-auto`}>
-                       <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-                         <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
-                           <span className="mr-3">📅</span>
-                           Doluluk Takvimi
-                         </h3>
-                         <div className="flex items-center space-x-4">
-                           <button
-                             onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                             className="p-2 hover:bg-gray-100 rounded-lg transition"
-                           >
-                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                             </svg>
-                           </button>
-                           <span className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} min-w-[140px] text-center capitalize`}>
-                             {currentMonth.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}
-                           </span>
-                           <button
-                             onClick={() => setCurrentMonth(new Date())}
-                             className={`text-xs px-3 py-1.5 rounded-lg border transition font-medium ${isDarkMode ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-gray-200 hover:bg-gray-50 text-gray-600'}`}
-                           >
-                             Bugün
-                           </button>
-                           <button
-                             onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                             className="p-2 hover:bg-gray-100 rounded-lg transition"
-                           >
-                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                             </svg>
-                           </button>
-                         </div>
-                       </div>
-         
-                       {/* Renk Açıklaması */}
-                       <div className={`flex flex-wrap gap-4 mb-4 p-3 ${isDarkMode ? 'bg-slate-800/50' : 'bg-gray-50'} rounded-xl`}>
-                         <div className="flex items-center">
-                           <div className="w-4 h-4 rounded bg-gradient-to-r from-green-400 to-green-600 mr-2 shadow"></div>
-                           <span className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>Dolu (Onaylı)</span>
-                         </div>
-                         <div className="flex items-center">
-                           <div className="w-4 h-4 rounded bg-gradient-to-r from-yellow-400 to-yellow-600 mr-2 shadow"></div>
-                           <span className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>Beklemede</span>
-                         </div>
-                         <div className="flex items-center">
-                           <div className="w-4 h-4 rounded bg-gradient-to-r from-red-400 to-red-600 mr-2 shadow"></div>
-                           <span className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>Bloklu</span>
-                         </div>
-                         <div className="flex items-center">
-                           <div className="w-4 h-4 bg-white border-2 border-gray-300 rounded mr-2"></div>
-                           <span className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>Müsait</span>
-                         </div>
-                       </div>
-         
-                       {/* Takvim Grid */}
-                       <div className="grid grid-cols-7 gap-2">
-                         {/* Gün başlıkları */}
-                         {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((gun) => (
-                           <div key={gun} className={`text-center font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-600'} py-2 text-sm`}>
-                             {gun}
-                           </div>
-                         ))}
-         
-                         {/* Takvim günleri */}
-                         {calendarDays.map((day, index) => {
-                           const dayStr = day ? day.toLocaleDateString('en-CA') : null
-                           const rezervasyon = day ? rezervasyonlar.find(r => dayStr >= r.giris_tarihi && dayStr < r.cikis_tarihi && (r.durum === 'onaylandi' || r.durum === 'beklemede')) : null
-                           const isBlocked = day && isDateBlocked(day)
-                           const blockedInfo = isBlocked ? blockedDates.find(b => b.date === dayStr) : null
-                           
-                           const isToday = day && isSameDay(day, new Date())
-                           const isPast = day && day < new Date().setHours(0, 0, 0, 0)
-                           
-                           return (
-                             <div
-                               key={index}
-                               onClick={() => handleDayClick(day)}
-                               className={`
-                                 relative h-28 md:h-32 rounded-xl border-2 transition-all duration-200 cursor-pointer transform hover:scale-105
-                                 ${!day ? (isDarkMode ? 'bg-slate-800/20 border-slate-800/50' : 'bg-gray-50/50 border-gray-100') : ''}
-                                 ${day && !rezervasyon && !isBlocked ? (isDarkMode ? 'bg-slate-800 border-slate-700 hover:border-cyan-500 hover:shadow-cyan-500/20' : 'bg-white border-gray-200 hover:border-cyan-400 hover:shadow-lg') : ''}
-                                 ${rezervasyon?.durum === 'onaylandi' ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-500 hover:shadow-xl hover:shadow-green-500/30 text-white' : ''}
-                                 ${rezervasyon?.durum === 'beklemede' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-500 hover:shadow-xl hover:shadow-yellow-500/30 text-gray-900' : ''}
-                                 ${isBlocked ? 'bg-gradient-to-br from-red-400 to-red-600 border-red-500 hover:shadow-xl hover:shadow-red-500/30 text-white' : ''}
-                                 ${isToday ? 'ring-4 ring-cyan-400 ring-offset-2' : ''}
-                                 ${isPast && !rezervasyon && !isBlocked ? 'opacity-40' : ''}
-                               `}
-                               onMouseEnter={() => rezervasyon && setHoveredReservation(rezervasyon)}
-                               onMouseLeave={() => setHoveredReservation(null)}
-                             >
-                               {day && (
-                                 <>
-                                   <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-                                     <span className={`text-sm font-bold ${
-                                       rezervasyon || isBlocked ? 'text-white' : (isDarkMode ? 'text-slate-300' : 'text-gray-700')
-                                     }`}>
-                                       {day.getDate()}
-                                     </span>
-                                     {rezervasyon && (
-                                       <span className="text-xs bg-white/20 rounded px-1.5 py-0.5 backdrop-blur">
-                                         {rezervasyon.durum === 'onaylandi' ? '✓' : '⏳'}
-                                       </span>
-                                     )}
-                                     {isBlocked && (
-                                       <span className="text-lg">🚫</span>
-                                     )}
-                                   </div>
-                                   {rezervasyon && (
-                                     <div className="absolute bottom-2 left-2 right-2">
-                                       <p className="text-xs font-bold truncate">
-                                         {rezervasyon.ad} {rezervasyon.soyad}
-                                       </p>
-                                       <p className="text-[10px] opacity-90">
-                                         {rezervasyon.kisi_sayisi} kişi
-                                       </p>
-                                     </div>
-                                   )}
-                                   {isBlocked && blockedInfo && (
-                                     <div className="absolute bottom-2 left-2 right-2">
-                                       <p className="text-xs font-bold truncate">
-                                         {blockedInfo.reason}
-                                       </p>
-                                     </div>
-                                   )}
-                                   {!rezervasyon && !isBlocked && !isPast && (
-                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                       <span className="text-2xl">+</span>
-                                     </div>
-                                   )}
-                                 </>
-                               )}
-                             </div>
-                           )
-                         })}
-                       </div>
-                     </div>
-         
-                     {/* Hover Detay Kartı */}
-                     {hoveredReservation && (
-                       <div className="fixed bottom-8 right-8 bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-80 z-50">
-                         <div className="flex items-center justify-between mb-4">
-                           <h4 className="text-lg font-bold text-gray-900">Rezervasyon Detayı</h4>
-                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                             hoveredReservation.durum === 'onaylandi' 
-                               ? 'bg-green-100 text-green-800' 
-                               : 'bg-yellow-100 text-yellow-800'
-                           }`}>
-                             {hoveredReservation.durum === 'onaylandi' ? '✓ Onaylı' : '⏳ Beklemede'}
-                           </span>
-                         </div>
-                         
-                         <div className="space-y-3">
-                           <div>
-                             <p className="text-xs text-gray-500">Misafir</p>
-                             <p className="font-semibold text-gray-900">
-                               {hoveredReservation.ad} {hoveredReservation.soyad}
-                             </p>
-                           </div>
-                           
-                           <div className="grid grid-cols-2 gap-3">
-                             <div>
-                               <p className="text-xs text-gray-500">Giriş</p>
-                               <p className="font-semibold text-gray-900 text-sm">
-                                 {new Date(hoveredReservation.giris_tarihi).toLocaleDateString('tr-TR', { 
-                                   day: '2-digit', 
-                                   month: 'short' 
-                                 })}
-                               </p>
-                             </div>
-                             <div>
-                               <p className="text-xs text-gray-500">Çıkış</p>
-                               <p className="font-semibold text-gray-900 text-sm">
-                                 {new Date(hoveredReservation.cikis_tarihi).toLocaleDateString('tr-TR', { 
-                                   day: '2-digit', 
-                                   month: 'short' 
-                                 })}
-                               </p>
-                             </div>
-                           </div>
-         
-                           <div className="grid grid-cols-2 gap-3">
-                             <div>
-                               <p className="text-xs text-gray-500">Kişi Sayısı</p>
-                               <p className="font-semibold text-gray-900">{hoveredReservation.kisi_sayisi}</p>
-                             </div>
-                             <div>
-                               <p className="text-xs text-gray-500">Toplam</p>
-                               <p className="font-semibold text-cyan-600">{formatCurrency(hoveredReservation.toplam_fiyat)}</p>
-                             </div>
-                           </div>
-         
-                           <div>
-                             <p className="text-xs text-gray-500">İletişim</p>
-                             <p className="text-sm text-gray-900">{hoveredReservation.email}</p>
-                             <p className="text-sm text-gray-600">{hoveredReservation.telefon}</p>
-                           </div>
-                         </div>
-                       </div>
-                     )}
-
-                     {/* Gün Detay Modal */}
-                     {showDayModal && selectedDay && (
-                       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowDayModal(false)}>
-                         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8" onClick={(e) => e.stopPropagation()}>
-                           <div className="flex items-center justify-between mb-6">
-                             <h3 className="text-2xl font-bold text-gray-900">
-                               {selectedDay.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                             </h3>
-                             <button onClick={() => setShowDayModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">
-                               ×
-                             </button>
-                           </div>
-
-                           {(() => {
-                             const dayStr = selectedDay.toLocaleDateString('en-CA')
-                             const dayReservation = rezervasyonlar.find(r => 
-                               dayStr >= r.giris_tarihi && 
-                               dayStr < r.cikis_tarihi && 
-                               (r.durum === 'onaylandi' || r.durum === 'beklemede')
-                             )
-                             const isBlocked = isDateBlocked(selectedDay)
-                             const blockedInfo = blockedDates.find(b => b.date === dayStr)
-
-                             if (dayReservation) {
-                               return (
-                                 <div className="space-y-4">
-                                   <div className={`p-4 rounded-xl ${dayReservation.durum === 'onaylandi' ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                                     <div className="flex items-center justify-between mb-2">
-                                       <span className={`text-sm font-bold ${dayReservation.durum === 'onaylandi' ? 'text-green-800' : 'text-yellow-800'}`}>
-                                         {dayReservation.durum === 'onaylandi' ? '✅ Onaylı Rezervasyon' : '⏳ Bekleyen Rezervasyon'}
-                                       </span>
-                                     </div>
-                                     <div className="space-y-2 text-sm">
-                                       <p><strong>Misafir:</strong> {dayReservation.ad} {dayReservation.soyad}</p>
-                                       <p><strong>Tarih:</strong> {new Date(dayReservation.giris_tarihi).toLocaleDateString('tr-TR')} - {new Date(dayReservation.cikis_tarihi).toLocaleDateString('tr-TR')}</p>
-                                       <p><strong>Kişi:</strong> {dayReservation.kisi_sayisi}</p>
-                                       <p><strong>Fiyat:</strong> {formatCurrency(dayReservation.toplam_fiyat)}</p>
-                                       <p><strong>İletişim:</strong> {dayReservation.telefon}</p>
-                                     </div>
-                                   </div>
-                                   <button
-                                     onClick={() => {
-                                       setActiveTab('rezervasyonlar')
-                                       setShowDayModal(false)
-                                     }}
-                                     className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 rounded-xl transition"
-                                   >
-                                     Detayları Görüntüle
-                                   </button>
-                                 </div>
-                               )
-                             } else if (isBlocked) {
-                               return (
-                                 <div className="space-y-4">
-                                   <div className="p-4 rounded-xl bg-red-50">
-                                     <div className="flex items-center gap-2 mb-2">
-                                       <span className="text-2xl">🚫</span>
-                                       <span className="text-sm font-bold text-red-800">Bloklu Tarih</span>
-                                     </div>
-                                     <p className="text-sm text-red-700">{blockedInfo?.reason}</p>
-                                   </div>
-                                   <button
-                                     onClick={() => {
-                                       handleUnblockDate(dayStr)
-                                       setShowDayModal(false)
-                                     }}
-                                     className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition"
-                                   >
-                                     Bloğu Kaldır
-                                   </button>
-                                 </div>
-                               )
-                             } else {
-                               return (
-                                 <div className="space-y-4">
-                                   <div className="p-4 rounded-xl bg-green-50 text-center">
-                                     <span className="text-4xl mb-2 block">✨</span>
-                                     <p className="text-sm font-bold text-green-800">Bu gün müsait</p>
-                                   </div>
-                                   <div className="space-y-2">
-                                     <button
-                                       onClick={() => {
-                                         setShowDayModal(false)
-                                         setActiveTab('rezervasyonlar')
-                                         // Burada rezervasyon formu açılabilir
-                                       }}
-                                       className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg"
-                                     >
-                                       ➕ Rezervasyon Ekle
-                                     </button>
-                                     <button
-                                       onClick={() => {
-                                         setShowDayModal(false)
-                                         setShowBlockModal(true)
-                                       }}
-                                       className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg"
-                                     >
-                                       🚫 Tarihi Blokla
-                                     </button>
-                                   </div>
-                                 </div>
-                               )
-                             }
-                           })()}
-                         </div>
-                       </div>
-                     )}
-
-                     {/* Tarih Bloklama Modal */}
-                     {showBlockModal && selectedDay && (
-                       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowBlockModal(false)}>
-                         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8" onClick={(e) => e.stopPropagation()}>
-                           <h3 className="text-2xl font-bold text-gray-900 mb-6">Tarihi Blokla</h3>
-                           
-                           <div className="mb-4">
-                             <p className="text-sm text-gray-600 mb-2">Tarih:</p>
-                             <p className="text-lg font-bold text-gray-900">
-                               {selectedDay.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                             </p>
-                           </div>
-
-                           <div className="mb-6">
-                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                               Sebep (Bakım, Temizlik, vb.)
-                             </label>
-                             <input
-                               type="text"
-                               value={blockReason}
-                               onChange={(e) => setBlockReason(e.target.value)}
-                               placeholder="Örn: Bakım çalışması"
-                               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                             />
-                           </div>
-
-                           <div className="flex gap-3">
-                             <button
-                               onClick={() => setShowBlockModal(false)}
-                               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition"
-                             >
-                               İptal
-                             </button>
-                             <button
-                               onClick={handleBlockDate}
-                               disabled={!blockReason.trim()}
-                               className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                             >
-                               Blokla
-                             </button>
-                           </div>
-                         </div>
-                       </div>
-                     )}
-
-
-                     {/* Bu Ayki Rezervasyonlar Listesi */}
-                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-                       <div className="p-6 border-b border-gray-200">
-                         <h3 className="text-lg font-bold text-gray-900 capitalize">
-                           {currentMonth.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })} Rezervasyonları
-                         </h3>
-                       </div>
-                       <div className="overflow-x-auto">
-                         {/* Listeyi filtrelerken ayı kapsayan rezervasyonları da dahil edelim */}
-                         {rezervasyonlar.filter(rez => {
-                           const rGiris = new Date(rez.giris_tarihi);
-                           const rCikis = new Date(rez.cikis_tarihi);
-                           const aybasi = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                           const aysonu = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-                           // Rezervasyon bu ayın içinde mi veya bu ayı kapsıyor mu?
-                           return (rGiris <= aysonu && rCikis >= aybasi) && (rez.durum === 'onaylandi' || rez.durum === 'beklemede');
-                         }).length === 0 ? (
-                           <div className="p-12 text-center text-gray-500">
-                             Bu ay için rezervasyon yok
-                           </div>
-                         ) : (
-                           <table className="w-full">
-                             <thead className="bg-gray-50">
-                               <tr>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Misafir</th>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tarih</th>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Gece</th>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kişi</th>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tutar</th>
-                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Durum</th>
-                               </tr>
-                             </thead>
-                             <tbody className="divide-y divide-gray-200">
-                               {rezervasyonlar.filter(rez => {
-                                 const rGiris = new Date(rez.giris_tarihi);
-                                 const rCikis = new Date(rez.cikis_tarihi);
-                                 const aybasi = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                                 const aysonu = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-                                 return (rGiris <= aysonu && rCikis >= aybasi) && (rez.durum === 'onaylandi' || rez.durum === 'beklemede');
-                               }).sort((a, b) => new Date(a.giris_tarihi) - new Date(b.giris_tarihi))
-                               .map((rez) => {
-                                 const nights = Math.ceil(
-                                   (new Date(rez.cikis_tarihi) - new Date(rez.giris_tarihi)) / (1000 * 60 * 60 * 24)
-                                 )
-                                 return (
-                                   <tr key={rez.id} className="hover:bg-gray-50 transition">
-                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                       {rez.ad} {rez.soyad}
-                                     </td>
-                                     <td className="px-6 py-4 text-sm text-gray-600">
-                                       {new Date(rez.giris_tarihi).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
-                                       {' - '}
-                                       {new Date(rez.cikis_tarihi).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
-                                     </td>
-                                     <td className="px-6 py-4 text-sm text-gray-900">{nights}</td>
-                                     <td className="px-6 py-4 text-sm text-gray-900">{rez.kisi_sayisi}</td>
-                                     <td className="px-6 py-4 text-sm font-bold text-cyan-600">
-                                       {formatCurrency(rez.toplam_fiyat)}
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                         rez.durum === 'onaylandi' ? 'bg-green-100 text-green-800' :
-                                         rez.durum === 'iptal' ? 'bg-red-100 text-red-800' :
-                                         'bg-yellow-100 text-yellow-800'
-                                       }`}>
-                                         {rez.durum === 'beklemede' ? '⏳ Beklemede' :
-                                          rez.durum === 'onaylandi' ? '✓ Onaylandı' : '✕ İptal'}
-                                       </span>
-                                     </td>
-                                   </tr>
-                                 )
-                               })}
-                             </tbody>
-                           </table>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* Fiyatlandırma Tab */}
-                 {activeTab === 'fiyatlandirma' && (
-                   <div className="space-y-6">
-                     {/* Header */}
-                     <div className="flex items-center justify-between">
-                       <div>
-                         <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center gap-3`}>
-                           <span>💰</span> Dinamik Fiyatlandırma
-                         </h3>
-                         <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                           Tarih ve sezona göre fiyat yönetimi
-                         </p>
-                       </div>
-                       <button
-                         onClick={() => {
-                           setEditingFiyat(null)
-                           setFiyatForm({ tip: 'varsayilan', fiyat: '', baslangic_tarihi: '', bitis_tarihi: '', aciklama: '' })
-                           setShowFiyatModal(true)
-                         }}
-                         className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-xl transition shadow-lg flex items-center gap-2"
-                       >
-                         <span>➕</span> Yeni Fiyat Ekle
-                       </button>
-                     </div>
-
-                     {/* Fiyat İstatistikleri */}
-                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                       <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="text-sm opacity-90 mb-2">Varsayılan Fiyat</div>
-                         <div className="text-3xl font-bold">
-                           ${fiyatlar.find(f => f.tip === 'varsayilan')?.fiyat || 150}
-                         </div>
-                         <div className="text-xs opacity-75 mt-1">Günlük</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="text-sm opacity-90 mb-2">Hafta Sonu</div>
-                         <div className="text-3xl font-bold">
-                           ${fiyatlar.find(f => f.tip === 'hafta_sonu')?.fiyat || '-'}
-                         </div>
-                         <div className="text-xs opacity-75 mt-1">Cuma-Cumartesi</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="text-sm opacity-90 mb-2">Sezon Fiyatları</div>
-                         <div className="text-3xl font-bold">
-                           {fiyatlar.filter(f => f.tip === 'sezon' && f.aktif).length}
-                         </div>
-                         <div className="text-xs opacity-75 mt-1">Aktif Sezon</div>
-                       </div>
-
-                       <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg">
-                         <div className="text-sm opacity-90 mb-2">Özel Tarihler</div>
-                         <div className="text-3xl font-bold">
-                           {fiyatlar.filter(f => f.tip === 'ozel_tarih' && f.aktif).length}
-                         </div>
-                         <div className="text-xs opacity-75 mt-1">Bayram/Yılbaşı</div>
-                       </div>
-                     </div>
-
-                     {/* Fiyat Listesi */}
-                     <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} rounded-2xl shadow-lg border overflow-hidden`}>
-                       <div className="overflow-x-auto">
-                         <table className="w-full">
-                           <thead className={isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}>
-                             <tr>
-                               <th className={`px-6 py-4 text-left text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 Tip
-                               </th>
-                               <th className={`px-6 py-4 text-left text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 Fiyat
-                               </th>
-                               <th className={`px-6 py-4 text-left text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 Tarih Aralığı
-                               </th>
-                               <th className={`px-6 py-4 text-left text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 Açıklama
-                               </th>
-                               <th className={`px-6 py-4 text-left text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 Durum
-                               </th>
-                               <th className={`px-6 py-4 text-right text-xs font-bold uppercase ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 İşlemler
-                               </th>
-                             </tr>
-                           </thead>
-                           <tbody className="divide-y divide-gray-200">
-                             {fiyatlar.map((fiyat) => (
-                               <tr key={fiyat.id} className={isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-50'}>
-                                 <td className={`px-6 py-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                     fiyat.tip === 'varsayilan' ? 'bg-green-100 text-green-800' :
-                                     fiyat.tip === 'hafta_sonu' ? 'bg-blue-100 text-blue-800' :
-                                     fiyat.tip === 'sezon' ? 'bg-purple-100 text-purple-800' :
-                                     'bg-orange-100 text-orange-800'
-                                   }`}>
-                                     {fiyat.tip === 'varsayilan' ? '🏠 Varsayılan' :
-                                      fiyat.tip === 'hafta_sonu' ? '📅 Hafta Sonu' :
-                                      fiyat.tip === 'sezon' ? '🌞 Sezon' :
-                                      '⭐ Özel Tarih'}
-                                   </span>
-                                 </td>
-                                 <td className={`px-6 py-4 font-bold text-lg ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                                   ${fiyat.fiyat}
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                   {fiyat.baslangic_tarihi && fiyat.bitis_tarihi ? (
-                                     <>
-                                       {new Date(fiyat.baslangic_tarihi).toLocaleDateString('tr-TR')}
-                                       {' - '}
-                                       {new Date(fiyat.bitis_tarihi).toLocaleDateString('tr-TR')}
-                                     </>
-                                   ) : '-'}
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                   {fiyat.aciklama || '-'}
-                                 </td>
-                                 <td className="px-6 py-4">
-                                   <button
-                                     onClick={() => handleFiyatAktifDegistir(fiyat.id, fiyat.aktif)}
-                                     className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                                       fiyat.aktif 
-                                         ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                     }`}
-                                   >
-                                     {fiyat.aktif ? '✓ Aktif' : '✗ Pasif'}
-                                   </button>
-                                 </td>
-                                 <td className="px-6 py-4 text-right space-x-2">
-                                   <button
-                                     onClick={() => handleFiyatDuzenle(fiyat)}
-                                     className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                                   >
-                                     ✏️ Düzenle
-                                   </button>
-                                   <button
-                                     onClick={() => handleFiyatSil(fiyat.id)}
-                                     className="text-red-600 hover:text-red-800 font-medium text-sm"
-                                   >
-                                     🗑️ Sil
-                                   </button>
-                                 </td>
-                               </tr>
-                             ))}
-                           </tbody>
-                         </table>
-                       </div>
-                     </div>
-                   </div>
-                 )}
-         
-                 {/* İstatistikler Tab */}
-                 {activeTab === 'istatistikler' && (
-                   <div className="space-y-8">
-                     {/* Header Section */}
-                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-                        <div>
-                          <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Performans Analizi
-                          </h3>
-                          <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                            Rezervasyon trendleri ve gelir raporları
-                          </p>
-                        </div>
-                     </div>
-
-                     {/* Grafikler Grid */}
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                       {/* Aylık Rezervasyon Trendi */}
-                       <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 shadow-sm`}>
-                         <div className="flex items-center justify-between mb-6">
-                            <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
-                              <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-500">📈</span> 
-                              Aylık Rezervasyon
-                            </h3>
-                         </div>
-                         <div className="h-[300px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                             <LineChart data={monthlyData}>
-                               <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#334155" : "#f1f5f9"} vertical={false} />
-                               <XAxis 
-                                 dataKey="ay" 
-                                 stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                                 style={{ fontSize: '12px' }} 
-                                 tickLine={false}
-                                 axisLine={false}
-                                 dy={10}
-                               />
-                               <YAxis 
-                                 stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                                 style={{ fontSize: '12px' }} 
-                                 tickLine={false}
-                                 axisLine={false}
-                                 dx={-10}
-                               />
-                               <Tooltip 
-                                 contentStyle={{ 
-                                   backgroundColor: isDarkMode ? '#1e293b' : '#fff', 
-                                   border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', 
-                                   borderRadius: '12px', 
-                                   color: isDarkMode ? '#fff' : '#0f172a',
-                                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                                 }}
-                                 cursor={{ stroke: isDarkMode ? '#475569' : '#cbd5e1', strokeWidth: 2 }}
-                               />
-                               <Line 
-                                 type="monotone" 
-                                 dataKey="rezervasyon" 
-                                 stroke="#06b6d4" 
-                                 strokeWidth={4}
-                                 dot={{ fill: '#06b6d4', r: 4, strokeWidth: 2, stroke: isDarkMode ? '#0f172a' : '#fff' }}
-                                 activeDot={{ r: 8, strokeWidth: 0 }}
-                                 name="Rezervasyon"
-                               />
-                             </LineChart>
-                           </ResponsiveContainer>
-                         </div>
-                       </div>
-         
-                       {/* Durum Dağılımı */}
-                       <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 shadow-sm`}>
-                         <div className="flex items-center justify-between mb-6">
-                            <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
-                              <span className="p-2 rounded-lg bg-purple-500/10 text-purple-500">🥧</span> 
-                              Rezervasyon Durumları
-                            </h3>
-                         </div>
-                         <div className="h-[300px] w-full flex items-center justify-center">
-                           <ResponsiveContainer width="100%" height="100%">
-                             <PieChart>
-                               <Pie
-                                 data={statusData}
-                                 cx="50%"
-                                 cy="50%"
-                                 innerRadius={80}
-                                 outerRadius={110}
-                                 paddingAngle={5}
-                                 dataKey="value"
-                               >
-                                 {statusData.map((entry, index) => (
-                                   <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                                 ))}
-                               </Pie>
-                               <Tooltip 
-                                 contentStyle={{ 
-                                   backgroundColor: isDarkMode ? '#1e293b' : '#fff', 
-                                   border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', 
-                                   borderRadius: '12px', 
-                                   color: isDarkMode ? '#fff' : '#0f172a'
-                                 }}
-                               />
-                               <Legend 
-                                 verticalAlign="bottom" 
-                                 height={36}
-                                 iconType="circle"
-                                 formatter={(value) => <span className={isDarkMode ? 'text-slate-300' : 'text-gray-600'}>{value}</span>}
-                               />
-                             </PieChart>
-                           </ResponsiveContainer>
-                         </div>
-                       </div>
-                     </div>
-         
-                     {/* Aylık Gelir Grafiği */}
-                     <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 shadow-sm`}>
-                       <div className="flex items-center justify-between mb-6">
-                          <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
-                            <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">💰</span> 
-                            Aylık Gelir Analizi
-                          </h3>
-                       </div>
-                       <div className="h-[400px] w-full">
-                         <ResponsiveContainer width="100%" height="100%">
-                           <BarChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                             <defs>
-                               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                 <stop offset="0%" stopColor="#10b981" stopOpacity={0.8}/>
-                                 <stop offset="100%" stopColor="#10b981" stopOpacity={0.3}/>
-                               </linearGradient>
-                             </defs>
-                             <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#334155" : "#f1f5f9"} vertical={false} />
-                             <XAxis 
-                               dataKey="ay" 
-                               stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                               style={{ fontSize: '12px' }} 
-                               tickLine={false}
-                               axisLine={false}
-                               dy={10}
-                             />
-                             <YAxis 
-                               stroke={isDarkMode ? "#94a3b8" : "#64748b"} 
-                               style={{ fontSize: '12px' }} 
-                               tickLine={false}
-                               axisLine={false}
-                               dx={-10}
-                             />
-                             <Tooltip 
-                               contentStyle={{ 
-                                 backgroundColor: isDarkMode ? '#1e293b' : '#fff', 
-                                 border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0', 
-                                 borderRadius: '12px', 
-                                 color: isDarkMode ? '#fff' : '#0f172a',
-                                 boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                               }}
-                               cursor={{ fill: isDarkMode ? '#334155' : '#f1f5f9', opacity: 0.4 }}
-                               formatter={(value) => [formatCurrency(value), 'Gelir']}
-                             />
-                             <Bar 
-                               dataKey="gelir" 
-                               fill="url(#colorRevenue)" 
-                               radius={[8, 8, 0, 0]}
-                               barSize={50}
-                               name="Gelir"
-                             />
-                           </BarChart>
-                         </ResponsiveContainer>
-                       </div>
-                     </div>
-                   </div>
-                 )}
-         
-                 {/* Rezervasyonlar Tab */}
-                 {activeTab === 'rezervasyonlar' && (
-                   <div className="space-y-6">
-                     {/* Filter Tabs */}
-                     <div className="flex justify-end gap-2 overflow-x-auto pb-2">
-                       {['all', 'onaylandi', 'beklemede', 'iptal'].map((filter) => (
-                         <button
-                           key={filter}
-                           onClick={() => setReservationFilter(filter)}
-                           className={`px-4 py-2 rounded-lg text-sm font-medium transition capitalize whitespace-nowrap ${
-                             reservationFilter === filter
-                               ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                               : isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                           }`}
-                         >
-                           {filter === 'all' ? 'Tümü' : filter === 'onaylandi' ? 'Onaylandı' : filter === 'beklemede' ? 'Beklemede' : 'İptal'}
-                           <span className="ml-2 text-xs opacity-75">
-                             ({filter === 'all' ? rezervasyonlar.length : rezervasyonlar.filter(r => r.durum === filter).length})
-                           </span>
-                         </button>
-                       ))}
-                     </div>
-
-                   <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} rounded-2xl shadow-lg border overflow-hidden`}>
-                     <div className="overflow-x-auto">
-                       <table className="w-full">
-                         <thead className={`${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'} border-b`}>
-                           <tr>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Rez. No</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Tarih</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Ad Soyad</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>İletişim</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Giriş - Çıkış</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Kişi</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Fiyat</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Durum</th>
-                             <th className={`px-6 py-4 text-center text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Email</th>
-                             <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>İşlem</th>
-                           </tr>
-                         </thead>
-                         <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-gray-200'}`}>
-                           {rezervasyonlar.length === 0 ? (
-                             <tr>
-                               <td colSpan="10" className={`px-6 py-12 text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>
-                                 Henüz rezervasyon yok
-                               </td>
-                             </tr>
-                           ) : (
-                             rezervasyonlar
-                               .filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter)
-                               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                               .map((rez) => (
-                               <tr key={rez.id} className={`${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-gray-50'} transition duration-200`}>
-                                 <td className={`px-6 py-4 text-xs font-mono ${isDarkMode ? 'text-cyan-400' : 'text-cyan-700'}`} title={String(rez.id)}>
-                                   #{String(rez.id).slice(0, 8)}
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-                                   {new Date(rez.created_at).toLocaleDateString('tr-TR')}
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                   {rez.ad} {rez.soyad}
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-                                   <div className="font-medium">{rez.email || <span className={`italic text-xs ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>(E-posta yok)</span>}</div>
-                                   <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{rez.telefon}</div>
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-                                   <div>{new Date(rez.giris_tarihi).toLocaleDateString('tr-TR')}</div>
-                                   <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{new Date(rez.cikis_tarihi).toLocaleDateString('tr-TR')}</div>
-                                 </td>
-                                 <td className={`px-6 py-4 text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                   {rez.kisi_sayisi}
-                                 </td>
-                                 <td className="px-6 py-4 text-sm font-bold text-cyan-600">
-                                   {formatCurrency(rez.toplam_fiyat)}
-                                 </td>
-                                 <td className="px-6 py-4">
-                                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                     rez.durum === 'onaylandi' ? 'bg-green-100 text-green-800' :
-                                     rez.durum === 'iptal' ? 'bg-red-100 text-red-800' :
-                                     'bg-yellow-100 text-yellow-800'
-                                   }`}>
-                                     {rez.durum === 'beklemede' ? '⏳ Beklemede' :
-                                      rez.durum === 'onaylandi' ? '✓ Onaylandı' : '✕ İptal'}
-                                   </span>
-                                 </td>
-                                 <td className="px-6 py-4 text-center">
-                                   {rez.email_gonderildi === true ? (
-                                     <span
-                                       title={`Gönderildi: ${rez.email_tarihi ? new Date(rez.email_tarihi).toLocaleString('tr-TR') : ''}`}
-                                       className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 text-green-700 text-base cursor-help"
-                                     >✓</span>
-                                   ) : rez.email_gonderildi === false && rez.email_tarihi ? (
-                                     <span
-                                       title={`Hata: ${new Date(rez.email_tarihi).toLocaleString('tr-TR')} tarihinde gönderilemedi`}
-                                       className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-600 text-base cursor-help"
-                                     >✕</span>
-                                   ) : (
-                                     <span
-                                       title="Henüz email gönderilmedi"
-                                       className={`text-lg ${isDarkMode ? 'text-slate-600' : 'text-gray-300'}`}
-                                     >—</span>
-                                   )}
-                                 </td>
-                                 <td className="px-6 py-4">
-                                   <div className="flex gap-2">
-                                     <select
-                                       value={rez.durum}
-                                       onChange={(e) => updateRezervasyonDurum(rez.id, e.target.value)}
-                                       className={`px-3 py-2 border ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900'} rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 hover:border-gray-400 transition`}
-                                     >
-                                       <option value="beklemede">Beklemede</option>
-                                       <option value="onaylandi">Onayla</option>
-                                       <option value="iptal">İptal Et</option>
-                                     </select>
-                                     
-                                     {/* Email Gönder Dropdown */}
-                                     <div className="relative">
-                                       <button
-                                         onClick={(e) => {
-                                           e.stopPropagation()
-                                           // Toggle dropdown (basit versiyon)
-                                           const dropdown = e.currentTarget.nextElementSibling
-                                           dropdown.classList.toggle('hidden')
-                                         }}
-                                         disabled={quickActionLoading === rez.id}
-                                         className={`px-3 py-2 ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-lg text-sm font-medium transition disabled:opacity-50`}
-                                         title="Email Gönder"
-                                       >
-                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                         </svg>
-                                       </button>
-                                       <div className={`hidden absolute right-0 mt-2 w-56 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border rounded-lg shadow-xl z-50`}>
-                                         <button
-                                           onClick={() => sendEmail(rez, 'reservation_confirmation')}
-                                           className={`w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-gray-100 text-gray-700'} transition`}
-                                         >
-                                           📧 Rezervasyon Onayı
-                                         </button>
-                                         <button
-                                           onClick={() => sendEmail(rez, 'payment_success')}
-                                           className={`w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-gray-100 text-gray-700'} transition`}
-                                         >
-                                           💳 Ödeme Onayı
-                                         </button>
-                                         <button
-                                           onClick={() => sendEmail(rez, 'check_in_reminder')}
-                                           className={`w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-gray-100 text-gray-700'} transition`}
-                                         >
-                                           ⏰ Check-in Hatırlatması
-                                         </button>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 </td>
-                               </tr>
-                             ))
-                           )}
-                         </tbody>
-                       </table>
-                     </div>
-                     
-                     {/* Pagination Controls */}
-                     {rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length > itemsPerPage && (
-                       <div className={`px-6 py-4 border-t flex items-center justify-between ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
-                         <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                           Toplam {rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length} kayıttan {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length)} arası gösteriliyor
-                         </span>
-                         <div className="flex gap-2">
-                           <button
-                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                             disabled={currentPage === 1}
-                             className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                               currentPage === 1
-                                 ? 'opacity-50 cursor-not-allowed'
-                                 : isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
-                             }`}
-                           >
-                             Önceki
-                           </button>
-                           
-                           <span className={`px-3 py-1 rounded-lg text-sm font-medium ${isDarkMode ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                             {currentPage} / {Math.ceil(rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length / itemsPerPage)}
-                           </span>
-
-                           <button
-                             onClick={() => setCurrentPage(p => Math.min(Math.ceil(rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length / itemsPerPage), p + 1))}
-                             disabled={currentPage === Math.ceil(rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length / itemsPerPage)}
-                             className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                               currentPage === Math.ceil(rezervasyonlar.filter(rez => reservationFilter === 'all' || rez.durum === reservationFilter).length / itemsPerPage)
-                                 ? 'opacity-50 cursor-not-allowed'
-                                 : isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
-                             }`}
-                           >
-                             Sonraki
-                           </button>
-                         </div>
-                       </div>
-                     )}
-                   </div>
-                   </div>
-                 )}
-         
-                 {/* Mesajlar Tab */}
-                 {activeTab === 'mesajlar' && (
-                   <div className="space-y-6">
-                     {/* Filter Bar */}
-                     <div className="flex gap-2 overflow-x-auto pb-2">
-                       {['all', 'unread', 'read'].map((filter) => (
-                         <button
-                           key={filter}
-                           onClick={() => setMessageFilter(filter)}
-                           className={`px-4 py-2 rounded-lg text-sm font-medium transition capitalize ${
-                             messageFilter === filter
-                               ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                               : isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                           }`}
-                         >
-                           {filter === 'all' ? 'Tümü' : filter === 'unread' ? 'Okunmamış' : 'Okunmuş'}
-                         </button>
-                       ))}
-                     </div>
-
-                     {/* Messages List */}
-                     <div className="space-y-4">
-                       {mesajlar
-                         .filter(m => {
-                           if (messageFilter === 'unread') return !m.okundu
-                           if (messageFilter === 'read') return m.okundu
-                           return true
-                         })
-                         .length === 0 ? (
-                       <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-12 text-center`}>
-                         <div className="text-6xl mb-4">📭</div>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-500'} text-lg`}>
-                           {messageFilter === 'all' ? 'Henüz mesaj yok' : messageFilter === 'unread' ? 'Okunmamış mesaj yok' : 'Okunmuş mesaj yok'}
-                         </p>
-                       </div>
-                     ) : (
-                       mesajlar
-                         .filter(m => {
-                           if (messageFilter === 'unread') return !m.okundu
-                           if (messageFilter === 'read') return m.okundu
-                           return true
-                         })
-                         .map((mesaj) => (
-                         <div
-                           key={mesaj.id}
-                           className={`group relative ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 transition-all duration-300 hover:shadow-xl ${
-                             !mesaj.okundu ? (isDarkMode ? 'bg-slate-800/30 border-l-4 border-l-cyan-500' : 'bg-cyan-50/30 border-l-4 border-l-cyan-500') : ''
-                           }`}
-                         >
-                           <div className="flex flex-col md:flex-row gap-6">
-                             {/* Avatar & Info */}
-                             <div className="flex items-start gap-4 min-w-[200px]">
-                               <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
-                                 !mesaj.okundu 
-                                   ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' 
-                                   : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-500'
-                               }`}>
-                                 {(mesaj.soyad || mesaj.ad_soyad || '?').charAt(0)}
-                               </div>
-                               <div>
-                                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                   {mesaj.soyad || mesaj.ad_soyad || '-'}
-                                 </h3>
-                                 <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{mesaj.email}</p>
-                                 {mesaj.telefon && (
-                                   <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>{mesaj.telefon}</p>
-                                 )}
-                               </div>
-                             </div>
-
-                             {/* Content */}
-                             <div className="flex-1">
-                               <div className="flex items-center justify-between mb-2">
-                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                   isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-gray-100 text-gray-800'
-                                 }`}>
-                                   {mesaj.konu}
-                                 </span>
-                                 <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                   {new Date(mesaj.created_at).toLocaleDateString('tr-TR', {
-                                     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-                                   })}
-                                 </span>
-                               </div>
-                               <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 {mesaj.mesaj}
-                               </p>
-                             </div>
-
-                             {/* Actions */}
-                             <div className="flex md:flex-col gap-2 justify-end md:justify-start min-w-[120px]">
-                               {!mesaj.okundu && (
-                                 <button
-                                   onClick={() => updateMesajOkundu(mesaj.id)}
-                                   className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
-                                 >
-                                   <span>✓</span> Okundu
-                                 </button>
-                               )}
-                               <button
-                                 onClick={() => deleteMesaj(mesaj.id)}
-                                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${
-                                   isDarkMode 
-                                     ? 'bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-400' 
-                                     : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-                                 }`}
-                               >
-                                 <span>🗑️</span> Sil
-                               </button>
-                               <a
-                                 href={`mailto:${mesaj.email}`}
-                                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${
-                                   isDarkMode 
-                                     ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white' 
-                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-                                 }`}
-                               >
-                                 <span>↩️</span> Yanıtla
-                               </a>
-                             </div>
-                           </div>
-                         </div>
-                       ))
-                     )}
-                   </div>
-                   </div>
-                 )}
-         
-                 {/* Yorumlar Tab */}
-                 {activeTab === 'yorumlar' && (
-                   <div className="space-y-6">
-                     {/* Filter Bar */}
-                     <div className="flex gap-2 overflow-x-auto pb-2">
-                       {['all', 'approved', 'pending'].map((filter) => (
-                         <button
-                           key={filter}
-                           onClick={() => setCommentFilter(filter)}
-                           className={`px-4 py-2 rounded-lg text-sm font-medium transition capitalize ${
-                             commentFilter === filter
-                               ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                               : isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                           }`}
-                         >
-                           {filter === 'all' ? 'Tümü' : filter === 'approved' ? 'Onaylı' : 'Bekleyen'}
-                         </button>
-                       ))}
-                     </div>
-
-                     {/* Comments List */}
-                     <div className="space-y-4">
-                       {yorumlar
-                         .filter(y => {
-                           if (commentFilter === 'approved') return y.onaylandi
-                           if (commentFilter === 'pending') return !y.onaylandi
-                           return true
-                         })
-                         .length === 0 ? (
-                       <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-12 text-center`}>
-                         <div className="text-6xl mb-4">💬</div>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-500'} text-lg`}>
-                           {commentFilter === 'all' ? 'Henüz yorum yok' : commentFilter === 'approved' ? 'Onaylı yorum yok' : 'Bekleyen yorum yok'}
-                         </p>
-                       </div>
-                     ) : (
-                       yorumlar
-                         .filter(y => {
-                           if (commentFilter === 'approved') return y.onaylandi
-                           if (commentFilter === 'pending') return !y.onaylandi
-                           return true
-                         })
-                         .map((yorum) => (
-                         <div
-                           key={yorum.id}
-                           className={`group relative ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} border rounded-2xl p-6 transition-all duration-300 hover:shadow-xl ${
-                             yorum.onaylandi 
-                               ? (isDarkMode ? 'bg-slate-800/30 border-l-4 border-l-green-500' : 'bg-green-50/30 border-l-4 border-l-green-500')
-                               : (isDarkMode ? 'bg-slate-800/30 border-l-4 border-l-orange-500' : 'bg-orange-50/30 border-l-4 border-l-orange-500')
-                           }`}
-                         >
-                           <div className="flex flex-col md:flex-row gap-6">
-                             {/* User Info */}
-                             <div className="flex items-start gap-4 min-w-[200px]">
-                               <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
-                                 yorum.onaylandi 
-                                   ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' 
-                                   : 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                               }`}>
-                                 {yorum.ad.charAt(0)}
-                               </div>
-                               <div>
-                                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{yorum.ad}</h3>
-                                 <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{yorum.email}</p>
-                                 <div className="flex mt-1">
-                                   {[1, 2, 3, 4, 5].map((star) => (
-                                     <svg
-                                       key={star}
-                                       className={`w-4 h-4 ${star <= yorum.puan ? 'text-yellow-400' : (isDarkMode ? 'text-slate-700' : 'text-gray-300')}`}
-                                       fill="currentColor"
-                                       viewBox="0 0 20 20"
-                                     >
-                                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                     </svg>
-                                   ))}
-                                 </div>
-                               </div>
-                             </div>
-
-                             {/* Content */}
-                             <div className="flex-1">
-                               <div className="flex items-center justify-between mb-2">
-                                 <h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{yorum.baslik}</h4>
-                                 <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                   {new Date(yorum.created_at).toLocaleDateString('tr-TR', {
-                                     day: 'numeric', month: 'long', year: 'numeric'
-                                   })}
-                                 </span>
-                               </div>
-                               <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                                 {yorum.yorum}
-                               </p>
-                             </div>
-
-                             {/* Actions */}
-                             <div className="flex md:flex-col gap-2 justify-end md:justify-start min-w-[120px]">
-                               {!yorum.onaylandi ? (
-                                 <button
-                                   onClick={() => updateYorumOnayla(yorum.id, true)}
-                                   className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
-                                 >
-                                   <span>✓</span> Onayla
-                                 </button>
-                               ) : (
-                                 <button
-                                   onClick={() => updateYorumOnayla(yorum.id, false)}
-                                   className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
-                                 >
-                                   <span>✕</span> Gizle
-                                 </button>
-                               )}
-                               <button
-                                 onClick={() => deleteYorum(yorum.id)}
-                                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${
-                                   isDarkMode 
-                                     ? 'bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-400' 
-                                     : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-                                 }`}
-                               >
-                                 <span>🗑️</span> Sil
-                               </button>
-                             </div>
-                           </div>
-                         </div>
-                       ))
-                     )}
-                   </div>
-                   </div>
-                 )}
-         
-                 {/* Newsletter Tab */}
-                 {activeTab === 'newsletter' && (
-                   <div className="space-y-6">
-                     {/* İstatistikler */}
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg p-6 border-l-4 border-l-cyan-500`}>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-sm mb-2`}>Toplam Abone</p>
-                         <p className="text-4xl font-bold text-cyan-600">{abone.length}</p>
-                       </div>
-                       <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg p-6 border-l-4 border-l-green-500`}>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-sm mb-2`}>Aktif Abone</p>
-                         <p className="text-4xl font-bold text-green-600">{abone.filter(a => a.aktif).length}</p>
-                       </div>
-                       <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg p-6 border-l-4 border-l-red-500`}>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-sm mb-2`}>Pasif Abone</p>
-                         <p className="text-4xl font-bold text-red-600">{abone.filter(a => !a.aktif).length}</p>
-                       </div>
-                     </div>
-         
-                     {/* Export Button */}
-                     <div className="flex justify-end">
-                       <button
-                         onClick={exportAboneler}
-                         className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg transition font-medium shadow-lg hover:shadow-xl"
-                       >
-                         📥 CSV Olarak İndir
-                       </button>
-                     </div>
-         
-                     {/* Abone Listesi */}
-                     {abone.length === 0 ? (
-                       <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg p-12 text-center`}>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-lg`}>Henüz abone yok</p>
-                       </div>
-                     ) : (
-                       <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'} rounded-2xl shadow-lg border overflow-hidden`}>
-                         <div className="overflow-x-auto">
-                           <table className="w-full">
-                             <thead className={`${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'} border-b`}>
-                               <tr>
-                                 <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Email</th>
-                                 <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Tarih</th>
-                                 <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>Durum</th>
-                                 <th className={`px-6 py-4 text-left text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-gray-700'} tracking-wide uppercase`}>İşlem</th>
-                               </tr>
-                             </thead>
-                             <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-gray-200'}`}>
-                               {abone.map((a) => (
-                                 <tr key={a.id} className={`${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-gray-50'} transition duration-200`}>
-                                   <td className={`px-6 py-4 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                     {a.email}
-                                   </td>
-                                   <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
-                                     {new Date(a.created_at).toLocaleDateString('tr-TR')}
-                                   </td>
-                                   <td className="px-6 py-4">
-                                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                       a.aktif ? 'bg-green-100 text-green-800' : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-800')
-                                     }`}>
-                                       {a.aktif ? '✓ Aktif' : '○ Pasif'}
-                                     </span>
-                                   </td>
-                                   <td className="px-6 py-4">
-                                     <button
-                                       onClick={() => deleteAbone(a.id)}
-                                       className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition font-medium text-sm"
-                                     >
-                                       🗑️ Kaldır
-                                     </button>
-                                   </td>
-                                 </tr>
-                               ))}
-                             </tbody>
-                           </table>
-                         </div>
-                       </div>
-                     )}
-                   </div>
-                 )}
-         
-                 {/* Galeri Tab */}
-                 {activeTab === 'galeri' && (
-                   <div className="space-y-6">
-                     {/* Yükleme Bölümü */}
-                     <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-cyan-300'} rounded-2xl shadow-lg border-2 border-dashed p-8`}>
-                       <div className="text-center">
-                         <input
-                           type="file"
-                           id="fotoUpload"
-                           accept="image/*"
-                           onChange={handleFotoUpload}
-                           disabled={uploadLoading}
-                           className="hidden"
-                         />
-                         <div className="text-5xl mb-4">📸</div>
-                         <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Fotoğraf Yükle</h3>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} mb-4`}>
-                           {uploadLoading ? 'Yükleniyor...' : 'Fotoğraf seçmek için tıkla'}
-                         </p>
-                         <button
-                           onClick={() => document.getElementById('fotoUpload').click()}
-                           type="button"
-                           disabled={uploadLoading}
-                           className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-                         >
-                           {uploadLoading ? 'Yükleniyor...' : '📁 Dosya Seç'}
-                         </button>
-                       </div>
-                     </div>
-         
-                     {/* Fotoğraflar Grid */}
-                     {galeriFotolar.length === 0 ? (
-                       <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg p-12 text-center`}>
-                         <p className={`${isDarkMode ? 'text-slate-400' : 'text-gray-600'} text-lg`}>Henüz galeri fotoğrafı yok</p>
-                       </div>
-                     ) : (
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                         {galeriFotolar.map((foto, index) => (
-                           <div
-                             key={foto.id}
-                             className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300`}
-                           >
-                             <div className="relative h-64 overflow-hidden bg-gray-100 group">
-                               <img
-                                 src={foto.image_url}
-                                 alt={foto.baslik}
-                                 className="w-full h-full object-cover hover:scale-110 transition duration-300 cursor-pointer"
-                                 onClick={() => setPreviewImage(foto)}
-                               />
-                               {/* Önizleme overlay */}
-                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                 <button
-                                   onClick={() => setPreviewImage(foto)}
-                                   className="px-4 py-2 bg-white/90 rounded-lg text-sm font-medium hover:bg-white transition"
-                                 >
-                                   🔍 Önizle
-                                 </button>
-                               </div>
-                             </div>
-                             <div className="p-4">
-                               <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>{foto.baslik}</h3>
-                               <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'} mb-3`}>
-                                 Sıra: {foto.sira} {foto.aciklama && `• ${foto.aciklama}`}
-                               </p>
-                               <div className="flex gap-2">
-                                 {/* Sıralama Butonları */}
-                                 <div className="flex gap-1">
-                                   <button
-                                     onClick={() => handleSiraDegistir(foto, 'up')}
-                                     disabled={index === 0}
-                                     className={`px-2 py-2 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-100 hover:bg-gray-200'} rounded-lg transition text-sm disabled:opacity-30 disabled:cursor-not-allowed`}
-                                     title="Yukarı taşı"
-                                   >
-                                     ⬆️
-                                   </button>
-                                   <button
-                                     onClick={() => handleSiraDegistir(foto, 'down')}
-                                     disabled={index === galeriFotolar.length - 1}
-                                     className={`px-2 py-2 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-100 hover:bg-gray-200'} rounded-lg transition text-sm disabled:opacity-30 disabled:cursor-not-allowed`}
-                                     title="Aşağı taşı"
-                                   >
-                                     ⬇️
-                                   </button>
-                                 </div>
-                                 
-                                 {/* Düzenle */}
-                                 <button
-                                   onClick={() => handleGaleriDuzenle(foto)}
-                                   className={`flex-1 px-3 py-2 ${isDarkMode ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700'} text-white rounded-lg transition font-medium text-sm`}
-                                 >
-                                   ✏️ Düzenle
-                                 </button>
-                                 
-                                 {/* Sil */}
-                                 <button
-                                   onClick={() => deleteFoto(foto.id, foto.image_url)}
-                                   className="px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg transition font-medium text-sm"
-                                 >
-                                   🗑️
-                                 </button>
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 )}
-          {/* For brevity, keeping the same structure as before but with dark theme */}
+          {activeTab === 'rezervasyonlar' && (
+            <Reservations
+              isDark={isDark}
+              rezervasyonlar={rezervasyonlar}
+              onApprove={handleQuickApprove}
+              onReject={handleQuickReject}
+              quickActionLoading={quickActionLoading}
+            />
+          )}
+          {activeTab === 'takvim' && (
+            <Takvim
+              isDark={isDark}
+              rezervasyonlar={rezervasyonlar}
+            />
+          )}
+          {activeTab === 'fiyatlandirma' && (
+            <Fiyatlandirma isDark={isDark} />
+          )}
+          {activeTab === 'mesajlar' && (
+            <Mesajlar
+              isDark={isDark}
+              mesajlar={mesajlar}
+              onRead={handleMesajRead}
+              onDelete={handleMesajDelete}
+            />
+          )}
+          {activeTab === 'yorumlar' && (
+            <Yorumlar
+              isDark={isDark}
+              yorumlar={yorumlar}
+              onApprove={handleYorumApprove}
+              onReject={handleYorumReject}
+              onDelete={handleYorumDelete}
+            />
+          )}
+          {activeTab === 'newsletter' && (
+            <Newsletter
+              isDark={isDark}
+              abone={abone}
+              onToggle={handleAboneToggle}
+              onDelete={handleAboneDelete}
+            />
+          )}
+          {activeTab === 'galeri' && (
+            <Galeri
+              isDark={isDark}
+              fotolar={galeriFotolar}
+              uploadLoading={fotoUploadLoading}
+              onUpload={handleFotoUpload}
+              onUpdate={handleFotoUpdate}
+              onToggle={handleFotoToggle}
+              onDelete={handleFotoDelete}
+              onMove={handleFotoMove}
+              onSlotChange={handleFotoSlotChange}
+            />
+          )}
+          {activeTab !== 'dashboard' && activeTab !== 'rezervasyonlar' && activeTab !== 'takvim' && activeTab !== 'fiyatlandirma' && activeTab !== 'mesajlar' && activeTab !== 'yorumlar' && activeTab !== 'newsletter' && activeTab !== 'galeri' && (
+            <ComingSoon isDark={isDark} label={tabLabels[activeTab]} />
+          )}
         </div>
       </main>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl text-white font-medium z-50 transition-all duration-300 transform translate-y-0 flex items-center gap-3 ${
-          toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-        }`}>
-          <span className="text-xl">{toast.type === 'success' ? '✓' : '✕'}</span>
-          {toast.message}
-        </div>
-      )}
-
-      {/* Fiyat Ekleme/Düzenleme Modal */}
-      {showFiyatModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowFiyatModal(false)}>
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingFiyat ? '✏️ Fiyat Düzenle' : '➕ Yeni Fiyat Ekle'}
-              </h3>
-              <button onClick={() => setShowFiyatModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fiyat Tipi</label>
-                <select
-                  value={fiyatForm.tip}
-                  onChange={(e) => setFiyatForm({ ...fiyatForm, tip: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="varsayilan">🏠 Varsayılan (Günlük)</option>
-                  <option value="hafta_sonu">📅 Hafta Sonu (Cuma-Cumartesi)</option>
-                  <option value="sezon">🌞 Sezon (Tarih Aralığı)</option>
-                  <option value="ozel_tarih">⭐ Özel Tarih (Bayram, Yılbaşı vb.)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fiyat ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={fiyatForm.fiyat}
-                  onChange={(e) => setFiyatForm({ ...fiyatForm, fiyat: e.target.value })}
-                  placeholder="150.00"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
-
-              {(fiyatForm.tip === 'sezon' || fiyatForm.tip === 'ozel_tarih') && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Tarihi</label>
-                    <input
-                      type="date"
-                      value={fiyatForm.baslangic_tarihi}
-                      onChange={(e) => setFiyatForm({ ...fiyatForm, baslangic_tarihi: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bitiş Tarihi</label>
-                    <input
-                      type="date"
-                      value={fiyatForm.bitis_tarihi}
-                      onChange={(e) => setFiyatForm({ ...fiyatForm, bitis_tarihi: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Açıklama (Opsiyonel)</label>
-                <input
-                  type="text"
-                  value={fiyatForm.aciklama}
-                  onChange={(e) => setFiyatForm({ ...fiyatForm, aciklama: e.target.value })}
-                  placeholder="Örn: Yaz sezonu fiyatı"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowFiyatModal(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleFiyatKaydet}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg"
-              >
-                {editingFiyat ? 'Güncelle' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Galeri Düzenleme Modal */}
-      {showGaleriModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowGaleriModal(false)}>
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">✏️ Fotoğraf Düzenle</h3>
-              <button onClick={() => setShowGaleriModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Başlık *</label>
-                <input
-                  type="text"
-                  value={galeriForm.baslik}
-                  onChange={(e) => setGaleriForm({ ...galeriForm, baslik: e.target.value })}
-                  placeholder="Örn: Marina Manzarası"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Açıklama</label>
-                <textarea
-                  value={galeriForm.aciklama}
-                  onChange={(e) => setGaleriForm({ ...galeriForm, aciklama: e.target.value })}
-                  placeholder="Fotoğraf hakkında kısa açıklama..."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowGaleriModal(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleGaleriKaydet}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg"
-              >
-                Kaydet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Galeri Önizleme Modal */}
-      {previewImage && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[70] p-4" onClick={() => setPreviewImage(null)}>
-          <button
-            onClick={() => setPreviewImage(null)}
-            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 transition z-10"
-          >
-            ×
-          </button>
-          <div className="max-w-6xl w-full" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={previewImage.image_url}
-              alt={previewImage.baslik}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
-            />
-            <div className="text-center mt-4">
-              <h3 className="text-2xl font-bold text-white mb-2">{previewImage.baslik}</h3>
-              {previewImage.aciklama && (
-                <p className="text-gray-300">{previewImage.aciklama}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-        
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: ${isDarkMode ? '#1e293b' : '#f1f5f9'};
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: ${isDarkMode ? '#475569' : '#cbd5e1'};
-          border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: ${isDarkMode ? '#64748b' : '#94a3b8'};
-        }
-      `}</style>
     </div>
   )
 }

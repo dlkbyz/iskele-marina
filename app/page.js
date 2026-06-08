@@ -4,45 +4,116 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
+import {
+  Search, Menu, X, ChevronRight, ChevronDown, MapPin, Phone, Mail, Clock,
+  Send, BedDouble, Wifi, ShieldCheck, Bath, Dumbbell, Wine, Quote, Sparkles,
+  Languages, MessageCircle, Sun, UtensilsCrossed, Anchor, ArrowUpRight,
+  Waves, Plane, Maximize2, Snowflake, Tv,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { generateStructuredData } from '@/lib/metadata'
 import { useLanguage } from '@/lib/LanguageContext'
 import DatePickerTR from './components/DatePickerTR'
 
-// Scroll animation hook
+/* Brand icons (Instagram/Facebook removed from lucide for trademark reasons) */
+const IconInstagram = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="2" width="20" height="20" rx="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.5" y2="6.5" />
+  </svg>
+)
+const IconFacebook = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+)
+
+/* ------------------------------------------------------------------ */
+/* Hooks                                                               */
+/* ------------------------------------------------------------------ */
 function useScrollAnimation() {
   const [scrollY, setScrollY] = useState(0)
-  
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-  
   return scrollY
 }
 
-// Intersection Observer hook for fade-in animations
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    const compute = () => {
+      const h = document.documentElement
+      const total = h.scrollHeight - h.clientHeight
+      const p = total > 0 ? (h.scrollTop / total) * 100 : 0
+      setProgress(Math.min(100, Math.max(0, p)))
+    }
+    compute()
+    window.addEventListener('scroll', compute, { passive: true })
+    window.addEventListener('resize', compute)
+    return () => {
+      window.removeEventListener('scroll', compute)
+      window.removeEventListener('resize', compute)
+    }
+  }, [])
+  return progress
+}
+
 function useInView(options = {}) {
   const ref = useRef(null)
   const [isInView, setIsInView] = useState(false)
-  
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsInView(true)
-        observer.disconnect()
-      }
-    }, { threshold: 0.1, ...options })
-    
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setIsInView(true); obs.disconnect() }
+    }, { threshold: 0.15, ...options })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
   }, [])
-  
   return [ref, isInView]
 }
 
-// Newsletter Form Component
+/* ------------------------------------------------------------------ */
+/* Small ornamental components                                         */
+/* ------------------------------------------------------------------ */
+function GoldDivider({ className = '' }) {
+  return (
+    <div className={`inline-flex items-center gap-3 ${className}`}>
+      <span className="block h-px w-10 bg-gold-500/60" />
+      <span className="block h-1.5 w-1.5 rotate-45 bg-gold-500" />
+      <span className="block h-px w-10 bg-gold-500/60" />
+    </div>
+  )
+}
+
+function Eyebrow({ children, tone = 'gold', className = '' }) {
+  const color = tone === 'cream' ? 'text-gold-300' : 'text-gold-600'
+  return (
+    <p className={`text-[11px] tracking-[0.32em] uppercase font-medium ${color} ${className}`}>
+      {children}
+    </p>
+  )
+}
+
+/**
+ * ChapterMarker — "01 · WELCOME" magazine treatment
+ * Vertical orientation on desktop, horizontal on mobile.
+ */
+function ChapterMarker({ label, tone = 'gold' }) {
+  const color = tone === 'cream' ? 'text-gold-300' : 'text-gold-600'
+  return (
+    <div className={`inline-flex items-center gap-3 ${color}`}>
+      <span className="block h-px w-8 bg-current opacity-50" />
+      <span className="text-[10px] tracking-[0.32em] uppercase font-medium">{label}</span>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Newsletter form                                                     */
+/* ------------------------------------------------------------------ */
 function NewsletterForm() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -52,33 +123,25 @@ function NewsletterForm() {
   const handleSubscribe = async (e) => {
     e.preventDefault()
     setMessage('')
-
     if (!email || !email.includes('@')) {
       setMessage(t('footer.emailError'))
       return
     }
-
     try {
       setLoading(true)
-
-      // Supabase'e ekle
       const { error } = await supabase
         .from('newsletter_aboneler')
         .insert([{ email, aktif: true }])
-
       if (error) {
-        if (error.code === '23505') {
-          setMessage(t('footer.emailExists'))
-        } else {
-          throw error
-        }
+        if (error.code === '23505') setMessage(t('footer.emailExists'))
+        else throw error
       } else {
         setMessage(t('footer.subscribeSuccess'))
         setEmail('')
         setTimeout(() => setMessage(''), 5000)
       }
-    } catch (error) {
-      console.error('Error:', error)
+    } catch (err) {
+      console.error('Error:', err)
       setMessage(t('common.error'))
     } finally {
       setLoading(false)
@@ -87,28 +150,32 @@ function NewsletterForm() {
 
   return (
     <div>
-      <form onSubmit={handleSubscribe} className="flex gap-3 flex-col sm:flex-row bg-white/10 backdrop-blur-sm p-1 rounded-full border border-white/20 hover:border-white/40 transition-all">
+      <form
+        onSubmit={handleSubscribe}
+        className="flex gap-2 flex-col sm:flex-row bg-cream/10 backdrop-blur-md p-1.5 rounded-full border border-gold-300/30 hover:border-gold-300/60 transition-all"
+      >
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t('footer.emailPlaceholder')}
-          className="flex-1 px-6 py-4 border-0 outline-none bg-transparent text-white placeholder-white/60 text-sm rounded-full"
+          className="flex-1 px-6 py-3.5 border-0 outline-none bg-transparent text-cream placeholder-cream/60 text-sm rounded-full"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading}
-          className="px-8 py-4 bg-white text-cyan-600 hover:bg-cyan-50 transition text-xs tracking-[0.2em] uppercase font-bold shadow-lg hover:shadow-xl rounded-full whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+          className="group px-7 py-3.5 bg-gold-500 text-sea-900 hover:bg-gold-300 transition text-[11px] tracking-[0.28em] uppercase font-semibold shadow-md rounded-full whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
           {loading ? t('common.loading') : t('footer.subscribe')}
+          <Send className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
         </button>
       </form>
       {message && (
         <p className={`text-xs mt-4 font-medium transition-opacity ${
-          message.includes('✅') ? 'text-green-200' : 
-          message.includes('⚠️') ? 'text-yellow-200' : 
-          'text-red-200'
+          message.includes('✅') ? 'text-emerald-200' :
+          message.includes('⚠️') ? 'text-gold-200' :
+          'text-rose-200'
         }`}>
           {message}
         </p>
@@ -117,6 +184,9 @@ function NewsletterForm() {
   )
 }
 
+/* ================================================================== */
+/* PAGE                                                                */
+/* ================================================================== */
 export default function Home() {
   const router = useRouter()
   const pathname = usePathname()
@@ -124,11 +194,10 @@ export default function Home() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const scrollY = useScrollAnimation()
-
-  // ✅ Structured Data for SEO
+  const scrollProgress = useScrollProgress()
   const structuredData = generateStructuredData('home')
+  const tr = language === 'tr'
 
-  // ✅ Premium navbar scroll effect
   const [isScrolled, setIsScrolled] = useState(false)
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20)
@@ -137,166 +206,193 @@ export default function Home() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  /* Galeri slot foto'ları — atanmış foto'lar admin'den seçilir, yoksa public fallback */
+  const SLOT_FALLBACKS = {
+    hero:          '/salon.png',
+    karsilama:     '/living.png',
+    konfor_bg:     '/h4-rev-img-2-1536x864.jpg',
+    yatak_odasi:   '/yatak_odasi.png',
+    suite_detay:   '/main_bedroom1.png',
+    cocuk_odasi:   '/kids_bedroom.png',
+    manzara_bg:    '/h4-rev-img-3-1536x864.jpg',
+    hakkimizda_bg: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop',
+  }
+  const [slotImages, setSlotImages] = useState(SLOT_FALLBACKS)
+  useEffect(() => {
+    let cancelled = false
+    const loadSlots = async () => {
+      try {
+        const { data } = await supabase
+          .from('galeri')
+          .select('kullanim_yeri, image_url')
+          .not('kullanim_yeri', 'is', null)
+          .eq('aktif', true)
+        if (cancelled || !data) return
+        const next = { ...SLOT_FALLBACKS }
+        data.forEach(row => {
+          if (row.kullanim_yeri && row.image_url) next[row.kullanim_yeri] = row.image_url
+        })
+        setSlotImages(next)
+      } catch (e) { console.warn('Slot foto:', e) }
+    }
+    loadSlots()
+    return () => { cancelled = true }
+  }, [])
+
   // Booking states
+  const bookingRef = useRef(null)
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
-
   const [checking, setChecking] = useState(false)
   const [availabilityMsg, setAvailabilityMsg] = useState('')
-
   const todayStr = new Date().toISOString().split('T')[0]
+
+  const scrollToBooking = () => {
+    bookingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   const handleCheckAvailability = async () => {
     setAvailabilityMsg('')
-    const isTurkish = language === 'tr'
-    console.log('Current language:', language, 'isTurkish:', isTurkish)
-
     if (!checkIn || !checkOut) {
-      setAvailabilityMsg(
-        isTurkish ? '⚠️ Lütfen giriş ve çıkış tarihini seçin.' : '⚠️ Please select check-in and check-out dates.'
-      )
+      setAvailabilityMsg(tr ? '⚠️ Lütfen giriş ve çıkış tarihini seçin.' : '⚠️ Please select check-in and check-out dates.')
       return
     }
-
     const inDate = new Date(checkIn)
     const outDate = new Date(checkOut)
-
     if (outDate <= inDate) {
-      setAvailabilityMsg(
-        isTurkish
-          ? '⚠️ Çıkış tarihi giriş tarihinden sonra olmalıdır.'
-          : '⚠️ Check-out must be after check-in.'
-      )
+      setAvailabilityMsg(tr ? '⚠️ Çıkış tarihi giriş tarihinden sonra olmalıdır.' : '⚠️ Check-out must be after check-in.')
       return
     }
-
     try {
       setChecking(true)
-      
-      // Supabase'den rezervasyonları kontrol et
-      const { data: existingReservations } = await supabase
+      const { data: existing } = await supabase
         .from('rezervasyonlar')
         .select('*')
         .eq('durum', 'onaylandı')
         .or(`and(giris_tarihi.lte.${checkOut},cikis_tarihi.gte.${checkIn})`)
-
       await new Promise((r) => setTimeout(r, 500))
-
-      if (existingReservations && existingReservations.length > 0) {
-        // Müsait değil
-        setAvailabilityMsg(
-          isTurkish
-            ? '❌ Üzgünüz, seçtiğiniz tarihler için rezervasyon mevcut.'
-            : '❌ Sorry, selected dates are not available.'
-        )
+      if (existing && existing.length > 0) {
+        setAvailabilityMsg(tr ? '❌ Üzgünüz, seçtiğiniz tarihler için rezervasyon mevcut.' : '❌ Sorry, selected dates are not available.')
       } else {
-        // Müsait!
-        setAvailabilityMsg(
-          isTurkish
-            ? '✅ Harika! Seçtiğiniz tarihler müsait.'
-            : '✅ Great! Selected dates are available.'
-        )
+        setAvailabilityMsg(tr ? '✅ Harika! Seçtiğiniz tarihler müsait.' : '✅ Great! Selected dates are available.')
       }
-    } catch (error) {
-      console.error('Availability check error:', error)
-      setAvailabilityMsg(
-        language === 'tr'
-          ? '⚠️ Kontrol sırasında bir hata oluştu. Lütfen tekrar deneyin.'
-          : '⚠️ An error occurred. Please try again.'
-      )
+    } catch (err) {
+      console.error('Availability check error:', err)
+      setAvailabilityMsg(tr ? '⚠️ Kontrol sırasında bir hata oluştu. Lütfen tekrar deneyin.' : '⚠️ An error occurred. Please try again.')
     } finally {
       setChecking(false)
     }
   }
 
-  // ✅ ÇALIŞAN SUPABASE URL
-  const heroImage = useMemo(() => {
-    return 'https://uvadqixzovxsjrzjayom.supabase.co/storage/v1/object/public/mainpage/h4-rev-img-1-1536x864.jpg?w=1920&h=1080&fit=crop'
-  }, [])
+  const heroImage = slotImages.hero
 
   const isActive = (href) => (href === '/' ? pathname === '/' : pathname?.startsWith(href))
 
-  // Navigation links
   const navLinks = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.gallery'), href: '/galeri' },
     { label: t('nav.features'), href: '/ozellikler' },
     { label: t('nav.reviews'), href: '/yorumlar' },
-    { label: t('nav.contact'), href: '/iletisim' }
+    { label: t('nav.contact'), href: '/iletisim' },
   ]
 
-  // Home features array
+  /* Bento-style stay privileges */
   const homeFeatures = [
-    { icon: '🛏️', title: t('homeFeatures.bed.title'), desc: t('homeFeatures.bed.desc') },
-    { icon: '📶', title: t('homeFeatures.wifi.title'), desc: t('homeFeatures.wifi.desc') },
-    { icon: '🔒', title: t('homeFeatures.safe.title'), desc: t('homeFeatures.safe.desc') },
-    { icon: '🛁', title: t('homeFeatures.bath.title'), desc: t('homeFeatures.bath.desc') },
-    { icon: '🤾', title: t('homeFeatures.exercise.title'), desc: t('homeFeatures.exercise.desc') },
-    { icon: '🍷', title: t('homeFeatures.drinks.title'), desc: t('homeFeatures.drinks.desc') }
+    { Icon: BedDouble,   title: t('homeFeatures.bed.title'),      desc: t('homeFeatures.bed.desc'),      span: 'md:col-span-2' },
+    { Icon: Wifi,        title: t('homeFeatures.wifi.title'),     desc: t('homeFeatures.wifi.desc'),     span: '' },
+    { Icon: ShieldCheck, title: t('homeFeatures.safe.title'),     desc: t('homeFeatures.safe.desc'),     span: '' },
+    { Icon: Bath,        title: t('homeFeatures.bath.title'),     desc: t('homeFeatures.bath.desc'),     span: '' },
+    { Icon: Dumbbell,    title: t('homeFeatures.exercise.title'), desc: t('homeFeatures.exercise.desc'), span: '' },
+    { Icon: Wine,        title: t('homeFeatures.drinks.title'),   desc: t('homeFeatures.drinks.desc'),   span: 'md:col-span-2' },
+  ]
+
+  /* Marquee strip phrases */
+  const marqueePhrases = tr
+    ? ['İskele · KKTC', 'Long Beach 2 dk', 'Marina 5 dk', 'Ercan 35 dk', '75 m² · 2+1', 'Anlık Müsaitlik']
+    : ['Iskele · TRNC', 'Long Beach 2 min', 'Marina 5 min', 'Ercan 35 min', '75 m² · 2+1', 'Live Availability']
+
+  /* Experiences cards */
+  const experiences = [
+    {
+      Icon: Sun,
+      tag: tr ? 'Sahil' : 'Coast',
+      title: tr ? 'Altın Kumlu Plajlar' : 'Golden Sandy Beaches',
+      desc: tr
+        ? 'Yürüme mesafesinde Akdeniz\'in en sakin koylarına ulaşın.'
+        : 'Walk to the calmest bays of the Mediterranean within minutes.',
+      img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&h=1100&fit=crop',
+    },
+    {
+      Icon: UtensilsCrossed,
+      tag: tr ? 'Lezzet' : 'Taste',
+      title: tr ? 'Sahil Lokantaları' : 'Seaside Tables',
+      desc: tr
+        ? 'Yerel meze, taze deniz mahsulleri ve Akdeniz mutfağının zarif yorumları.'
+        : 'Local mezze, fresh seafood and refined Mediterranean cuisine.',
+      img: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&h=1100&fit=crop',
+    },
+    {
+      Icon: Anchor,
+      tag: tr ? 'Macera' : 'Adventure',
+      title: tr ? 'Tekne & Dalış' : 'Yacht & Diving',
+      desc: tr
+        ? 'Özel tekne turları, gün batımı yelken ve berrak sularda dalış.'
+        : 'Private boat tours, sunset sailing and diving in crystal waters.',
+      img: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=900&h=1100&fit=crop',
+    },
   ]
 
   const goReservationWithQS = () => {
     const qs = new URLSearchParams({
-      giris: checkIn,
-      cikis: checkOut,
-      yetiskin: String(adults),
-      cocuk: String(children)
+      giris: checkIn, cikis: checkOut, yetiskin: String(adults), cocuk: String(children),
     }).toString()
     router.push(`/rezervasyon?${qs}`)
   }
 
-  /**
-   * ✅ HERO TYPOGRAPHY OPTIONS
-   * classic: Alloggio benzeri daha romantik, serif ağırlıklı
-   * modern : daha modern / premium editorial hissi
-   */
-  const HERO_VARIANT = 'classic' // 'classic' | 'modern'
-
-  const heroTitleClass =
-    HERO_VARIANT === 'classic'
-      ? 'text-4xl md:text-5xl lg:text-6xl font-serif'
-      : 'text-4xl md:text-6xl lg:text-7xl font-serif tracking-[0.01em]'
-
-  const heroSubtitleClass =
-    HERO_VARIANT === 'classic'
-      ? 'text-base md:text-lg font-medium text-white/95 tracking-wide'
-      : 'text-sm md:text-base font-semibold text-white/90 tracking-[0.24em] uppercase'
-
   return (
     <>
-      {/* SEO: Structured Data (JSON-LD) */}
+      {/* SEO */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      {/* TOP NAVBAR (Premium Scroll) */}
+      {/* =========================================================== */}
+      {/* TOP SCROLL PROGRESS BAR                                      */}
+      {/* =========================================================== */}
+      <div className="fixed top-0 left-0 right-0 z-[55] h-[2px] bg-transparent pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 shadow-[0_0_8px_rgba(201,169,97,0.6)] transition-[width] duration-150 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {/* =========================================================== */}
+      {/* NAVBAR                                                       */}
+      {/* =========================================================== */}
       <header
         className={[
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          isScrolled ? 'py-2' : 'py-0'
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+          isScrolled ? 'pt-3' : 'pt-4',
         ].join(' ')}
       >
-        <div className="px-5 md:px-10">
+        <div className="px-4 md:px-8">
           <div
             className={[
-              'relative rounded-2xl border backdrop-blur-md transition-all duration-300',
-              isScrolled ? 'border-white/20 bg-black/55 shadow-2xl' : 'border-white/15 bg-black/20 shadow-lg'
+              'relative rounded-full border backdrop-blur-xl transition-all duration-500',
+              isScrolled
+                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(22,59,52,0.4)]'
+                : 'border-cream/15 bg-sea-900/25 shadow-lg',
             ].join(' ')}
           >
-            {/* subtle highlight */}
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-cream/8 to-transparent opacity-60" />
+
             <div
               className={[
-                'pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent transition-opacity duration-300',
-                isScrolled ? 'opacity-100' : 'opacity-0'
-              ].join(' ')}
-            />
-            <div
-              className={[
-                'relative flex items-center justify-between transition-all duration-300',
-                isScrolled ? 'px-5 md:px-8 py-3' : 'px-5 md:px-8 py-4'
+                'relative flex items-center justify-between transition-all duration-500',
+                isScrolled ? 'px-5 md:px-7 py-2.5' : 'px-5 md:px-7 py-3',
               ].join(' ')}
             >
               {/* Logo */}
@@ -306,81 +402,63 @@ export default function Home() {
                   alt="Serenity İskele"
                   width={400}
                   height={160}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
+                  className={`object-contain transition-all duration-500 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
                   priority
                 />
               </Link>
 
-              {/* Desktop Nav */}
-              <nav className="hidden lg:flex items-center gap-8">
+              <nav className="hidden lg:flex items-center gap-9">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     className={[
-                      'relative text-[12px] md:text-[13px] tracking-[0.18em] uppercase font-medium transition',
-                      isActive(link.href) ? 'text-cyan-200' : 'text-white/85 hover:text-white'
+                      'relative text-[12px] tracking-[0.22em] uppercase font-medium transition-colors',
+                      isActive(link.href) ? 'text-gold-300' : 'text-cream/85 hover:text-gold-300',
                     ].join(' ')}
                   >
                     {link.label}
                     <span
                       className={[
-                        'absolute left-0 -bottom-2 h-[2px] bg-cyan-200 rounded-full transition-all duration-300',
-                        isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0 hover:w-full hover:opacity-100'
+                        'absolute left-0 -bottom-2 h-px bg-gold-500 transition-all duration-300',
+                        isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0',
                       ].join(' ')}
                     />
                   </Link>
                 ))}
               </nav>
 
-              {/* Right actions */}
-              <div className="flex items-center gap-3">
-                {/* Language (bigger) */}
-                <div
-                  className={[
-                    'hidden sm:flex items-center gap-3 rounded-full px-4 py-2 transition-all duration-300',
-                    isScrolled ? 'border border-white/20 bg-white/5' : 'border border-white/15 bg-white/0'
-                  ].join(' ')}
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-full border border-gold-300/25 bg-cream/5 px-3.5 py-2 text-[12px] tracking-[0.2em] uppercase font-medium text-cream hover:text-gold-300 hover:border-gold-300/50 transition"
+                  aria-label="Toggle language"
                 >
-                  <button
-                    type="button"
-                    onClick={toggleLanguage}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'tr' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {language === 'tr' ? 'TR' : 'EN'}
-                  </button>
-                </div>
+                  <Languages className="w-3.5 h-3.5" />
+                  {language === 'tr' ? 'TR' : 'EN'}
+                </button>
 
-                {/* CTA (bigger) */}
                 <Link
                   href="/rezervasyon"
                   className={[
-                    'hidden md:inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white',
-                    'text-[14px] tracking-[0.22em] uppercase font-semibold shadow-lg hover:shadow-xl transition',
+                    'hidden md:inline-flex items-center justify-center gap-2 rounded-full',
+                    'bg-gold-500 hover:bg-gold-300 text-sea-900',
+                    'text-[12px] tracking-[0.26em] uppercase font-semibold shadow-[0_8px_24px_rgba(201,169,97,0.35)] hover:shadow-[0_10px_28px_rgba(201,169,97,0.55)] transition-all',
                     isScrolled ? 'px-5 py-2.5' : 'px-6 py-3',
-                    'hover:from-cyan-600 hover:to-blue-700'
                   ].join(' ')}
                 >
                   {t('nav.reservation')}
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
 
-                {/* Mobile menu button */}
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(true)}
-                  className={[
-                    'lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-full transition',
-                    isScrolled
-                      ? 'border border-white/20 bg-white/10 hover:bg-white/15'
-                      : 'border border-white/15 bg-white/5 hover:bg-white/10'
-                  ].join(' ')}
+                  className="lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-full border border-gold-300/25 bg-cream/5 hover:bg-cream/10 transition"
                   aria-label="Open menu"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  <Menu className="w-5 h-5 text-cream" />
                 </button>
               </div>
             </div>
@@ -388,51 +466,48 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Mobile Menu Drawer */}
+      {/* MOBILE DRAWER */}
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-[#0b0f17] border-l border-white/10 p-6">
-            <div className="flex items-center justify-between mb-8">
+          <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-sea-900 border-l border-gold-300/15 p-6">
+            <div className="flex items-center justify-between mb-10">
               <Image
                 src="/serenity_logo.png"
                 alt="Serenity İskele"
                 width={160}
                 height={64}
-                className="h-14 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center justify-center"
+                className="w-10 h-10 rounded-full border border-gold-300/25 bg-cream/5 hover:bg-cream/10 transition flex items-center justify-center"
                 aria-label="Close menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5 text-cream" />
               </button>
             </div>
 
-            <div className="flex items-center gap-3 mb-6">
-              <button
-                type="button"
-                onClick={toggleLanguage}
-                className={`px-4 py-2 rounded-full border text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                  language === 'tr' ? 'border-cyan-300/40 text-cyan-200 bg-white/5' : 'border-white/15 text-white/70 hover:text-white'
-                }`}
-              >
-                {language === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-gold-300/30 px-4 py-2 text-[12px] tracking-[0.22em] uppercase font-medium text-cream"
+            >
+              <Languages className="w-3.5 h-3.5" />
+              {language === 'tr' ? 'Türkçe' : 'English'}
+            </button>
 
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-[14px] tracking-[0.18em] uppercase font-medium transition ${
-                    isActive(link.href) ? 'bg-white/10 text-cyan-200' : 'text-white/80 hover:bg-white/5 hover:text-white'
+                  className={`px-4 py-3.5 rounded-xl text-[13px] tracking-[0.22em] uppercase font-medium transition ${
+                    isActive(link.href)
+                      ? 'bg-gold-500/10 text-gold-300 border-l-2 border-gold-500'
+                      : 'text-cream/85 hover:bg-cream/5 hover:text-gold-300'
                   }`}
                 >
                   {link.label}
@@ -440,183 +515,211 @@ export default function Home() {
               ))}
             </nav>
 
-            <div className="mt-8">
+            <div className="mt-10">
               <Link
                 href="/rezervasyon"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-center px-7 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[14px] tracking-[0.22em] uppercase font-semibold shadow-lg hover:shadow-xl hover:from-cyan-600 hover:to-blue-700 transition"
+                className="flex items-center justify-center gap-2 px-7 py-4 rounded-full bg-gold-500 text-sea-900 text-[12px] tracking-[0.28em] uppercase font-semibold shadow-lg hover:bg-gold-300 transition"
               >
                 {t('nav.reservation')}
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
         </div>
       ) : null}
 
-      {/* MAIN */}
-      <main>
-        {/* HERO */}
-        <section className="relative h-screen overflow-hidden">
-          <div 
+      {/* =========================================================== */}
+      {/* SIDE RESERVATION TAB (left edge, appears after scroll)        */}
+      {/* =========================================================== */}
+      <button
+        type="button"
+        onClick={scrollToBooking}
+        aria-label="Müsaitlik sorgula"
+        className={[
+          'fixed left-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center gap-2',
+          'bg-gold-500 hover:bg-gold-300 text-sea-900 font-semibold',
+          'pl-2 pr-3 py-5 rounded-r-xl shadow-[0_10px_30px_rgba(22,59,52,0.3)]',
+          'transition-all duration-500',
+          isScrolled ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none',
+        ].join(' ')}
+        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+      >
+        <Search className="w-3.5 h-3.5 -rotate-90" />
+        <span className="text-[11px] tracking-[0.32em] uppercase">
+          {tr ? 'Müsaitlik' : 'Availability'}
+        </span>
+      </button>
+
+      {/* =========================================================== */}
+      {/* MAIN                                                         */}
+      {/* =========================================================== */}
+      <main className="bg-cream">
+        {/* =========================================================== */}
+        {/* HERO — editorial bottom-left                                 */}
+        {/* =========================================================== */}
+        <section className="relative h-screen min-h-[720px] overflow-hidden">
+          <div
             className="absolute inset-0"
-            style={{
-              transform: `translateY(${scrollY * 0.5}px)`,
-              transition: 'transform 0.1s ease-out'
-            }}
+            style={{ transform: `translateY(${scrollY * 0.35}px)`, transition: 'transform 0.1s ease-out' }}
           >
             <img
               src={heroImage}
               alt="Serenity Iskele"
-              className="w-full h-full object-cover scale-110"
-              onError={(e) => {
-                console.log('Hero image failed to load:', heroImage)
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600'
+              className="w-full h-full object-cover"
+              style={{ objectPosition: '50% 35%' }}
+            />
+            {/* Tight top vignette — only top 18% dims for chapter marker */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.32) 0%, transparent 18%)' }}
+            />
+            {/* Tight bottom vignette — only bottom 42% dims for title + widget */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to top, rgba(22,59,52,0.78) 0%, rgba(22,59,52,0.35) 22%, transparent 42%)',
               }}
             />
-            {/* ✅ Enhanced gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
           </div>
 
-          {/* ✅ HERO TEXT with fade-in animation */}
-          <div className="relative z-10 h-full flex items-center justify-center px-4 text-center -mt-6">
-            <div 
-              className="px-6 py-5 md:px-10 md:py-7 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 shadow-2xl animate-fadeInUp"
-              style={{
-                animation: 'fadeInUp 1s ease-out'
-              }}
+          {/* Chapter marker top-left */}
+          <div className="absolute top-32 md:top-36 left-6 md:left-12 z-10 animate-fadeIn animation-delay-200">
+            <ChapterMarker number="00" label={tr ? 'Hoşgeldiniz' : 'Welcome'} tone="cream" />
+          </div>
+
+          {/* Vertical scroll indicator right edge */}
+          <div className="hidden md:flex absolute right-8 bottom-72 z-10 flex-col items-center gap-3 text-cream/70 animate-fadeIn animation-delay-600">
+            <span
+              className="text-[10px] tracking-[0.4em] uppercase font-medium"
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
+              {tr ? 'Aşağı kaydır' : 'Scroll down'}
+            </span>
+            <span className="block h-12 w-px bg-gradient-to-b from-gold-300 to-transparent animate-pulse" />
+            <ChevronDown className="w-4 h-4 text-gold-300 animate-float" />
+          </div>
+
+          {/* Hero copy — bottom-left editorial */}
+          <div className="relative z-10 h-full flex flex-col justify-end pb-56 md:pb-72 px-6 md:px-14">
+            <div className="max-w-3xl">
+              <Eyebrow tone="cream" className="mb-5 animate-fadeIn animation-delay-200">
+                {tr ? 'Boutique Marina · İskele, KKTC' : 'Boutique Marina · Iskele, TRNC'}
+              </Eyebrow>
+
               <h1
-                className={`${heroTitleClass} mb-3 text-white animate-fadeIn`}
-                style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
-                  fontWeight: HERO_VARIANT === 'modern' ? 400 : 300,
-                  letterSpacing: HERO_VARIANT === 'modern' ? '0.01em' : '0.02em',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                  animation: 'fadeIn 1.2s ease-out'
-                }}
+                className="font-display text-cream text-6xl md:text-8xl lg:text-[7rem] leading-[0.95] font-light animate-fadeInUp"
+                style={{ textShadow: '0 4px 30px rgba(22,59,52,0.55)' }}
               >
                 {t('hero.title')}
               </h1>
 
-              <p
-                className={`${heroSubtitleClass} animate-fadeIn`}
-                style={{
-                  textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                  animation: 'fadeIn 1.4s ease-out'
-                }}
-              >
-                {t('hero.subtitle')}
-              </p>
+              <div className="mt-8 flex items-center gap-5 animate-fadeIn animation-delay-400">
+                <span className="block h-px w-16 bg-gold-500" />
+                <p
+                  className="max-w-md text-cream/90 text-base md:text-lg font-light leading-relaxed"
+                  style={{ textShadow: '0 2px 12px rgba(22,59,52,0.55)' }}
+                >
+                  {t('hero.subtitle')}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Booking Widget */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 pb-6 md:pb-12 px-4">
-            <div className="max-w-7xl mx-auto rounded-3xl border border-white/20 bg-white/90 backdrop-blur-xl shadow-2xl overflow-hidden">
+          {/* Booking widget anchored to bottom */}
+          <div ref={bookingRef} className="absolute bottom-0 left-0 right-0 z-20 pb-8 md:pb-10 px-4">
+            <div className="max-w-6xl mx-auto rounded-2xl border border-gold-300/40 bg-cream/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(22,59,52,0.45)] overflow-hidden animate-fadeInUp animation-delay-600">
+              <div className="flex items-center justify-center gap-3 py-3 bg-sea-800 text-cream">
+                <Sparkles className="w-3.5 h-3.5 text-gold-300" />
+                <span className="text-[10px] tracking-[0.32em] uppercase font-medium">
+                  {tr ? 'Müsaitlik Sorgula' : 'Check Availability'}
+                </span>
+                <Sparkles className="w-3.5 h-3.5 text-gold-300" />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0">
-                {/* Giriş Tarihi */}
-                <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px] lg:border-r">
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
+                <div className="border-r border-sand-200 p-5 md:p-7 flex flex-col justify-between min-h-[130px]">
+                  <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 mb-3 font-semibold">
                     {t('reservation.checkIn')}
                   </label>
-                  <div className="flex-1 flex items-center">
-                    <DatePickerTR
-                      value={checkIn}
-                      onChange={setCheckIn}
-                      minDate={todayStr}
-                      placeholder="gg/aa/yyyy"
-                      className="w-full"
-                      inputClassName="w-full text-lg md:text-xl font-light border-0 border-b-2 border-cyan-300 py-2 bg-transparent outline-none cursor-pointer placeholder-gray-400 text-gray-900"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light invisible">placeholder</p>
+                  <DatePickerTR
+                    value={checkIn}
+                    onChange={setCheckIn}
+                    minDate={todayStr}
+                    placeholder="gg/aa/yyyy"
+                    className="w-full"
+                    inputClassName="w-full text-lg md:text-xl font-light border-0 border-b border-sea-800/30 focus:border-gold-500 py-2 bg-transparent outline-none cursor-pointer placeholder-mute text-sea-900 transition-colors"
+                  />
                 </div>
 
-                {/* Çıkış Tarihi */}
-                <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px]">
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
+                <div className="border-r border-sand-200 p-5 md:p-7 flex flex-col justify-between min-h-[130px]">
+                  <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 mb-3 font-semibold">
                     {t('reservation.checkOut')}
                   </label>
-                  <div className="flex-1 flex items-center">
-                    <DatePickerTR
-                      value={checkOut}
-                      onChange={setCheckOut}
-                      minDate={checkIn || todayStr}
-                      placeholder="gg/aa/yyyy"
-                      className="w-full"
-                      inputClassName="w-full text-lg md:text-xl font-light border-0 border-b-2 border-cyan-300 py-2 bg-transparent outline-none cursor-pointer placeholder-gray-400 text-gray-900"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light invisible">placeholder</p>
+                  <DatePickerTR
+                    value={checkOut}
+                    onChange={setCheckOut}
+                    minDate={checkIn || todayStr}
+                    placeholder="gg/aa/yyyy"
+                    className="w-full"
+                    inputClassName="w-full text-lg md:text-xl font-light border-0 border-b border-sea-800/30 focus:border-gold-500 py-2 bg-transparent outline-none cursor-pointer placeholder-mute text-sea-900 transition-colors"
+                  />
                 </div>
 
-                {/* Yetişkinler */}
-                <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px]">
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
+                <div className="border-r border-sand-200 p-5 md:p-7 flex flex-col justify-between min-h-[130px]">
+                  <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 mb-3 font-semibold">
                     {t('reservation.adults')}
                   </label>
-                  <div className="flex-1 flex items-center">
-                    <select
-                      value={adults}
-                      onChange={(e) => setAdults(Number(e.target.value))}
-                      className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2 appearance-none cursor-pointer pr-4"
-                    >
-                      <option value={1}>1 {language === 'tr' ? 'Kişi' : 'Guest'}</option>
-                      <option value={2}>2 {language === 'tr' ? 'Kişi' : 'Guests'}</option>
-                      <option value={3}>3 {language === 'tr' ? 'Kişi' : 'Guests'}</option>
-                      <option value={4}>4 {language === 'tr' ? 'Kişi' : 'Guests'}</option>
-                    </select>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light invisible">placeholder</p>
+                  <select
+                    value={adults}
+                    onChange={(e) => setAdults(Number(e.target.value))}
+                    className="w-full text-lg md:text-xl text-sea-900 font-light border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none bg-transparent transition-colors py-2 appearance-none cursor-pointer pr-4"
+                  >
+                    <option value={1}>1 {tr ? 'Kişi' : 'Guest'}</option>
+                    <option value={2}>2 {tr ? 'Kişi' : 'Guests'}</option>
+                    <option value={3}>3 {tr ? 'Kişi' : 'Guests'}</option>
+                    <option value={4}>4 {tr ? 'Kişi' : 'Guests'}</option>
+                  </select>
                 </div>
 
-                {/* Çocuklar */}
-                <div className="border-r border-gray-200 p-6 md:p-8 flex flex-col justify-between min-h-[140px] lg:border-r-0">
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3 font-semibold">
+                <div className="border-r border-sand-200 p-5 md:p-7 flex flex-col justify-between min-h-[130px] lg:border-r-0">
+                  <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 mb-3 font-semibold">
                     {t('reservation.children')}
                   </label>
-                  <div className="flex-1 flex items-center">
-                    <select
-                      value={children}
-                      onChange={(e) => setChildren(Number(e.target.value))}
-                      className="w-full text-lg md:text-xl text-gray-900 font-light border-0 border-b-2 border-cyan-300 focus:border-cyan-600 outline-none bg-transparent transition py-2 appearance-none cursor-pointer pr-4"
-                    >
-                      <option value={0}>0</option>
-                      <option value={1}>1</option>
-                      <option value={2}>2</option>
-                      <option value={3}>3</option>
-                    </select>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-2 font-light invisible">placeholder</p>
+                  <select
+                    value={children}
+                    onChange={(e) => setChildren(Number(e.target.value))}
+                    className="w-full text-lg md:text-xl text-sea-900 font-light border-0 border-b border-sea-800/30 focus:border-gold-500 outline-none bg-transparent transition-colors py-2 appearance-none cursor-pointer pr-4"
+                  >
+                    <option value={0}>0</option>
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                  </select>
                 </div>
 
-                {/* Button */}
-                <div className="p-6 md:p-8 flex items-center justify-center lg:border-l border-gray-200 min-h-[140px]">
+                <div className="p-4 md:p-5 flex items-center justify-center min-h-[130px] bg-sand-50">
                   <button
                     type="button"
                     onClick={handleCheckAvailability}
                     disabled={checking}
-                    className="w-full h-full px-8 py-4 md:py-6 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all text-[12px] md:text-[13px] tracking-[0.2em] uppercase font-bold shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transform hover:scale-105 duration-200"
+                    className="group w-full h-full px-6 py-4 rounded-xl bg-sea-800 hover:bg-sea-900 text-cream transition-all text-[11px] tracking-[0.26em] uppercase font-semibold shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      {checking ? t('common.loading') : t('reservation.submit')}
-                    </div>
+                    <Search className="w-4 h-4 text-gold-300 transition-transform group-hover:scale-110" />
+                    {checking ? t('common.loading') : t('reservation.submit')}
                   </button>
                 </div>
               </div>
 
               {availabilityMsg && (
-                <div className="px-5 md:px-6 pb-6">
-                  <div className={`p-4 rounded-xl border-2 ${
-                    availabilityMsg.includes('✅') 
-                      ? 'bg-green-50 border-green-300 text-green-800' 
+                <div className="px-5 md:px-6 pb-6 pt-4 border-t border-sand-200 bg-sand-50/40">
+                  <div className={`p-4 rounded-xl border ${
+                    availabilityMsg.includes('✅')
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                       : availabilityMsg.includes('❌')
-                      ? 'bg-red-50 border-red-300 text-red-800'
-                      : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+                      ? 'bg-rose-50 border-rose-200 text-rose-800'
+                      : 'bg-gold-50 border-gold-300 text-gold-700'
                   }`}>
                     <p className="text-sm md:text-base font-medium text-center">{availabilityMsg}</p>
                   </div>
@@ -626,9 +729,10 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={goReservationWithQS}
-                        className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 transition-all text-[11px] tracking-[0.2em] uppercase font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+                        className="group px-8 py-3 rounded-full bg-gold-500 text-sea-900 hover:bg-gold-300 transition-all text-[11px] tracking-[0.26em] uppercase font-semibold shadow-md inline-flex items-center gap-2"
                       >
-                        {language === 'tr' ? '📝 Rezervasyon Yap' : '📝 Make Reservation'}
+                        {tr ? 'Rezervasyon Yap' : 'Make Reservation'}
+                        <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </button>
                     </div>
                   )}
@@ -639,21 +743,17 @@ export default function Home() {
                         href="https://wa.me/905301234567"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all text-[11px] tracking-[0.15em] uppercase font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200 flex items-center gap-2"
+                        className="px-6 py-3 rounded-full bg-emerald-600 text-cream hover:bg-emerald-700 transition-all text-[11px] tracking-[0.2em] uppercase font-semibold shadow-md flex items-center gap-2"
                       >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                        </svg>
-                        {language === 'tr' ? 'WhatsApp ile Sor' : 'Ask on WhatsApp'}
+                        <MessageCircle className="w-4 h-4" />
+                        {tr ? 'WhatsApp ile Sor' : 'Ask on WhatsApp'}
                       </a>
                       <a
                         href="/iletisim"
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all text-[11px] tracking-[0.15em] uppercase font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200 flex items-center gap-2"
+                        className="px-6 py-3 rounded-full bg-sea-800 text-cream hover:bg-sea-900 transition-all text-[11px] tracking-[0.2em] uppercase font-semibold shadow-md flex items-center gap-2"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        {language === 'tr' ? 'İletişim Formu' : 'Contact Form'}
+                        <Mail className="w-4 h-4" />
+                        {tr ? 'İletişim Formu' : 'Contact Form'}
                       </a>
                     </div>
                   )}
@@ -663,149 +763,416 @@ export default function Home() {
           </div>
         </section>
 
-        {/* WELCOME */}
-        <section className="py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mb-4 font-light">{t('hero.welcomeBadge')}</p>
-              <h2 className="text-4xl md:text-5xl font-serif text-gray-900 mb-6" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-                {t('hero.welcomeTitle')}
-              </h2>
-              <div className="w-12 h-[1px] bg-gray-400 mx-auto mb-8" />
-              <p className="text-lg text-gray-600 font-light leading-relaxed max-w-2xl mx-auto">{t('hero.welcomeDesc')}</p>
+        {/* =========================================================== */}
+        {/* MARQUEE STRIP                                                */}
+        {/* =========================================================== */}
+        <div className="relative bg-sea-900 border-y border-gold-500/20 overflow-hidden py-5">
+          <div className="flex gap-12 whitespace-nowrap animate-marquee">
+            {[...marqueePhrases, ...marqueePhrases, ...marqueePhrases].map((phrase, i) => (
+              <div key={i} className="flex items-center gap-12 shrink-0">
+                <span className="font-display italic text-cream/85 text-2xl md:text-3xl font-light">{phrase}</span>
+                <span className="block h-2 w-2 rotate-45 bg-gold-500 shrink-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* =========================================================== */}
+        {/* 01 — WELCOME (asymmetric editorial)                          */}
+        {/* =========================================================== */}
+        <section className="py-28 md:py-36 bg-cream relative overflow-hidden">
+          <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-gold-500/5 blur-3xl" />
+
+          <div className="container mx-auto px-6 relative">
+            <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+              {/* Left: chapter + heading + pull text */}
+              <div className="lg:col-span-7">
+                <ChapterMarker number="01" label={tr ? 'Karşılama' : 'Welcome'} />
+                <h2 className="font-display text-5xl md:text-6xl lg:text-7xl text-sea-900 font-light leading-[1.05] mt-6 mb-8">
+                  {t('hero.welcomeTitle')}
+                </h2>
+                <div className="w-16 h-px bg-gold-500 mb-8" />
+                <p className="text-lg md:text-xl text-ink-soft font-light leading-relaxed max-w-xl">
+                  {t('hero.welcomeDesc')}
+                </p>
+              </div>
+
+              {/* Right: real living room with floating caption */}
+              <div className="lg:col-span-5 relative">
+                <div className="relative aspect-[3/2] rounded-2xl overflow-hidden shadow-[0_30px_70px_-20px_rgba(22,59,52,0.4)] group">
+                  <img
+                    src={slotImages.karsilama}
+                    alt="Yaşam alanı"
+                    className="w-full h-full object-cover transition-transform duration-[1.6s] group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-sea-900/35 via-transparent to-transparent" />
+
+                  {/* Location proximity strip — overlay on top of image */}
+                  <div className="absolute inset-x-0 top-0 px-5 md:px-6 py-4 md:py-5 bg-gradient-to-b from-sea-900/65 via-sea-900/30 to-transparent flex items-center justify-between gap-2">
+                    {[
+                      { Icon: Waves,  label: tr ? 'Plaja'  : 'Beach',  value: tr ? '2 dk' : '2 min' },
+                      { Icon: Anchor, label: tr ? 'Marina' : 'Marina', value: tr ? '5 dk' : '5 min' },
+                      { Icon: Plane,  label: tr ? 'Ercan'  : 'Ercan',  value: tr ? '35 dk' : '35 min' },
+                    ].map((item, i, arr) => (
+                      <div key={i} className="flex items-center gap-3 flex-1">
+                        {i > 0 && <span className="w-px h-7 bg-gold-300/40 -ml-1" />}
+                        <div className="w-8 h-8 rounded-full bg-gold-500/15 border border-gold-300/40 flex items-center justify-center shrink-0">
+                          <item.Icon className="w-3.5 h-3.5 text-gold-300" strokeWidth={1.4} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] tracking-[0.22em] uppercase text-gold-200/90 font-semibold leading-tight">{item.label}</p>
+                          <p className="font-display text-cream text-base md:text-lg italic leading-tight">{item.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Floating frame ornament */}
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-2xl border-2 border-gold-500 hidden md:block" />
+                </div>
+                {/* Floating caption tile bottom-left */}
+                <div className="hidden lg:flex absolute -bottom-8 -left-8 flex-col bg-cream border border-gold-300/30 px-6 py-5 rounded-xl shadow-[0_20px_40px_-10px_rgba(22,59,52,0.25)]">
+                  <span className="text-[10px] tracking-[0.28em] uppercase text-gold-600 font-medium mb-1">
+                    {tr ? 'İskele' : 'Iskele'}
+                  </span>
+                  <span className="font-display text-2xl text-sea-900 italic">KKTC</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Spec cards — daire spesifikasyonları */}
+            <div className="mt-20 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+              {[
+                { Icon: Maximize2, label: tr ? 'Boyut'       : 'Size',      value: '75 m²' },
+                { Icon: BedDouble, label: tr ? 'Yatak Odası' : 'Bedrooms',  value: '2+1' },
+                { Icon: Bath,      label: tr ? 'Banyo'       : 'Bathrooms', value: '2' },
+                { Icon: Sun,       label: tr ? 'Manzara'     : 'View',      value: tr ? 'Deniz' : 'Sea' },
+              ].map((spec, i) => (
+                <div
+                  key={i}
+                  className="group relative bg-white/50 backdrop-blur-sm border border-gold-300/30 rounded-2xl p-6 md:p-7 hover:border-gold-500 hover:bg-white/70 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(22,59,52,0.25)]"
+                  style={{ animation: `fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${0.1 + i * 0.08}s both` }}
+                >
+                  <span className="absolute top-4 right-4 w-5 h-5 border-t border-r border-gold-500/40 group-hover:border-gold-500 transition-colors" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-sand-50 border border-gold-500/40 group-hover:border-gold-500 group-hover:bg-gold-50 flex items-center justify-center shrink-0 transition-all duration-500">
+                      <spec.Icon className="w-5 h-5 text-sea-800 group-hover:text-gold-700 transition-colors" strokeWidth={1.4} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] tracking-[0.24em] uppercase text-gold-700 font-semibold mb-1">{spec.label}</p>
+                      <p className="font-display text-2xl md:text-3xl text-sea-900 font-light leading-tight">{spec.value}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* FEATURES - Modern Overlay Style */}
-        <section className="relative py-0">
+        {/* =========================================================== */}
+        {/* 02 — STAY PRIVILEGES (bento grid)                            */}
+        {/* =========================================================== */}
+        <section className="relative">
           <div className="absolute inset-0 z-0">
             <img
-              src="https://uvadqixzovxsjrzjayom.supabase.co/storage/v1/object/public/mainpage/h4-rev-img-2-1536x864.jpg"
+              src={slotImages.konfor_bg}
               alt="Modern Interior"
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1631049307038-da5ec5d27288?w=1920&h=1080&fit=crop"
-              }}
             />
-            <div className="absolute inset-0 bg-black/25"></div>
+            {/* Hafifletilmiş overlay — foto nefes alsın */}
+            <div className="absolute inset-0 bg-gradient-to-b from-sea-900/55 via-sea-900/35 to-sea-900/55" />
           </div>
 
-          <div className="relative z-10 py-20 md:py-32 px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 lg:p-16">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
-                  {homeFeatures.map((feature, i) => (
-                    <div 
-                      key={i} 
-                      className="flex flex-col items-center text-center group cursor-pointer"
-                      style={{
-                        animation: `fadeInUp 0.6s ease-out ${i * 0.1}s both`
-                      }}
-                    >
-                      <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-4 md:mb-6 transition-all group-hover:scale-125 group-hover:-translate-y-3 duration-500 ease-out">
-                        <span className="text-4xl filter drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-500">{feature.icon}</span>
-                      </div>
-                      <h3 className="text-sm md:text-base tracking-[0.15em] uppercase text-gray-900 mb-2 font-semibold">
-                        {feature.title}
-                      </h3>
-                      <p className="text-xs md:text-sm text-gray-600 font-light leading-relaxed">
-                        {feature.desc}
-                      </p>
-                    </div>
-                  ))}
+          <div className="relative z-10 py-24 md:py-32 px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-14">
+                <ChapterMarker number="02" label={tr ? 'Konfor' : 'Comfort'} tone="cream" />
+                <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-cream font-light mt-6">
+                  {tr ? 'Her detay sizin için' : 'Every detail, for you'}
+                </h2>
+                <div className="mt-6 flex justify-center">
+                  <GoldDivider />
+                </div>
+              </div>
+
+              {/* Glass capsules — 4x2 grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {[
+                  { Icon: BedDouble,   title: tr ? 'Geniş Yatak'  : 'King Bed' },
+                  { Icon: Wifi,        title: tr ? 'Hızlı Wi-Fi'  : 'Fast Wi-Fi' },
+                  { Icon: ShieldCheck, title: tr ? 'Kasa'         : 'Safe' },
+                  { Icon: Bath,        title: tr ? 'Modern Banyo' : 'Modern Bath' },
+                  { Icon: Snowflake,   title: tr ? 'Klima'        : 'A/C' },
+                  { Icon: Tv,          title: tr ? 'Smart TV'     : 'Smart TV' },
+                  { Icon: Wine,        title: tr ? 'Mini Bar'     : 'Mini Bar' },
+                  { Icon: Dumbbell,    title: tr ? 'Egzersiz'     : 'Gym' },
+                ].map(({ Icon, title }, i) => (
+                  <div
+                    key={i}
+                    className="group flex items-center gap-3 bg-cream/8 backdrop-blur-md border border-gold-300/25 rounded-full px-4 py-3 md:px-5 md:py-3.5 hover:bg-cream/15 hover:border-gold-500/60 transition-all duration-500"
+                    style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.06}s both` }}
+                  >
+                    <span className="w-9 h-9 rounded-full bg-gold-500/15 border border-gold-300/40 flex items-center justify-center shrink-0 group-hover:bg-gold-500/25 group-hover:border-gold-500/70 transition">
+                      <Icon className="w-4 h-4 text-gold-300 group-hover:text-gold-200 transition" strokeWidth={1.4} />
+                    </span>
+                    <span className="text-cream text-[11px] md:text-[12px] tracking-[0.18em] uppercase font-semibold">
+                      {title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* 03 — ATMOSPHERE / Gallery preview                            */}
+        {/* =========================================================== */}
+        <section className="py-28 md:py-36 bg-cream relative overflow-hidden">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10 mb-14">
+              <div className="max-w-2xl">
+                <ChapterMarker number="03" label={tr ? 'Atmosfer' : 'Atmosphere'} />
+                <h2 className="font-display text-5xl md:text-6xl text-sea-900 font-light leading-tight mt-6">
+                  {tr ? 'Mekândan kareler' : 'Frames from the space'}
+                </h2>
+              </div>
+              <Link
+                href="/galeri"
+                className="group inline-flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase text-sea-900 hover:text-gold-600 font-semibold transition self-start"
+              >
+                {tr ? 'Tüm Galeri' : 'View Full Gallery'}
+                <span className="w-10 h-10 rounded-full border border-gold-500/50 group-hover:bg-gold-500 group-hover:border-gold-500 flex items-center justify-center transition-all">
+                  <ArrowUpRight className="w-4 h-4 text-gold-600 group-hover:text-sea-900 transition" />
+                </span>
+              </Link>
+            </div>
+
+            {/* Editorial: cinematic banner (real interior) + 2 thumbnails below */}
+            <div className="space-y-4 md:space-y-6">
+              {/* Cinematic banner — master bedroom */}
+              <div className="relative h-[420px] md:h-[560px] rounded-2xl overflow-hidden group shadow-[0_30px_70px_-25px_rgba(22,59,52,0.4)]">
+                <img
+                  src={slotImages.yatak_odasi}
+                  alt={tr ? 'Yatak odası' : 'Bedroom'}
+                  className="w-full h-full object-cover transition-transform duration-[1.6s] group-hover:scale-[1.04]"
+                  style={{ objectPosition: '50% 55%' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-sea-900/65 via-sea-900/10 to-transparent" />
+                <div className="absolute top-6 right-6 inline-flex items-center gap-2 bg-cream/95 backdrop-blur px-4 py-2 rounded-full border border-gold-300/40 shadow-md">
+                  <Sparkles className="w-3.5 h-3.5 text-gold-600" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-sea-900 font-semibold">
+                    {tr ? 'Bizim Mekanımız' : 'Our Space'}
+                  </span>
+                </div>
+                <div className="absolute bottom-7 left-7 md:bottom-10 md:left-10 max-w-md">
+                  <Eyebrow tone="cream" className="mb-3">{tr ? 'Yatak Odası' : 'Bedroom'}</Eyebrow>
+                  <p className="font-display text-cream text-3xl md:text-5xl font-light italic leading-tight">
+                    {tr ? 'Sessizlik & sıcaklık' : 'Stillness & warmth'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Two thumbnails — real rooms */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 h-[260px] md:h-[320px]">
+                <div className="relative rounded-2xl overflow-hidden group">
+                  <img
+                    src={slotImages.suite_detay}
+                    alt={tr ? 'İç mekan detayları' : 'Interior details'}
+                    className="w-full h-full object-cover transition-transform duration-[1.4s] group-hover:scale-105"
+                    style={{ objectPosition: '50% 50%' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-sea-900/55 via-transparent to-transparent" />
+                  <div className="absolute bottom-5 left-5">
+                    <Eyebrow tone="cream" className="mb-1">{tr ? 'Suite' : 'Suite'}</Eyebrow>
+                    <p className="font-display text-cream text-2xl font-light italic">
+                      {tr ? 'İnce Detaylar' : 'Fine Details'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative rounded-2xl overflow-hidden group">
+                  <img
+                    src={slotImages.cocuk_odasi}
+                    alt={tr ? 'Çocuk odası' : 'Kids room'}
+                    className="w-full h-full object-cover transition-transform duration-[1.4s] group-hover:scale-105"
+                    style={{ objectPosition: '50% 55%' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-sea-900/55 via-transparent to-transparent" />
+                  <div className="absolute bottom-5 left-5">
+                    <Eyebrow tone="cream" className="mb-1">{tr ? 'Çocuk Odası' : 'Kids Room'}</Eyebrow>
+                    <p className="font-display text-cream text-2xl font-light italic">
+                      {tr ? 'Aile' : 'Family'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* GALLERY & ABOUT */}
-        <section className="py-0 bg-white">
-          <div className="grid lg:grid-cols-2 gap-0 min-h-[600px] lg:min-h-[750px]">
-            <div className="relative overflow-hidden bg-gray-200 order-2 lg:order-1">
+        {/* =========================================================== */}
+        {/* 04 — ABOUT (split with chapter + signature ornament)         */}
+        {/* =========================================================== */}
+        <section className="bg-cream">
+          <div className="grid lg:grid-cols-2 gap-0 min-h-[680px]">
+            <div className="relative overflow-hidden bg-sea-900 order-2 lg:order-1 group">
               <img
-                src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop"
+                src={slotImages.hakkimizda_bg}
                 alt="Gallery"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent"></div>
-              <div className="absolute left-6 md:left-10 lg:left-12 top-1/2 -translate-y-1/2">
-                <div className="bg-white px-8 md:px-12 lg:px-16 py-12 md:py-16 rounded-2xl shadow-2xl backdrop-blur-sm border border-white/90 hover:shadow-3xl transition-shadow duration-300">
-                  <div className="text-cyan-600 text-sm tracking-[0.2em] uppercase font-bold mb-4">Keşfet</div>
-                  <h3
-                    className="text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-8 font-light"
-                    style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                  >
-                    {language === 'tr' ? 'Galeri' : 'Gallery'}
+              <div className="absolute inset-0 bg-gradient-to-r from-sea-900/65 via-sea-900/15 to-transparent" />
+              <div className="absolute left-6 md:left-12 top-1/2 -translate-y-1/2 max-w-sm">
+                <div className="bg-cream/95 backdrop-blur-sm px-9 md:px-12 py-12 md:py-14 rounded-2xl shadow-[0_20px_60px_-15px_rgba(22,59,52,0.4)] border border-gold-300/30">
+                  <Eyebrow className="mb-4">{tr ? 'Keşfet' : 'Discover'}</Eyebrow>
+                  <h3 className="font-display text-5xl md:text-6xl text-sea-900 font-light mb-6 leading-tight">
+                    {tr ? 'Galeri' : 'Gallery'}
                   </h3>
+                  <div className="w-12 h-px bg-gold-500 mb-7" />
                   <Link
                     href="/galeri"
-                    className="inline-flex items-center gap-3 text-[12px] tracking-[0.3em] uppercase text-gray-900 hover:text-cyan-600 font-bold transition group"
+                    className="group/btn inline-flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase text-sea-900 hover:text-gold-600 font-semibold transition"
                   >
-                    {language === 'tr' ? 'Daha Fazla' : 'Read More'} 
-                    <span className="text-2xl group-hover:translate-x-2 transition-transform">→</span>
+                    {tr ? 'Daha Fazla' : 'View More'}
+                    <ChevronRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1.5" />
                   </Link>
                 </div>
               </div>
             </div>
 
-            <div className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-cyan-50 p-8 md:p-12 lg:p-16 flex flex-col justify-center order-1 lg:order-2">
+            <div className="relative overflow-hidden bg-gradient-to-br from-sand-50 via-cream to-sand-100 p-8 md:p-14 lg:p-20 flex flex-col justify-center order-1 lg:order-2">
+
               <div className="relative z-10 max-w-lg">
-                <div className="text-cyan-600 text-sm tracking-[0.2em] uppercase font-bold mb-6">Serenity Iskele</div>
-                <h3
-                  className="text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-10 font-light leading-tight"
-                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                >
-                  {language === 'tr' ? 'Hakkımızda' : 'About Us'}
+                <ChapterMarker number="04" label={tr ? 'Hikayemiz' : 'Our Story'} />
+                <h3 className="font-display text-5xl md:text-6xl text-sea-900 font-light leading-tight mt-6 mb-7">
+                  {tr ? 'Hakkımızda' : 'About Us'}
                 </h3>
-                <div className="w-12 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mb-8"></div>
-                <p className="text-[15px] md:text-[16px] leading-relaxed text-gray-700 font-light mb-10">
-                  {language === 'tr'
-                    ? "Denize yakın konumunun huzurlu atmosferi ve modern konforu bir araya getirir. Her misafirimiz için unutulmaz bir deneyim yaratmayı amaçlıyoruz."
-                    : "Located close to the sea, combining serene atmosphere with modern comfort. We aim to create an unforgettable experience for every guest."}
+                <div className="w-12 h-px bg-gold-500 mb-8" />
+                <p className="text-[15px] md:text-[17px] leading-relaxed text-ink-soft font-light mb-10">
+                  {tr
+                    ? 'Denize yakın konumunun huzurlu atmosferi ve modern konforu bir araya getirir. Her misafirimiz için unutulmaz bir deneyim yaratmayı amaçlıyoruz.'
+                    : 'Located close to the sea, combining serene atmosphere with modern comfort. We aim to create an unforgettable experience for every guest.'}
                 </p>
-                <div className="grid grid-cols-2 gap-8 pt-10 border-t border-gray-300">
+                <dl className="grid grid-cols-2 gap-8 pt-10 border-t border-gold-500/20">
                   <div>
-                    <div className="text-4xl md:text-5xl font-light text-cyan-600 mb-3">5+</div>
-                    <p className="text-xs tracking-[0.15em] uppercase text-gray-600 font-semibold">
-                      {language === 'tr' ? 'Yıl Deneyim' : 'Years Experience'}
-                    </p>
+                    <dt className="text-[11px] tracking-[0.22em] uppercase text-mute font-semibold mb-2">
+                      {tr ? 'Konum' : 'Location'}
+                    </dt>
+                    <dd className="font-display text-2xl md:text-3xl text-sea-900 font-light leading-tight">
+                      İskele · KKTC
+                    </dd>
                   </div>
                   <div>
-                    <div className="text-4xl md:text-5xl font-light text-blue-600 mb-3">500+</div>
-                    <p className="text-xs tracking-[0.15em] uppercase text-gray-600 font-semibold">
-                      {language === 'tr' ? 'Memnun Konuk' : 'Happy Guests'}
-                    </p>
+                    <dt className="text-[11px] tracking-[0.22em] uppercase text-mute font-semibold mb-2">
+                      {tr ? 'Rezervasyon' : 'Booking'}
+                    </dt>
+                    <dd className="font-display text-2xl md:text-3xl text-sea-900 font-light leading-tight">
+                      {tr ? 'Anlık onay' : 'Instant confirm'}
+                    </dd>
                   </div>
-                </div>
+                </dl>
               </div>
             </div>
           </div>
         </section>
 
-        {/* TESTIMONIAL */}
-        <section className="relative py-24 overflow-hidden min-h-[450px]">
+        {/* =========================================================== */}
+        {/* 05 — EXPERIENCES (3 immersive cards)                         */}
+        {/* =========================================================== */}
+        <section className="py-28 md:py-36 bg-sand-50 relative overflow-hidden">
+          <div className="pointer-events-none absolute top-0 left-0 w-72 h-72 rounded-full bg-gold-500/8 blur-3xl" />
+
+          <div className="container mx-auto px-6 relative">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <ChapterMarker number="05" label={tr ? 'Deneyim' : 'Experience'} />
+              <h2 className="font-display text-5xl md:text-6xl text-sea-900 font-light leading-tight mt-6 mb-6">
+                {tr ? 'İskele’de sizi neler bekliyor' : 'What awaits you in Iskele'}
+              </h2>
+              <GoldDivider />
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+              {experiences.map(({ Icon, tag, title, desc, img }, i) => (
+                <div
+                  key={i}
+                  className="group relative bg-cream rounded-2xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(22,59,52,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(22,59,52,0.4)] transition-all duration-500 hover:-translate-y-2"
+                  style={{ animation: `fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s both` }}
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <img
+                      src={img}
+                      alt={title}
+                      className="w-full h-full object-cover transition-transform duration-[1.6s] group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-sea-900/80 via-sea-900/15 to-transparent" />
+
+                    {/* Tag */}
+                    <div className="absolute top-5 left-5 inline-flex items-center gap-2 bg-cream/95 backdrop-blur px-3 py-1.5 rounded-full border border-gold-300/40">
+                      <Icon className="w-3.5 h-3.5 text-gold-600" strokeWidth={1.6} />
+                      <span className="text-[10px] tracking-[0.28em] uppercase text-sea-900 font-semibold">{tag}</span>
+                    </div>
+
+                    {/* Title overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-7">
+                      <h3 className="font-display text-cream text-3xl md:text-4xl font-light leading-tight">
+                        {title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="p-7 md:p-8">
+                    <p className="text-sm md:text-[15px] text-ink-soft font-light leading-relaxed mb-5">
+                      {desc}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] tracking-[0.3em] uppercase text-gold-600 font-semibold">
+                        {tr ? 'Misafirlerimize özel' : 'For our guests'}
+                      </span>
+                      <ArrowUpRight className="w-5 h-5 text-sea-900 transition-transform group-hover:rotate-45" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* 06 — TESTIMONIAL                                             */}
+        {/* =========================================================== */}
+        <section className="relative py-28 md:py-36 overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img
-              src="https://uvadqixzovxsjrzjayom.supabase.co/storage/v1/object/public/mainpage/h4-rev-bg-img-3-1536x864.jpg"
+              src={slotImages.manzara_bg}
               alt="Interior Background"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="absolute inset-0 bg-sea-900/65" />
           </div>
 
           <div className="relative z-10 container mx-auto px-4">
+            <div className="text-center mb-12">
+              <ChapterMarker number="06" label={tr ? 'Misafirler' : 'Guests'} tone="cream" />
+            </div>
+
             <div className="max-w-3xl mx-auto">
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-12 md:p-16 border border-white/80">
-                <h3 className="text-3xl md:text-4xl font-serif text-gray-900 mb-8 text-center" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+              <div className="relative bg-cream/95 backdrop-blur-md rounded-2xl shadow-[0_30px_80px_-20px_rgba(22,59,52,0.5)] p-12 md:p-16 border border-gold-300/30">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-gold-500 flex items-center justify-center shadow-lg">
+                  <Quote className="w-6 h-6 text-sea-900" strokeWidth={1.5} />
+                </div>
+
+                <h3 className="font-display text-3xl md:text-4xl text-sea-900 mb-8 mt-2 text-center font-light">
                   {t('testimonial.title')}
                 </h3>
-                <p className="text-lg md:text-xl text-gray-700 font-light leading-relaxed mb-12 text-center italic">
-                  {t('testimonial.text')}
+
+                <p className="text-lg md:text-xl text-ink-soft font-light leading-relaxed mb-10 text-center italic">
+                  &ldquo;{t('testimonial.text')}&rdquo;
                 </p>
-                <div className="text-center">
-                  <p className="text-sm md:text-base tracking-[0.15em] uppercase text-gray-900 font-semibold">
+
+                <div className="flex flex-col items-center gap-3">
+                  <GoldDivider />
+                  <p className="text-xs md:text-sm tracking-[0.22em] uppercase text-sea-900 font-semibold">
                     {t('testimonial.author')}
                   </p>
                 </div>
@@ -814,130 +1181,138 @@ export default function Home() {
           </div>
         </section>
 
-        {/* NEWSLETTER */}
-        <section className="relative py-20 bg-gradient-to-r from-cyan-600 to-blue-700">
-          <div className="container mx-auto px-4 text-center">
-            <h3 className="text-3xl md:text-4xl font-serif text-white mb-4" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+        {/* =========================================================== */}
+        {/* NEWSLETTER                                                   */}
+        {/* =========================================================== */}
+        <section className="relative py-24 md:py-28 bg-sea-900 overflow-hidden">
+          <div className="pointer-events-none absolute -top-20 -left-20 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl" />
+
+          <div className="relative container mx-auto px-4 text-center">
+            <Eyebrow tone="cream" className="mb-5">
+              {tr ? 'Bültenimize Katılın' : 'Join the Journal'}
+            </Eyebrow>
+            <h3 className="font-display text-4xl md:text-5xl text-cream mb-5 font-light">
               {t('footer.newsletter')}
             </h3>
-            <p className="text-cyan-100 mb-10 text-lg">{t('footer.newsletterText')}</p>
-            <div className="max-w-2xl mx-auto">
-              <NewsletterForm language={language} />
+            <div className="flex justify-center mb-7">
+              <GoldDivider />
+            </div>
+            <p className="text-cream/75 mb-10 text-base md:text-lg font-light max-w-xl mx-auto">
+              {t('footer.newsletterText')}
+            </p>
+            <div className="max-w-xl mx-auto">
+              <NewsletterForm />
             </div>
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="bg-black text-white py-16">
-          <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-3 gap-12 text-center md:text-left">
-              <div>
-                <h4 className="text-cyan-400 uppercase tracking-widest mb-6">Serenity Iskele</h4>
-                <p className="text-gray-400 text-sm leading-relaxed">{t('footer.aboutDesc')}</p>
+        {/* =========================================================== */}
+        {/* FOOTER                                                       */}
+        {/* =========================================================== */}
+        <footer className="bg-sea-900 text-cream border-t border-gold-500/15">
+          <div className="container mx-auto px-6 pt-20 pb-10">
+            <div className="grid md:grid-cols-4 gap-12 mb-14">
+              <div className="md:col-span-1">
+                <Image
+                  src="/serenity_logo.png"
+                  alt="Serenity İskele"
+                  width={180}
+                  height={72}
+                  className="h-12 w-auto object-contain mb-5"
+                />
+                <p className="text-cream/65 text-sm leading-relaxed font-light">
+                  {t('footer.aboutDesc')}
+                </p>
               </div>
+
               <div>
-                <h4 className="text-cyan-400 uppercase tracking-widest mb-6">{t('contact.title')}</h4>
-                <p className="text-gray-400 text-sm">İskele, KKTC</p>
-                <p className="text-gray-400 text-sm mt-2">+90 533 123 45 67</p>
+                <Eyebrow tone="cream" className="mb-5">{t('contact.title')}</Eyebrow>
+                <ul className="space-y-3.5 text-sm font-light text-cream/75">
+                  <li className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 mt-0.5 text-gold-500 shrink-0" />
+                    <span>İskele, KKTC</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Phone className="w-4 h-4 mt-0.5 text-gold-500 shrink-0" />
+                    <a href="tel:+905301234567" className="hover:text-gold-300 transition">+90 533 123 45 67</a>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Mail className="w-4 h-4 mt-0.5 text-gold-500 shrink-0" />
+                    <a href="mailto:info@serenity-iskele.com" className="hover:text-gold-300 transition">info@serenity-iskele.com</a>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Clock className="w-4 h-4 mt-0.5 text-gold-500 shrink-0" />
+                    <span>{tr ? '7/24 Resepsiyon' : '24/7 Reception'}</span>
+                  </li>
+                </ul>
               </div>
+
               <div>
-                <h4 className="text-cyan-400 uppercase tracking-widest mb-6">{t('footer.followUs')}</h4>
-                <div className="flex justify-center md:justify-start gap-4">
-                  <Link href="#" className="hover:text-cyan-400 transition">Instagram</Link>
-                  <Link href="#" className="hover:text-cyan-400 transition">Facebook</Link>
+                <Eyebrow tone="cream" className="mb-5">
+                  {tr ? 'Keşfedin' : 'Explore'}
+                </Eyebrow>
+                <ul className="space-y-3 text-sm font-light text-cream/75">
+                  {navLinks.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="hover:text-gold-300 transition inline-flex items-center gap-2 group">
+                        <span className="w-1 h-1 rounded-full bg-gold-500/60 transition-all group-hover:w-4 group-hover:bg-gold-300" />
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                  <li>
+                    <Link href="/gizlilik" className="hover:text-gold-300 transition inline-flex items-center gap-2 group">
+                      <span className="w-1 h-1 rounded-full bg-gold-500/60 transition-all group-hover:w-4 group-hover:bg-gold-300" />
+                      {tr ? 'Gizlilik' : 'Privacy'}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <Eyebrow tone="cream" className="mb-5">{t('footer.followUs')}</Eyebrow>
+                <div className="flex gap-3 mb-6">
+                  <a href="#" aria-label="Instagram" className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition">
+                    <IconInstagram className="w-4 h-4" />
+                  </a>
+                  <a href="#" aria-label="Facebook" className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition">
+                    <IconFacebook className="w-4 h-4" />
+                  </a>
+                  <a href="https://wa.me/905301234567" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-gold-500/30 hover:border-gold-300 hover:bg-gold-500/10 flex items-center justify-center text-gold-300 transition">
+                    <MessageCircle className="w-4 h-4" />
+                  </a>
                 </div>
+                <Link
+                  href="/rezervasyon"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gold-500 hover:bg-gold-300 text-sea-900 text-[11px] tracking-[0.26em] uppercase font-semibold px-6 py-3 shadow-md transition-all"
+                >
+                  {t('nav.reservation')}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
-            <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-xs">
-              {t('footer.copyright')}
+
+            <div className="border-t border-gold-500/15 pt-7 flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-cream/55 text-xs tracking-wide">{t('footer.copyright')}</p>
+              <div className="flex items-center gap-2 text-gold-500/70">
+                <span className="block h-px w-6 bg-gold-500/40" />
+                <Sparkles className="w-3 h-3" />
+                <span className="block h-px w-6 bg-gold-500/40" />
+              </div>
             </div>
           </div>
         </footer>
       </main>
 
+      {/* Marquee animation */}
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
-        .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
-        
-        @keyframes fadeIn {
-          from { 
-            opacity: 0;
-          }
-          to { 
-            opacity: 1;
-          }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-33.333%); }
         }
-        
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInDown {
-          from { 
-            opacity: 0;
-            transform: translateY(-30px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes scaleIn {
-          from { 
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to { 
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 1s ease-out;
-        }
-        
-        .animate-fadeInUp {
-          animation: fadeInUp 0.8s ease-out;
-        }
-        
-        .animate-fadeInDown {
-          animation: fadeInDown 0.8s ease-out;
-        }
-        
-        .animate-scaleIn {
-          animation: scaleIn 0.6s ease-out;
-        }
-        
-        /* Smooth scroll behavior */
-        html {
-          scroll-behavior: smooth;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 10px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: #1a1a1a;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #06b6d4, #3b82f6);
-          border-radius: 5px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #0891b2, #2563eb);
+        .animate-marquee {
+          animation: marquee 38s linear infinite;
+          will-change: transform;
         }
       `}</style>
     </>

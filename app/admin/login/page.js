@@ -28,8 +28,8 @@ export default function AdminLogin() {
       const data = await response.json()
 
       if (data.success) {
-        // Session cookie ayarlandı, dashboard'a yönlendir
-        router.push('/admin/dashboard')
+        // Session cookie ayarlandı, dashboard'a hard navigation ile geç (Turbopack'te router.push takılabiliyor)
+        window.location.replace('/admin/dashboard')
       } else {
         setError(data.error || 'Giriş başarısız')
       }
@@ -42,37 +42,37 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-sea-900 via-sea-800 to-sea-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gold-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-sea-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-serif text-white mb-2" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+            <h1 className="text-4xl font-serif text-cream mb-2" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
               Serenity İskele
             </h1>
           </Link>
-          <p className="text-cyan-400 text-sm tracking-[0.2em] uppercase font-semibold">
+          <p className="text-gold-300 text-sm tracking-[0.2em] uppercase font-semibold">
             Admin Panel
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden">
+        <div className="bg-sea-800/40 backdrop-blur-xl border border-gold-500/20 rounded-3xl shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-8 text-center">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <div className="bg-gradient-to-br from-sea-800 to-sea-900 border-b border-gold-500/20 p-8 text-center">
+            <div className="w-20 h-20 bg-gold-500/15 border border-gold-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-gold-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-1">Yönetici Girişi</h2>
-            <p className="text-cyan-100 text-sm">Panele erişim için giriş yapın</p>
+            <h2 className="font-display text-3xl font-light text-cream mb-1">Yönetici Girişi</h2>
+            <p className="text-cream/70 text-sm">Panele erişim için giriş yapın</p>
           </div>
 
           {/* Form */}
@@ -89,13 +89,13 @@ export default function AdminLogin() {
 
             {/* Email */}
             <div>
-              <label className="block text-xs tracking-[0.15em] uppercase text-gray-300 font-bold mb-3">
+              <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-300/80 font-semibold mb-3">
                 E-posta
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <svg className="w-5 h-5 text-cream/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                   </svg>
                 </div>
                 <input
@@ -103,7 +103,7 @@ export default function AdminLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-white/5 border-2 border-white/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition rounded-xl text-white placeholder-gray-400"
+                  className="w-full pl-12 pr-4 py-3 bg-sea-900/40 border border-gold-500/20 focus:border-gold-500/60 focus:ring-2 focus:ring-gold-500/15 outline-none transition rounded-xl text-cream placeholder-cream/35"
                   placeholder="admin@example.com"
                   autoComplete="email"
                 />
@@ -112,13 +112,13 @@ export default function AdminLogin() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs tracking-[0.15em] uppercase text-gray-300 font-bold mb-3">
+              <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-300/80 font-semibold mb-3">
                 Şifre
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg className="w-5 h-5 text-cream/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
                 <input
@@ -126,14 +126,14 @@ export default function AdminLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-12 pr-12 py-3 bg-white/5 border-2 border-white/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition rounded-xl text-white placeholder-gray-400"
+                  className="w-full pl-12 pr-12 py-3 bg-sea-900/40 border border-gold-500/20 focus:border-gold-500/60 focus:ring-2 focus:ring-gold-500/15 outline-none transition rounded-xl text-cream placeholder-cream/35"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-cream/45 hover:text-gold-300 transition"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,10 +152,10 @@ export default function AdminLogin() {
             {/* Remember Me */}
             <div className="flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-500 focus:ring-cyan-500" />
-                <span className="ml-2 text-sm text-gray-300">Beni hatırla</span>
+                <input type="checkbox" className="w-4 h-4 rounded border-gold-500/40 text-gold-500 focus:ring-gold-500" />
+                <span className="ml-2 text-sm text-cream/75">Beni hatırla</span>
               </label>
-              <button type="button" className="text-sm text-cyan-400 hover:text-cyan-300 transition">
+              <button type="button" className="text-sm text-gold-300 hover:text-gold-100 transition">
                 Şifremi unuttum
               </button>
             </div>
@@ -164,11 +164,11 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold text-sm tracking-[0.2em] uppercase transition-all transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-4 bg-gold-500 hover:bg-gold-300 text-sea-900 rounded-xl font-bold text-sm tracking-[0.2em] uppercase transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                  <div className="w-5 h-5 border-2 border-sea-900/30 border-t-sea-900 rounded-full animate-spin mr-2"></div>
                   GİRİŞ YAPILIYOR...
                 </div>
               ) : (
@@ -179,9 +179,9 @@ export default function AdminLogin() {
 
           {/* Footer */}
           <div className="px-8 pb-8 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-cream/55">
               Bir sorun mu yaşıyorsunuz?{' '}
-              <Link href="/iletisim" className="text-cyan-400 hover:text-cyan-300 transition">
+              <Link href="/iletisim" className="text-gold-300 hover:text-gold-100 transition">
                 İletişime geçin
               </Link>
             </p>
@@ -190,23 +190,23 @@ export default function AdminLogin() {
 
         {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Link 
-            href="/" 
-            className="inline-flex items-center text-sm text-gray-400 hover:text-white transition"
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm text-cream/55 hover:text-cream transition"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Ana Sayfaya Dön
           </Link>
         </div>
 
         {/* Demo Credentials */}
-        <div className="mt-8 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-          <p className="text-xs text-blue-300 font-bold mb-2 tracking-wider">🔑 DEMO GİRİŞ BİLGİLERİ</p>
-          <p className="text-xs text-gray-300 font-mono">
-            Email: <span className="text-cyan-400">admin@serenity.com</span><br />
-            Şifre: <span className="text-cyan-400">admin123</span>
+        <div className="mt-8 bg-gold-500/8 border border-gold-500/25 rounded-xl p-4">
+          <p className="text-[10px] text-gold-300 font-bold mb-2 tracking-[0.22em] uppercase">Demo Giriş Bilgileri</p>
+          <p className="text-xs text-cream/75 font-mono">
+            Email: <span className="text-gold-300">admin@serenity.com</span><br />
+            Şifre: <span className="text-gold-300">admin123</span>
           </p>
         </div>
       </div>

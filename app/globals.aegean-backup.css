@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 /* ============================================
-   FOREST & AMBER — Design Tokens
-   (token names korunur; sadece hex değerleri değişir)
-   sea-*  → koyu orman yeşili / teal
-   gold-* → sıcak amber / bakır
-   cream  → ılık off-white
+   AEGEAN — Design Tokens
+   (token names match Akdeniz palette; only hex values changed)
+   sea-*  → derin kobalt (Aegean kapı/kepenk mavisi)
+   gold-* → soluk zeytin/ochre (Akdeniz herb tonu)
+   cream  → beyaz badanalı bone
    ============================================ */
 :root {
-  /* sea-* = deep forest / teal green */
-  --color-sea-50:  #EEF3F1;
-  --color-sea-100: #C9DAD5;
-  --color-sea-200: #99B8AF;
-  --color-sea-400: #4D7D72;
-  --color-sea-600: #2B5F56;
-  --color-sea-800: #1F4B43;  /* header koyu yeşili */
-  --color-sea-900: #163B34;  /* en derin forest */
+  /* sea-* = Aegean cobalt */
+  --color-sea-50:  #ECF1F6;
+  --color-sea-100: #C7D5E5;
+  --color-sea-200: #93AAC9;
+  --color-sea-400: #3D62A0;
+  --color-sea-600: #1F3FB5;  /* canlı kobalt vurgu */
+  --color-sea-800: #122C7A;
+  --color-sea-900: #0B1E55;  /* en derin kobalt (dark bg için) */
 
-  /* gold-* = sıcak amber / copper */
-  --color-gold-50:  #FBF4EA;
-  --color-gold-100: #F4E1C7;
-  --color-gold-300: #E5BD8B;
-  --color-gold-500: #D9A26B;  /* amber accent (referans buton rengi) */
-  --color-gold-600: #B57F4D;
-  --color-gold-700: #8E6238;
+  /* gold-* = soluk zeytin / kuru herb */
+  --color-gold-50:  #F4F2E6;
+  --color-gold-100: #E6E4C9;
+  --color-gold-300: #C2C58E;
+  --color-gold-500: #8A9650;  /* zeytin accent */
+  --color-gold-600: #6E7A3F;
+  --color-gold-700: #555F30;
 
-  /* sand-* = nötr sıcak kum */
-  --color-sand-50:  #FAF6ED;
-  --color-sand-100: #F0E7D4;
-  --color-sand-200: #E6D7B9;
-  --color-sand-300: #D4BF92;
+  /* sand-* = sıcak kemik / kireçtaşı */
+  --color-sand-50:  #FAF6EA;
+  --color-sand-100: #F0E8D2;
+  --color-sand-200: #E5D8B6;
+  --color-sand-300: #D2C190;
 
-  --color-cream:    #F6F1E6;  /* ılık off-white */
+  --color-cream:    #F4ECD8;  /* badanalı bone */
   --color-ink:      #1A1A1A;
   --color-ink-soft: #3A3A3A;
   --color-mute:     #6B6B6B;

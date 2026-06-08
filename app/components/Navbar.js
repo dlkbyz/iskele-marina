@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { Languages, Menu, X, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/LanguageContext'
 
 const navLinks = {
@@ -12,15 +13,15 @@ const navLinks = {
     { label: 'GALERİ', href: '/galeri' },
     { label: 'ÖZELLİKLER', href: '/ozellikler' },
     { label: 'YORUMLAR', href: '/yorumlar' },
-    { label: 'İLETİŞİM', href: '/iletisim' }
+    { label: 'İLETİŞİM', href: '/iletisim' },
   ],
   en: [
     { label: 'HOME', href: '/' },
     { label: 'GALLERY', href: '/galeri' },
     { label: 'FEATURES', href: '/ozellikler' },
     { label: 'REVIEWS', href: '/yorumlar' },
-    { label: 'CONTACT', href: '/iletisim' }
-  ]
+    { label: 'CONTACT', href: '/iletisim' },
+  ],
 }
 
 export default function Navbar() {
@@ -37,24 +38,34 @@ export default function Navbar() {
   }, [])
 
   const links = navLinks[language] || navLinks.tr
-  const isActive = (href) => pathname === href
+  const isActive = (href) => (href === '/' ? pathname === '/' : pathname?.startsWith(href))
   const bookLabel = language === 'tr' ? 'REZERVASYON' : 'BOOK NOW'
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
-        <div className="px-5 md:px-10">
-          <div className={`relative rounded-2xl border backdrop-blur-md transition-all duration-300 ${
-            isScrolled ? 'border-white/20 bg-black/70 shadow-2xl' : 'border-white/20 bg-black/55 shadow-lg'
-          }`}>
-            {/* Sheen overlay */}
-            <div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent transition-opacity duration-300 ${
-              isScrolled ? 'opacity-100' : 'opacity-0'
-            }`} />
+      <header
+        className={[
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+          isScrolled ? 'pt-3' : 'pt-4',
+        ].join(' ')}
+      >
+        <div className="px-4 md:px-8">
+          <div
+            className={[
+              'relative rounded-full border backdrop-blur-xl transition-all duration-500',
+              isScrolled
+                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(22,59,52,0.4)]'
+                : 'border-cream/15 bg-sea-900/40 shadow-lg',
+            ].join(' ')}
+          >
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-cream/8 to-transparent opacity-60" />
 
-            <div className={`relative flex items-center justify-between transition-all duration-300 ${
-              isScrolled ? 'px-5 md:px-8 py-3' : 'px-5 md:px-8 py-4'
-            }`}>
+            <div
+              className={[
+                'relative flex items-center justify-between transition-all duration-500',
+                isScrolled ? 'px-5 md:px-7 py-2.5' : 'px-5 md:px-7 py-3',
+              ].join(' ')}
+            >
               {/* Logo */}
               <Link href="/" className="shrink-0">
                 <Image
@@ -62,80 +73,66 @@ export default function Navbar() {
                   alt="Serenity İskele"
                   width={400}
                   height={160}
-                  className={`object-contain transition-all duration-300 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
+                  className={`object-contain transition-all duration-500 ${isScrolled ? 'h-9' : 'h-11'} w-auto`}
                   priority
                 />
               </Link>
 
               {/* Desktop Nav */}
-              <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+              <nav className="hidden lg:flex items-center gap-9">
                 {links.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`relative text-[12px] md:text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      isActive(link.href) ? 'text-cyan-200' : 'text-white/85 hover:text-white'
-                    }`}
+                    className={[
+                      'relative text-[12px] tracking-[0.22em] uppercase font-medium transition-colors',
+                      isActive(link.href) ? 'text-gold-300' : 'text-cream/85 hover:text-gold-300',
+                    ].join(' ')}
                   >
                     {link.label}
-                    <span className={`absolute left-0 -bottom-2 h-[2px] bg-cyan-200 rounded-full transition-all duration-300 ${
-                      isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0 hover:w-full hover:opacity-100'
-                    }`} />
+                    <span
+                      className={[
+                        'absolute left-0 -bottom-2 h-px bg-gold-500 transition-all duration-300',
+                        isActive(link.href) ? 'w-full opacity-100' : 'w-0 opacity-0',
+                      ].join(' ')}
+                    />
                   </Link>
                 ))}
               </nav>
 
-              {/* Right actions */}
-              <div className="flex items-center gap-3 shrink-0">
-                {/* Language toggle */}
-                <div className={`hidden sm:flex items-center gap-3 rounded-full px-4 py-2 transition-all duration-300 ${
-                  isScrolled ? 'border border-white/20 bg-white/5' : 'border border-white/15'
-                }`}>
-                  <button
-                    type="button"
-                    onClick={() => language !== 'tr' && toggleLanguage()}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'tr' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    TR
-                  </button>
-                  <span className="text-white/25">|</span>
-                  <button
-                    type="button"
-                    onClick={() => language !== 'en' && toggleLanguage()}
-                    className={`text-[13px] tracking-[0.18em] uppercase font-medium transition ${
-                      language === 'en' ? 'text-cyan-200' : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-full border border-gold-300/25 bg-cream/5 px-3.5 py-2 text-[12px] tracking-[0.2em] uppercase font-medium text-cream hover:text-gold-300 hover:border-gold-300/50 transition"
+                  aria-label="Toggle language"
+                >
+                  <Languages className="w-3.5 h-3.5" />
+                  {language === 'tr' ? 'TR' : 'EN'}
+                </button>
 
-                {/* CTA — hide on rezervasyon page */}
                 {pathname !== '/rezervasyon' && (
                   <Link
                     href="/rezervasyon"
-                    className={`hidden md:inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[13px] tracking-[0.2em] uppercase font-semibold shadow-lg hover:shadow-xl hover:from-cyan-600 hover:to-blue-700 transition ${
-                      isScrolled ? 'px-5 py-2.5' : 'px-6 py-3'
-                    }`}
+                    className={[
+                      'hidden md:inline-flex items-center justify-center gap-2 rounded-full',
+                      'bg-gold-500 hover:bg-gold-300 text-sea-900',
+                      'text-[12px] tracking-[0.26em] uppercase font-semibold shadow-[0_8px_24px_rgba(201,169,97,0.35)] hover:shadow-[0_10px_28px_rgba(201,169,97,0.55)] transition-all',
+                      isScrolled ? 'px-5 py-2.5' : 'px-6 py-3',
+                    ].join(' ')}
                   >
                     {bookLabel}
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 )}
 
-                {/* Mobile menu button */}
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(true)}
-                  className={`md:hidden inline-flex w-10 h-10 items-center justify-center rounded-full transition ${
-                    isScrolled ? 'border border-white/20 bg-white/10 hover:bg-white/15' : 'border border-white/15 bg-white/5 hover:bg-white/10'
-                  }`}
+                  className="lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-full border border-gold-300/25 bg-cream/5 hover:bg-cream/10 transition"
                   aria-label="Open menu"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  <Menu className="w-5 h-5 text-cream" />
                 </button>
               </div>
             </div>
@@ -143,38 +140,48 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* MOBILE DRAWER */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-[#0b0f17] border-l border-white/10 p-6">
-            <div className="flex items-center justify-between mb-8">
+          <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-[86%] max-w-sm bg-sea-900 border-l border-gold-300/15 p-6">
+            <div className="flex items-center justify-between mb-10">
               <Image
                 src="/serenity_logo.png"
                 alt="Serenity İskele"
                 width={160}
                 height={64}
-                className="h-14 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition flex items-center justify-center"
+                className="w-10 h-10 rounded-full border border-gold-300/25 bg-cream/5 hover:bg-cream/10 transition flex items-center justify-center"
+                aria-label="Close menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5 text-cream" />
               </button>
             </div>
 
-            <nav className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-gold-300/30 px-4 py-2 text-[12px] tracking-[0.22em] uppercase font-medium text-cream"
+            >
+              <Languages className="w-3.5 h-3.5" />
+              {language === 'tr' ? 'Türkçe' : 'English'}
+            </button>
+
+            <nav className="flex flex-col gap-1">
               {links.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-[14px] tracking-[0.18em] uppercase font-medium transition ${
-                    isActive(link.href) ? 'bg-white/10 text-cyan-200' : 'text-white/80 hover:bg-white/5 hover:text-white'
+                  className={`px-4 py-3.5 rounded-xl text-[13px] tracking-[0.22em] uppercase font-medium transition ${
+                    isActive(link.href)
+                      ? 'bg-gold-500/10 text-gold-300 border-l-2 border-gold-500'
+                      : 'text-cream/85 hover:bg-cream/5 hover:text-gold-300'
                   }`}
                 >
                   {link.label}
@@ -182,30 +189,17 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="mt-6 pt-6 border-t border-white/10 flex gap-4">
-              <button
-                onClick={() => { language !== 'tr' && toggleLanguage(); setMobileMenuOpen(false) }}
-                className={`text-sm tracking-widest uppercase font-medium ${language === 'tr' ? 'text-cyan-300' : 'text-white/50'}`}
-              >
-                TR
-              </button>
-              <span className="text-white/20">|</span>
-              <button
-                onClick={() => { language !== 'en' && toggleLanguage(); setMobileMenuOpen(false) }}
-                className={`text-sm tracking-widest uppercase font-medium ${language === 'en' ? 'text-cyan-300' : 'text-white/50'}`}
-              >
-                EN
-              </button>
-            </div>
-
             {pathname !== '/rezervasyon' && (
-              <Link
-                href="/rezervasyon"
-                onClick={() => setMobileMenuOpen(false)}
-                className="mt-4 w-full flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm tracking-widest uppercase font-semibold py-3 shadow-lg"
-              >
-                {bookLabel}
-              </Link>
+              <div className="mt-10">
+                <Link
+                  href="/rezervasyon"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 px-7 py-4 rounded-full bg-gold-500 text-sea-900 text-[12px] tracking-[0.28em] uppercase font-semibold shadow-lg hover:bg-gold-300 transition"
+                >
+                  {bookLabel}
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
             )}
           </div>
         </div>
