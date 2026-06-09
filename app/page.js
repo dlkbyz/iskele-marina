@@ -212,8 +212,8 @@ export default function Home() {
     karsilama:     '/living.png',
     konfor_bg:     '/h4-rev-img-2-1536x864.jpg',
     yatak_odasi:   '/yatak_odasi.png',
-    suite_detay:   '/main_bedroom1.png',
-    cocuk_odasi:   '/kids_bedroom.png',
+    suite_detay:   '/salon.png',
+    cocuk_odasi:   '/salon.png',
     manzara_bg:    '/h4-rev-img-3-1536x864.jpg',
     hakkimizda_bg: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop',
   }
