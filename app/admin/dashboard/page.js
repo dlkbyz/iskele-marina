@@ -12,7 +12,7 @@ import {
   Check, X, ArrowLeft, ListFilter, Plus, Ellipsis, ChevronLeft, ChevronRight,
   Pencil, Trash2, Sparkles, Users, Save, ChevronUp, ChevronDown, ArrowUpDown,
   Reply, MailOpen, Phone, Inbox, Download, Power, UserPlus, AtSign,
-  Upload, GripVertical,
+  Upload, GripVertical, Menu,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import DatePickerTR from '../../components/DatePickerTR'
@@ -41,7 +41,7 @@ function timeAgo(d) {
 /* ============================================================ */
 /* SIDEBAR                                                       */
 /* ============================================================ */
-function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout }) {
+function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout, sidebarOpen, setSidebarOpen }) {
   const groups = [
     {
       label: 'Operasyon',
@@ -65,7 +65,16 @@ function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout 
   ]
 
   return (
-    <aside className={`fixed left-0 top-0 h-full w-60 border-r flex flex-col ${isDark ? 'bg-sea-900 border-gold-500/10' : 'bg-cream border-gold-300/30'}`}>
+    <>
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-sea-900/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+    <aside className={`fixed left-0 top-0 h-full w-60 border-r flex flex-col z-50 transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isDark ? 'bg-sea-900 border-gold-500/10' : 'bg-cream border-gold-300/30'}`}>
       {/* Logo */}
       <div className={`px-4 py-5 border-b ${isDark ? 'border-gold-500/10' : 'border-gold-300/30'}`}>
         <div className="flex items-center gap-3">
@@ -96,7 +105,7 @@ function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout 
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => { setActiveTab(item.id); setSidebarOpen?.(false) }}
                   className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${
                     isActive
                       ? (isDark ? 'bg-sea-800/60 text-cream' : 'bg-gold-50 text-sea-900')
@@ -140,17 +149,26 @@ function Sidebar({ activeTab, setActiveTab, isDark, setIsDark, badges, onLogout 
         </div>
       </div>
     </aside>
+    </>
   )
 }
 
 /* ============================================================ */
 /* TOP BAR                                                       */
 /* ============================================================ */
-function TopBar({ isDark, pageTitle, pendingCount, unreadCount, onPendingClick }) {
+function TopBar({ isDark, pageTitle, pendingCount, unreadCount, onPendingClick, onMenuToggle }) {
   return (
     <header className={`sticky top-0 z-30 backdrop-blur-xl border-b ${isDark ? 'bg-sea-900/85 border-gold-500/10' : 'bg-cream/90 border-gold-300/30'}`}>
-      <div className="px-6 py-3.5 flex items-center justify-between gap-6">
-        <div className="min-w-0">
+      <div className="px-4 md:px-6 py-3.5 flex items-center justify-between gap-3 md:gap-6">
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          aria-label="Menüyü aç"
+          className={`md:hidden w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${isDark ? 'border-gold-500/15 bg-sea-800/40 text-cream/75' : 'border-gold-300/40 bg-sand-50 text-sea-900'}`}
+        >
+          <Menu className="w-4 h-4" strokeWidth={1.8} />
+        </button>
+        <div className="min-w-0 flex-1 md:flex-none">
           <p className={`text-[10px] tracking-[0.28em] uppercase font-semibold ${isDark ? 'text-gold-300/80' : 'text-gold-600'}`}>
             {new Date().toLocaleDateString('tr-TR', { weekday: 'long' })} · {new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
@@ -3020,7 +3038,8 @@ function ComingSoon({ isDark, label }) {
 /* MAIN PAGE                                                     */
 /* ============================================================ */
 export default function AdminDashboard() {
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [rezervasyonlar, setRezervasyonlar] = useState([])
   const [mesajlar, setMesajlar] = useState([])
@@ -3363,14 +3382,17 @@ export default function AdminDashboard() {
         setIsDark={setIsDark}
         badges={badges}
         onLogout={handleLogout}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
-      <main className="ml-60">
+      <main className="md:ml-60">
         <TopBar
           isDark={isDark}
           pageTitle={tabLabels[activeTab] || 'Dashboard'}
           pendingCount={badges.rez}
           unreadCount={badges.msg}
           onPendingClick={() => setActiveTab('rezervasyonlar')}
+          onMenuToggle={() => setSidebarOpen(true)}
         />
         <div className="p-6">
           {activeTab === 'dashboard' && (
