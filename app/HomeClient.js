@@ -193,6 +193,7 @@ export default function HomeClient({ initialSlotImages }) {
   const { language, toggleLanguage, t } = useLanguage()
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileBookingOpen, setMobileBookingOpen] = useState(false)
   const scrollY = useScrollAnimation()
   const scrollProgress = useScrollProgress()
   const structuredData = generateStructuredData('home')
@@ -600,15 +601,24 @@ export default function HomeClient({ initialSlotImages }) {
           {/* Booking widget anchored to bottom */}
           <div ref={bookingRef} className="absolute bottom-0 left-0 right-0 z-20 pb-8 md:pb-10 px-4">
             <div className="max-w-6xl mx-auto rounded-2xl border border-gold-300/40 bg-cream/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(19,64,59,0.45)] overflow-hidden animate-fadeInUp animation-delay-600">
-              <div className="flex items-center justify-center gap-3 py-3 bg-sea-800 text-cream">
+              <button
+                type="button"
+                onClick={() => setMobileBookingOpen((v) => !v)}
+                aria-expanded={mobileBookingOpen}
+                className="w-full flex items-center justify-center gap-3 py-3 bg-sea-800 text-cream md:cursor-default"
+              >
                 <Sparkles className="w-3.5 h-3.5 text-gold-300" />
                 <span className="text-[10px] tracking-[0.32em] uppercase font-medium">
                   {tr ? 'Müsaitlik Sorgula' : 'Check Availability'}
                 </span>
-                <Sparkles className="w-3.5 h-3.5 text-gold-300" />
-              </div>
+                <Sparkles className="w-3.5 h-3.5 text-gold-300 hidden md:block" />
+                <ChevronDown
+                  className={`md:hidden w-4 h-4 text-gold-300 transition-transform ${mobileBookingOpen ? 'rotate-180' : ''}`}
+                  strokeWidth={1.8}
+                />
+              </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0">
+              <div className={`${mobileBookingOpen ? 'grid' : 'hidden md:grid'} grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0`}>
                 <div className="border-r border-sand-200 p-5 md:p-7 flex flex-col justify-between min-h-[130px]">
                   <label className="block text-[10px] tracking-[0.28em] uppercase text-gold-700 mb-3 font-semibold">
                     {t('reservation.checkIn')}
