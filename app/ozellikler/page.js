@@ -82,7 +82,7 @@ export default function Ozellikler() {
             />
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.5) 0%, rgba(22,59,52,0.2) 40%, rgba(22,59,52,0.6) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.5) 0%, rgba(19,64,59,0.2) 40%, rgba(19,64,59,0.6) 100%)' }}
             />
           </div>
 
@@ -90,7 +90,7 @@ export default function Ozellikler() {
             <ChapterMarker number="02" label={tr ? 'Olanaklar' : 'Amenities'} tone="cream" />
             <h1
               className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6 max-w-4xl"
-              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
             >
               {tr ? (
                 <>Konfor, lüks &{' '}<em className="font-display italic text-gold-300 not-italic">huzur</em></>
@@ -103,7 +103,7 @@ export default function Ozellikler() {
             </div>
             <p
               className="max-w-2xl text-cream/85 text-base md:text-lg font-light"
-              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
             >
               {tr
                 ? 'Tatil deneyiminizi unutulmaz kılacak her detay düşünüldü.'
@@ -151,7 +151,7 @@ export default function Ozellikler() {
               {apartmentFeatures.map(({ Icon, title, desc }, i) => (
                 <div
                   key={i}
-                  className="group relative bg-cream rounded-2xl p-6 border border-gold-300/20 hover:border-gold-500/60 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_-15px_rgba(22,59,52,0.35)] overflow-hidden"
+                  className="group relative bg-cream rounded-2xl p-6 border border-gold-300/20 hover:border-gold-500/60 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_-15px_rgba(19,64,59,0.35)] overflow-hidden"
                   style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.06}s both` }}
                 >
                   <span className="absolute top-3 right-3 w-5 h-5 border-t border-r border-gold-500/40 group-hover:border-gold-500 transition" />
@@ -202,7 +202,7 @@ export default function Ozellikler() {
               {complexFeatures.map(({ Icon, title, desc }, i) => (
                 <div
                   key={i}
-                  className="group relative bg-cream/95 backdrop-blur rounded-2xl p-6 border border-gold-300/30 hover:border-gold-500/70 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_-15px_rgba(22,59,52,0.5)] overflow-hidden"
+                  className="group relative bg-cream/95 backdrop-blur rounded-2xl p-6 border border-gold-300/30 hover:border-gold-500/70 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_-15px_rgba(19,64,59,0.5)] overflow-hidden"
                   style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.06}s both` }}
                 >
                   <span className="absolute top-3 right-3 w-5 h-5 border-t border-r border-gold-500/40 group-hover:border-gold-500 transition" />
@@ -243,7 +243,7 @@ export default function Ozellikler() {
               {locationFeatures.map(({ Icon, title, desc }, i) => (
                 <div
                   key={i}
-                  className="group relative flex items-start gap-5 p-7 rounded-2xl bg-cream border border-gold-300/30 hover:border-gold-500/60 shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)] hover:shadow-[0_25px_60px_-20px_rgba(22,59,52,0.32)] transition-all duration-500 hover:-translate-y-1"
+                  className="group relative flex items-start gap-5 p-7 rounded-2xl bg-cream border border-gold-300/30 hover:border-gold-500/60 shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)] hover:shadow-[0_25px_60px_-20px_rgba(19,64,59,0.32)] transition-all duration-500 hover:-translate-y-1"
                   style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.1}s both` }}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-sea-900 flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:rotate-3 group-hover:scale-105">

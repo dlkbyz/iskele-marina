@@ -107,7 +107,7 @@ export default function Iletisim() {
             />
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.6) 0%, rgba(22,59,52,0.35) 45%, rgba(22,59,52,0.7) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.6) 0%, rgba(19,64,59,0.35) 45%, rgba(19,64,59,0.7) 100%)' }}
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function Iletisim() {
             <ChapterMarker number="04" label={tr ? 'İletişim' : 'Contact'} tone="cream" />
             <h1
               className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6"
-              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
             >
               {tr ? 'Bize ulaşın' : 'Get in touch'}
             </h1>
@@ -124,7 +124,7 @@ export default function Iletisim() {
             </div>
             <p
               className="max-w-xl text-cream/85 text-base md:text-lg font-light"
-              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
             >
               {tr
                 ? 'Rezervasyon, sorular veya özel istekleriniz için 7/24 yanınızdayız.'
@@ -136,7 +136,7 @@ export default function Iletisim() {
         {/* ============================ INFO STRIP ============================ */}
         <section className="relative -mt-12 z-20 mb-10">
           <div className="container mx-auto px-6 max-w-6xl">
-            <div className="bg-cream border border-gold-300/40 rounded-2xl shadow-[0_25px_60px_-20px_rgba(22,59,52,0.3)] p-8 md:p-10">
+            <div className="bg-cream border border-gold-300/40 rounded-2xl shadow-[0_25px_60px_-20px_rgba(19,64,59,0.3)] p-8 md:p-10">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {infoItems.map(({ Icon, label, value, href }, i) => (
                   <div key={i} className="text-center group">
@@ -272,7 +272,7 @@ export default function Iletisim() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full bg-sea-900 hover:bg-sea-800 text-cream transition-all text-[11px] tracking-[0.28em] uppercase font-semibold shadow-[0_10px_30px_rgba(22,59,52,0.25)] hover:shadow-[0_14px_40px_rgba(22,59,52,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full bg-sea-900 hover:bg-sea-800 text-cream transition-all text-[11px] tracking-[0.28em] uppercase font-semibold shadow-[0_10px_30px_rgba(19,64,59,0.25)] hover:shadow-[0_14px_40px_rgba(19,64,59,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -295,7 +295,7 @@ export default function Iletisim() {
               {/* SIDE: Dark info card + Map */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Dark contact card */}
-                <div className="bg-sea-900 rounded-2xl p-8 text-cream border border-gold-500/20 shadow-[0_25px_60px_-20px_rgba(22,59,52,0.4)]">
+                <div className="bg-sea-900 rounded-2xl p-8 text-cream border border-gold-500/20 shadow-[0_25px_60px_-20px_rgba(19,64,59,0.4)]">
                   <Eyebrow tone="cream" className="mb-6">
                     {tr ? 'İletişim Bilgileri' : 'Contact Details'}
                   </Eyebrow>
@@ -360,7 +360,7 @@ export default function Iletisim() {
                 </div>
 
                 {/* Map */}
-                <div className="rounded-2xl overflow-hidden border border-gold-300/30 bg-cream shadow-[0_15px_40px_-15px_rgba(22,59,52,0.2)]">
+                <div className="rounded-2xl overflow-hidden border border-gold-300/30 bg-cream shadow-[0_15px_40px_-15px_rgba(19,64,59,0.2)]">
                   <div className="px-6 py-4 flex items-center justify-between border-b border-gold-300/30">
                     <div>
                       <Eyebrow className="mb-1">{tr ? 'Konumumuz' : 'Our Location'}</Eyebrow>

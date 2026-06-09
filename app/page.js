@@ -224,13 +224,20 @@ export default function Home() {
       try {
         const { data } = await supabase
           .from('galeri')
-          .select('kullanim_yeri, image_url')
-          .not('kullanim_yeri', 'is', null)
+          .select('kullanim_yerleri, image_url, sira')
+          .not('kullanim_yerleri', 'is', null)
           .eq('aktif', true)
+          .order('sira', { ascending: true })
         if (cancelled || !data) return
         const next = { ...SLOT_FALLBACKS }
+        const claimed = new Set()
         data.forEach(row => {
-          if (row.kullanim_yeri && row.image_url) next[row.kullanim_yeri] = row.image_url
+          ;(row.kullanim_yerleri || []).forEach(slot => {
+            if (!claimed.has(slot) && row.image_url) {
+              next[slot] = row.image_url
+              claimed.add(slot)
+            }
+          })
         })
         setSlotImages(next)
       } catch (e) { console.warn('Slot foto:', e) }
@@ -383,7 +390,7 @@ export default function Home() {
             className={[
               'relative rounded-full border backdrop-blur-xl transition-all duration-500',
               isScrolled
-                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(22,59,52,0.4)]'
+                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(19,64,59,0.4)]'
                 : 'border-cream/15 bg-sea-900/25 shadow-lg',
             ].join(' ')}
           >
@@ -539,7 +546,7 @@ export default function Home() {
         className={[
           'fixed left-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center gap-2',
           'bg-gold-500 hover:bg-gold-300 text-sea-900 font-semibold',
-          'pl-2 pr-3 py-5 rounded-r-xl shadow-[0_10px_30px_rgba(22,59,52,0.3)]',
+          'pl-2 pr-3 py-5 rounded-r-xl shadow-[0_10px_30px_rgba(19,64,59,0.3)]',
           'transition-all duration-500',
           isScrolled ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none',
         ].join(' ')}
@@ -572,14 +579,14 @@ export default function Home() {
             {/* Tight top vignette — only top 18% dims for chapter marker */}
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.32) 0%, transparent 18%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.32) 0%, transparent 18%)' }}
             />
             {/* Tight bottom vignette — only bottom 42% dims for title + widget */}
             <div
               className="absolute inset-0"
               style={{
                 background:
-                  'linear-gradient(to top, rgba(22,59,52,0.78) 0%, rgba(22,59,52,0.35) 22%, transparent 42%)',
+                  'linear-gradient(to top, rgba(19,64,59,0.78) 0%, rgba(19,64,59,0.35) 22%, transparent 42%)',
               }}
             />
           </div>
@@ -610,7 +617,7 @@ export default function Home() {
 
               <h1
                 className="font-display text-cream text-6xl md:text-8xl lg:text-[7rem] leading-[0.95] font-light animate-fadeInUp"
-                style={{ textShadow: '0 4px 30px rgba(22,59,52,0.55)' }}
+                style={{ textShadow: '0 4px 30px rgba(19,64,59,0.55)' }}
               >
                 {t('hero.title')}
               </h1>
@@ -619,7 +626,7 @@ export default function Home() {
                 <span className="block h-px w-16 bg-gold-500" />
                 <p
                   className="max-w-md text-cream/90 text-base md:text-lg font-light leading-relaxed"
-                  style={{ textShadow: '0 2px 12px rgba(22,59,52,0.55)' }}
+                  style={{ textShadow: '0 2px 12px rgba(19,64,59,0.55)' }}
                 >
                   {t('hero.subtitle')}
                 </p>
@@ -629,7 +636,7 @@ export default function Home() {
 
           {/* Booking widget anchored to bottom */}
           <div ref={bookingRef} className="absolute bottom-0 left-0 right-0 z-20 pb-8 md:pb-10 px-4">
-            <div className="max-w-6xl mx-auto rounded-2xl border border-gold-300/40 bg-cream/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(22,59,52,0.45)] overflow-hidden animate-fadeInUp animation-delay-600">
+            <div className="max-w-6xl mx-auto rounded-2xl border border-gold-300/40 bg-cream/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(19,64,59,0.45)] overflow-hidden animate-fadeInUp animation-delay-600">
               <div className="flex items-center justify-center gap-3 py-3 bg-sea-800 text-cream">
                 <Sparkles className="w-3.5 h-3.5 text-gold-300" />
                 <span className="text-[10px] tracking-[0.32em] uppercase font-medium">
@@ -799,7 +806,7 @@ export default function Home() {
 
               {/* Right: real living room with floating caption */}
               <div className="lg:col-span-5 relative">
-                <div className="relative aspect-[3/2] rounded-2xl overflow-hidden shadow-[0_30px_70px_-20px_rgba(22,59,52,0.4)] group">
+                <div className="relative aspect-[3/2] rounded-2xl overflow-hidden shadow-[0_30px_70px_-20px_rgba(19,64,59,0.4)] group">
                   <img
                     src={slotImages.karsilama}
                     alt="Yaşam alanı"
@@ -831,7 +838,7 @@ export default function Home() {
                   <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-2xl border-2 border-gold-500 hidden md:block" />
                 </div>
                 {/* Floating caption tile bottom-left */}
-                <div className="hidden lg:flex absolute -bottom-8 -left-8 flex-col bg-cream border border-gold-300/30 px-6 py-5 rounded-xl shadow-[0_20px_40px_-10px_rgba(22,59,52,0.25)]">
+                <div className="hidden lg:flex absolute -bottom-8 -left-8 flex-col bg-cream border border-gold-300/30 px-6 py-5 rounded-xl shadow-[0_20px_40px_-10px_rgba(19,64,59,0.25)]">
                   <span className="text-[10px] tracking-[0.28em] uppercase text-gold-600 font-medium mb-1">
                     {tr ? 'İskele' : 'Iskele'}
                   </span>
@@ -850,7 +857,7 @@ export default function Home() {
               ].map((spec, i) => (
                 <div
                   key={i}
-                  className="group relative bg-white/50 backdrop-blur-sm border border-gold-300/30 rounded-2xl p-6 md:p-7 hover:border-gold-500 hover:bg-white/70 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(22,59,52,0.25)]"
+                  className="group relative bg-white/50 backdrop-blur-sm border border-gold-300/30 rounded-2xl p-6 md:p-7 hover:border-gold-500 hover:bg-white/70 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(19,64,59,0.25)]"
                   style={{ animation: `fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${0.1 + i * 0.08}s both` }}
                 >
                   <span className="absolute top-4 right-4 w-5 h-5 border-t border-r border-gold-500/40 group-hover:border-gold-500 transition-colors" />
@@ -951,7 +958,7 @@ export default function Home() {
             {/* Editorial: cinematic banner (real interior) + 2 thumbnails below */}
             <div className="space-y-4 md:space-y-6">
               {/* Cinematic banner — master bedroom */}
-              <div className="relative h-[420px] md:h-[560px] rounded-2xl overflow-hidden group shadow-[0_30px_70px_-25px_rgba(22,59,52,0.4)]">
+              <div className="relative h-[420px] md:h-[560px] rounded-2xl overflow-hidden group shadow-[0_30px_70px_-25px_rgba(19,64,59,0.4)]">
                 <img
                   src={slotImages.yatak_odasi}
                   alt={tr ? 'Yatak odası' : 'Bedroom'}
@@ -1019,32 +1026,16 @@ export default function Home() {
             <div className="relative overflow-hidden bg-sea-900 order-2 lg:order-1 group">
               <img
                 src={slotImages.hakkimizda_bg}
-                alt="Gallery"
+                alt={tr ? 'Hakkımızda' : 'About'}
                 className="w-full h-full object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-sea-900/65 via-sea-900/15 to-transparent" />
-              <div className="absolute left-6 md:left-12 top-1/2 -translate-y-1/2 max-w-sm">
-                <div className="bg-cream/95 backdrop-blur-sm px-9 md:px-12 py-12 md:py-14 rounded-2xl shadow-[0_20px_60px_-15px_rgba(22,59,52,0.4)] border border-gold-300/30">
-                  <Eyebrow className="mb-4">{tr ? 'Keşfet' : 'Discover'}</Eyebrow>
-                  <h3 className="font-display text-5xl md:text-6xl text-sea-900 font-light mb-6 leading-tight">
-                    {tr ? 'Galeri' : 'Gallery'}
-                  </h3>
-                  <div className="w-12 h-px bg-gold-500 mb-7" />
-                  <Link
-                    href="/galeri"
-                    className="group/btn inline-flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase text-sea-900 hover:text-gold-600 font-semibold transition"
-                  >
-                    {tr ? 'Daha Fazla' : 'View More'}
-                    <ChevronRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1.5" />
-                  </Link>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-sea-900/25 via-transparent to-transparent" />
             </div>
 
             <div className="relative overflow-hidden bg-gradient-to-br from-sand-50 via-cream to-sand-100 p-8 md:p-14 lg:p-20 flex flex-col justify-center order-1 lg:order-2">
 
               <div className="relative z-10 max-w-lg">
-                <ChapterMarker number="04" label={tr ? 'Hikayemiz' : 'Our Story'} />
+                <ChapterMarker label={tr ? 'Hikayemiz' : 'Our Story'} />
                 <h3 className="font-display text-5xl md:text-6xl text-sea-900 font-light leading-tight mt-6 mb-7">
                   {tr ? 'Hakkımızda' : 'About Us'}
                 </h3>
@@ -1072,6 +1063,24 @@ export default function Home() {
                     </dd>
                   </div>
                 </dl>
+
+                {/* CTA */}
+                <div className="mt-10 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/rezervasyon"
+                    className="group/cta inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-sea-900 hover:bg-sea-800 text-cream text-[11px] tracking-[0.28em] uppercase font-semibold transition shadow-[0_12px_30px_-12px_rgba(19,64,59,0.55)]"
+                  >
+                    {tr ? 'Rezervasyon Yap' : 'Book Now'}
+                    <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover/cta:translate-x-1" />
+                  </Link>
+                  <Link
+                    href="/iletisim"
+                    className="group/cta2 inline-flex items-center gap-2 px-5 py-3.5 text-[11px] tracking-[0.28em] uppercase font-semibold text-sea-900 hover:text-gold-600 transition"
+                  >
+                    {tr ? 'İletişim' : 'Contact'}
+                    <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover/cta2:translate-x-1" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -1096,7 +1105,7 @@ export default function Home() {
               {experiences.map(({ Icon, tag, title, desc, img }, i) => (
                 <div
                   key={i}
-                  className="group relative bg-cream rounded-2xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(22,59,52,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(22,59,52,0.4)] transition-all duration-500 hover:-translate-y-2"
+                  className="group relative bg-cream rounded-2xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(19,64,59,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(19,64,59,0.4)] transition-all duration-500 hover:-translate-y-2"
                   style={{ animation: `fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.12}s both` }}
                 >
                   <div className="relative aspect-[4/5] overflow-hidden">
@@ -1157,7 +1166,7 @@ export default function Home() {
             </div>
 
             <div className="max-w-3xl mx-auto">
-              <div className="relative bg-cream/95 backdrop-blur-md rounded-2xl shadow-[0_30px_80px_-20px_rgba(22,59,52,0.5)] p-12 md:p-16 border border-gold-300/30">
+              <div className="relative bg-cream/95 backdrop-blur-md rounded-2xl shadow-[0_30px_80px_-20px_rgba(19,64,59,0.5)] p-12 md:p-16 border border-gold-300/30">
                 <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-gold-500 flex items-center justify-center shadow-lg">
                   <Quote className="w-6 h-6 text-sea-900" strokeWidth={1.5} />
                 </div>

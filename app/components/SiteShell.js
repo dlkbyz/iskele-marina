@@ -21,8 +21,9 @@ export function useHeroSlot(slotKey, fallback) {
         const { data } = await supabase
           .from('galeri')
           .select('image_url')
-          .eq('kullanim_yeri', slotKey)
+          .contains('kullanim_yerleri', [slotKey])
           .eq('aktif', true)
+          .order('sira', { ascending: true })
           .limit(1)
           .maybeSingle()
         if (!cancelled && data?.image_url) setSrc(data.image_url)
@@ -99,7 +100,7 @@ export function PageHero({ number, label, title, subtitle, image, fallbackImage 
         {/* dim gradients */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.55) 0%, rgba(22,59,52,0.25) 40%, rgba(22,59,52,0.55) 100%)' }}
+          style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.55) 0%, rgba(19,64,59,0.25) 40%, rgba(19,64,59,0.55) 100%)' }}
         />
       </div>
 
@@ -109,7 +110,7 @@ export function PageHero({ number, label, title, subtitle, image, fallbackImage 
         </div>
         <h1
           className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] max-w-4xl"
-          style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+          style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
         >
           {title}
         </h1>
@@ -119,7 +120,7 @@ export function PageHero({ number, label, title, subtitle, image, fallbackImage 
         {subtitle ? (
           <p
             className="max-w-xl text-cream/85 text-base md:text-lg font-light leading-relaxed"
-            style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+            style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
           >
             {subtitle}
           </p>

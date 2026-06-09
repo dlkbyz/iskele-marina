@@ -54,7 +54,7 @@ export default function Navbar() {
             className={[
               'relative rounded-full border backdrop-blur-xl transition-all duration-500',
               isScrolled
-                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(22,59,52,0.4)]'
+                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(19,64,59,0.4)]'
                 : 'border-cream/15 bg-sea-900/40 shadow-lg',
             ].join(' ')}
           >

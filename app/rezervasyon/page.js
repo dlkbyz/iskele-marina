@@ -68,7 +68,7 @@ function Modal({ isOpen, onClose, type, data, tr }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
       <div className="absolute inset-0 bg-sea-900/70 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-cream rounded-3xl shadow-[0_30px_80px_rgba(22,59,52,0.45)] max-w-md w-full overflow-hidden border border-gold-300/40 animate-scaleIn">
+      <div className="relative bg-cream rounded-3xl shadow-[0_30px_80px_rgba(19,64,59,0.45)] max-w-md w-full overflow-hidden border border-gold-300/40 animate-scaleIn">
         <div className={`${config.headerBg} p-8 text-center relative`}>
           <div className={`w-20 h-20 ${config.ring} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg ring-4 ring-cream/30`}>
             <Icon className={`w-9 h-9 ${config.iconColor}`} strokeWidth={1.5} />
@@ -492,7 +492,7 @@ function RezervasyonContent() {
             />
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.6) 0%, rgba(22,59,52,0.35) 45%, rgba(22,59,52,0.7) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.6) 0%, rgba(19,64,59,0.35) 45%, rgba(19,64,59,0.7) 100%)' }}
             />
           </div>
 
@@ -501,7 +501,7 @@ function RezervasyonContent() {
             <ChapterMarker number="05" label={tr ? 'Rezervasyon' : 'Reservation'} tone="cream" />
             <h1
               className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6"
-              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
             >
               {tr ? 'Rezervasyon' : 'Reservation'}
             </h1>
@@ -510,7 +510,7 @@ function RezervasyonContent() {
             </div>
             <p
               className="max-w-xl text-cream/85 text-base md:text-lg font-light"
-              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
             >
               {tr ? 'Hayalinizdeki tatil bir adım uzağınızda.' : 'Your dream vacation is just one step away.'}
             </p>
@@ -518,7 +518,7 @@ function RezervasyonContent() {
 
           {/* Floating availability widget */}
           <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-full px-4 z-20">
-            <div className="max-w-5xl mx-auto bg-cream rounded-2xl border border-gold-300/40 shadow-[0_25px_60px_-20px_rgba(22,59,52,0.45)] overflow-hidden">
+            <div className="max-w-5xl mx-auto bg-cream rounded-2xl border border-gold-300/40 shadow-[0_25px_60px_-20px_rgba(19,64,59,0.45)] overflow-hidden">
               <div className="flex items-center justify-center gap-3 py-3 bg-sea-800 text-cream">
                 <Sparkles className="w-3.5 h-3.5 text-gold-300" />
                 <span className="text-[10px] tracking-[0.32em] uppercase font-medium">
@@ -599,7 +599,7 @@ function RezervasyonContent() {
           <section className="pt-40 md:pt-44 pb-24 bg-cream">
             <div className="container mx-auto px-6 max-w-7xl">
               {/* Confirmation badge */}
-              <div className="mb-10 max-w-3xl mx-auto bg-gradient-to-r from-emerald-50 to-cream border border-emerald-300/60 rounded-2xl p-6 shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+              <div className="mb-10 max-w-3xl mx-auto bg-gradient-to-r from-emerald-50 to-cream border border-emerald-300/60 rounded-2xl p-6 shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
                     <CircleCheck className="w-7 h-7 text-cream" strokeWidth={1.5} />
@@ -620,7 +620,7 @@ function RezervasyonContent() {
               <div className="grid lg:grid-cols-3 gap-10">
                 {/* ========== FORM (left, span 2) ========== */}
                 <div className="lg:col-span-2">
-                  <div className="bg-cream border border-gold-300/30 rounded-2xl shadow-[0_25px_60px_-20px_rgba(22,59,52,0.25)] overflow-hidden">
+                  <div className="bg-cream border border-gold-300/30 rounded-2xl shadow-[0_25px_60px_-20px_rgba(19,64,59,0.25)] overflow-hidden">
                     <div className="border-l-4 border-gold-500 p-8 md:p-12">
                       <form onSubmit={handleSubmit} className="space-y-12">
                         {/* --- Personal info --- */}
@@ -780,7 +780,7 @@ function RezervasyonContent() {
                           <button
                             type="submit"
                             disabled={loading}
-                            className="group w-full mt-10 py-4 rounded-full bg-sea-900 hover:bg-sea-800 text-cream transition-all text-[11px] tracking-[0.28em] uppercase font-semibold shadow-[0_10px_30px_rgba(22,59,52,0.25)] hover:shadow-[0_14px_40px_rgba(22,59,52,0.4)] disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-3"
+                            className="group w-full mt-10 py-4 rounded-full bg-sea-900 hover:bg-sea-800 text-cream transition-all text-[11px] tracking-[0.28em] uppercase font-semibold shadow-[0_10px_30px_rgba(19,64,59,0.25)] hover:shadow-[0_14px_40px_rgba(19,64,59,0.4)] disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-3"
                           >
                             {loading ? (
                               <>
@@ -812,7 +812,7 @@ function RezervasyonContent() {
                   <div className="sticky top-32 space-y-6">
                     {/* Price summary */}
                     {gunSayisi > 0 && (
-                      <div className="bg-sea-900 text-cream rounded-2xl p-7 shadow-[0_20px_50px_-20px_rgba(22,59,52,0.5)] border border-gold-500/20">
+                      <div className="bg-sea-900 text-cream rounded-2xl p-7 shadow-[0_20px_50px_-20px_rgba(19,64,59,0.5)] border border-gold-500/20">
                         <Eyebrow tone="cream" className="mb-5">
                           {tr ? 'Rezervasyon Özeti' : 'Reservation Summary'}
                         </Eyebrow>
@@ -854,7 +854,7 @@ function RezervasyonContent() {
                     )}
 
                     {/* Info */}
-                    <div className="bg-cream border border-gold-300/30 rounded-2xl p-7 shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+                    <div className="bg-cream border border-gold-300/30 rounded-2xl p-7 shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                       <Eyebrow className="mb-5">{tr ? 'Neden Serenity?' : 'Why Serenity?'}</Eyebrow>
                       <ul className="space-y-3 text-sm text-ink-soft font-light leading-relaxed">
                         {infoItems.map((item, i) => (
@@ -869,7 +869,7 @@ function RezervasyonContent() {
                     </div>
 
                     {/* WhatsApp */}
-                    <div className="bg-gradient-to-br from-emerald-50 to-cream border border-emerald-300/40 rounded-2xl p-7 text-center shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+                    <div className="bg-gradient-to-br from-emerald-50 to-cream border border-emerald-300/40 rounded-2xl p-7 text-center shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                       <MessageCircle className="w-7 h-7 text-emerald-600 mx-auto mb-3" strokeWidth={1.5} />
                       <h3 className="font-display text-xl text-sea-900 font-medium mb-2">
                         {tr ? 'Sorularınız mı var?' : 'Have questions?'}
@@ -896,7 +896,7 @@ function RezervasyonContent() {
           // Müsaitlik kontrolü beklenirken
           <section className="pt-40 md:pt-44 pb-24 bg-cream">
             <div className="container mx-auto px-6">
-              <div className="max-w-2xl mx-auto text-center bg-cream rounded-3xl shadow-[0_25px_60px_-20px_rgba(22,59,52,0.2)] p-12 border border-gold-300/30">
+              <div className="max-w-2xl mx-auto text-center bg-cream rounded-3xl shadow-[0_25px_60px_-20px_rgba(19,64,59,0.2)] p-12 border border-gold-300/30">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-sand-50 border border-gold-500/40 flex items-center justify-center">
                   <Calendar className="w-9 h-9 text-gold-700" strokeWidth={1.5} />
                 </div>

@@ -118,7 +118,7 @@ export default function Yorumlar({ initialReviews = [] }) {
             />
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.55) 0%, rgba(22,59,52,0.3) 50%, rgba(22,59,52,0.65) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.55) 0%, rgba(19,64,59,0.3) 50%, rgba(19,64,59,0.65) 100%)' }}
             />
           </div>
 
@@ -126,7 +126,7 @@ export default function Yorumlar({ initialReviews = [] }) {
             <ChapterMarker number="03" label={tr ? 'Misafirler' : 'Guests'} tone="cream" />
             <h1
               className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6 max-w-3xl"
-              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
             >
               {tr ? 'Konuklarımızın görüşleri' : 'What our guests say'}
             </h1>
@@ -135,7 +135,7 @@ export default function Yorumlar({ initialReviews = [] }) {
             </div>
             <p
               className="max-w-xl text-cream/85 text-base md:text-lg font-light"
-              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
             >
               {tr
                 ? 'Deneyimlerini paylaşan misafirlerimizin hikâyelerini okuyun.'
@@ -158,13 +158,13 @@ export default function Yorumlar({ initialReviews = [] }) {
         <section className="py-20 bg-cream">
           <div className="container mx-auto px-6 max-w-5xl">
             <div className="grid md:grid-cols-3 gap-5">
-              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                 <Eyebrow className="mb-3">{tr ? 'Ortalama' : 'Average'}</Eyebrow>
                 <div className="font-display text-6xl text-gold-600 font-light mb-3">{avgRating}</div>
                 <StarRating rating={parseFloat(avgRating)} size="md" />
               </div>
 
-              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                 <Eyebrow className="mb-3">{tr ? 'Toplam Yorum' : 'Total Reviews'}</Eyebrow>
                 <div className="font-display text-6xl text-sea-800 font-light mb-3">{yorumlar.length}</div>
                 <p className="text-[11px] tracking-[0.22em] uppercase text-mute font-medium">
@@ -172,7 +172,7 @@ export default function Yorumlar({ initialReviews = [] }) {
                 </p>
               </div>
 
-              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)]">
+              <div className="bg-cream border border-gold-300/30 rounded-2xl p-8 text-center shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)]">
                 <Eyebrow className="mb-3">{tr ? 'Tavsiye Eder' : 'Would Recommend'}</Eyebrow>
                 <div className="font-display text-6xl text-emerald-600 font-light mb-3">{recommendPercent}%</div>
                 <p className="text-[11px] tracking-[0.22em] uppercase text-mute font-medium">
@@ -194,7 +194,7 @@ export default function Yorumlar({ initialReviews = [] }) {
                   onClick={() => setFilter(key)}
                   className={`px-6 py-3 rounded-full text-[11px] tracking-[0.26em] uppercase font-semibold transition ${
                     filter === key
-                      ? 'bg-sea-900 text-cream shadow-[0_10px_25px_rgba(22,59,52,0.25)]'
+                      ? 'bg-sea-900 text-cream shadow-[0_10px_25px_rgba(19,64,59,0.25)]'
                       : 'bg-cream text-sea-900 border border-gold-300/40 hover:border-gold-500 hover:bg-gold-50'
                   }`}
                 >
@@ -220,7 +220,7 @@ export default function Yorumlar({ initialReviews = [] }) {
                 {filtered.map((y, i) => (
                   <article
                     key={y.id}
-                    className="relative group bg-cream rounded-2xl border border-gold-300/30 p-7 shadow-[0_15px_40px_-15px_rgba(22,59,52,0.18)] hover:shadow-[0_28px_60px_-20px_rgba(22,59,52,0.32)] hover:border-gold-500/60 transition-all duration-500 hover:-translate-y-1"
+                    className="relative group bg-cream rounded-2xl border border-gold-300/30 p-7 shadow-[0_15px_40px_-15px_rgba(19,64,59,0.18)] hover:shadow-[0_28px_60px_-20px_rgba(19,64,59,0.32)] hover:border-gold-500/60 transition-all duration-500 hover:-translate-y-1"
                     style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.06}s both` }}
                   >
                     {/* Quote ornament */}
@@ -242,12 +242,12 @@ export default function Yorumlar({ initialReviews = [] }) {
                     </div>
 
                     {y.baslik && (
-                      <h4 className="font-display text-lg italic text-sea-800 mb-2 font-light">
+                      <h4 className="font-display text-lg italic text-sea-800 mb-2 font-light break-words" style={{ overflowWrap: 'anywhere' }}>
                         “{y.baslik}”
                       </h4>
                     )}
 
-                    <p className="text-[14px] text-ink-soft font-light leading-relaxed">
+                    <p className="text-[14px] text-ink-soft font-light leading-relaxed break-words whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
                       {y.yorum}
                     </p>
 
@@ -284,7 +284,7 @@ export default function Yorumlar({ initialReviews = [] }) {
               </p>
             </div>
 
-            <div className="bg-cream border border-gold-300/30 rounded-2xl shadow-[0_25px_60px_-20px_rgba(22,59,52,0.25)] p-8 md:p-12">
+            <div className="bg-cream border border-gold-300/30 rounded-2xl shadow-[0_25px_60px_-20px_rgba(19,64,59,0.25)] p-8 md:p-12">
               {success && (
                 <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-medium">
                   ✓ {tr ? 'Yorumunuz alındı! Onaylandıktan sonra yayınlanacak.' : 'Your review has been received! It will be published after approval.'}

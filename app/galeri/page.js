@@ -51,7 +51,7 @@ export default function Galeri() {
   ]
 
   const displayImages = fotolar.length > 0 ? fotolar : fallbackImages
-  const heroImage = fotolar.find(f => f.kullanim_yeri === 'galeri_hero')?.image_url || '/h4-rev-img-1-1536x864.jpg'
+  const heroImage = fotolar.find(f => (f.kullanim_yerleri || []).includes('galeri_hero'))?.image_url || '/h4-rev-img-1-1536x864.jpg'
 
   const openLightbox = (img, index) => {
     setSelectedImage(img.image_url)
@@ -107,7 +107,7 @@ export default function Galeri() {
             />
             <div
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, rgba(22,59,52,0.55) 0%, rgba(22,59,52,0.25) 45%, rgba(22,59,52,0.65) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, rgba(19,64,59,0.55) 0%, rgba(19,64,59,0.25) 45%, rgba(19,64,59,0.65) 100%)' }}
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function Galeri() {
             <ChapterMarker number="01" label={tr ? 'Galeri' : 'Gallery'} tone="cream" />
             <h1
               className="font-display text-cream text-5xl md:text-7xl font-light leading-[1.05] mt-6 max-w-3xl"
-              style={{ textShadow: '0 4px 24px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 4px 24px rgba(19,64,59,0.5)' }}
             >
               {tr ? 'Mekândan kareler.' : 'Frames from the space.'}
             </h1>
@@ -124,7 +124,7 @@ export default function Galeri() {
             </div>
             <p
               className="max-w-xl text-cream/85 text-base md:text-lg font-light"
-              style={{ textShadow: '0 2px 12px rgba(22,59,52,0.5)' }}
+              style={{ textShadow: '0 2px 12px rgba(19,64,59,0.5)' }}
             >
               {tr
                 ? "Serenity İskele'nin atmosferini, sıcaklığını ve detaylarını paylaşıyoruz."
@@ -155,7 +155,7 @@ export default function Galeri() {
                 {displayImages.map((img, index) => (
                   <div
                     key={index}
-                    className="group relative break-inside-avoid overflow-hidden rounded-2xl shadow-[0_15px_40px_-15px_rgba(22,59,52,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(22,59,52,0.45)] transition-all duration-700 cursor-pointer border border-gold-300/20"
+                    className="group relative break-inside-avoid overflow-hidden rounded-2xl shadow-[0_15px_40px_-15px_rgba(19,64,59,0.25)] hover:shadow-[0_30px_70px_-20px_rgba(19,64,59,0.45)] transition-all duration-700 cursor-pointer border border-gold-300/20"
                     onClick={() => openLightbox(img, index)}
                     style={{ animation: `fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s both` }}
                   >
@@ -165,23 +165,11 @@ export default function Galeri() {
                       className="w-full h-auto object-cover transition-transform duration-[1.4s] group-hover:scale-[1.06]"
                       loading="lazy"
                     />
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-sea-900/80 via-sea-900/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute inset-0 flex items-end p-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0">
-                      <div className="flex items-end justify-between w-full">
-                        <div>
-                          <Eyebrow tone="cream" className="mb-1.5">
-                            {tr ? 'Görüntüle' : 'View'}
-                          </Eyebrow>
-                          {img.baslik && (
-                            <p className="font-display text-cream text-2xl md:text-3xl font-light italic">
-                              {img.baslik}
-                            </p>
-                          )}
-                        </div>
-                        <div className="w-11 h-11 rounded-full bg-gold-500 text-sea-900 flex items-center justify-center shrink-0">
-                          <Search className="w-4 h-4" />
-                        </div>
+                    {/* Hover overlay — sadece view ikonu */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-sea-900/60 via-sea-900/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 flex items-end justify-end p-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0">
+                      <div className="w-11 h-11 rounded-full bg-gold-500 text-sea-900 flex items-center justify-center shrink-0">
+                        <Search className="w-4 h-4" />
                       </div>
                     </div>
                   </div>

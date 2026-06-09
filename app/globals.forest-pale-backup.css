@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 /* ============================================
-   DEEP FOREST & COPPER — Design Tokens (v2)
-   Daha derin, doygun forest + kor bakır amber.
-   sea-*  → derin teal-forest (referans ile aynı doygunluk)
-   gold-* → kor bakır amber (peach değil, daha terra)
+   FOREST & AMBER — Design Tokens
+   (token names korunur; sadece hex değerleri değişir)
+   sea-*  → koyu orman yeşili / teal
+   gold-* → sıcak amber / bakır
+   cream  → ılık off-white
    ============================================ */
 :root {
-  /* sea-* = deep forest / teal */
-  --color-sea-50:  #E7EFEC;
-  --color-sea-100: #BAD3CB;
-  --color-sea-200: #82AFA3;
-  --color-sea-400: #3F756B;
-  --color-sea-600: #1E5B51;
-  --color-sea-800: #154A42;
-  --color-sea-900: #13403B;  /* referans BG ile aynı */
+  /* sea-* = deep forest / teal green */
+  --color-sea-50:  #EEF3F1;
+  --color-sea-100: #C9DAD5;
+  --color-sea-200: #99B8AF;
+  --color-sea-400: #4D7D72;
+  --color-sea-600: #2B5F56;
+  --color-sea-800: #1F4B43;  /* header koyu yeşili */
+  --color-sea-900: #163B34;  /* en derin forest */
 
-  /* gold-* = copper amber */
-  --color-gold-50:  #F8EFE2;
-  --color-gold-100: #EFD7B5;
-  --color-gold-300: #D9A87C;
-  --color-gold-500: #C99060;  /* kor bakır amber */
-  --color-gold-600: #A87145;
-  --color-gold-700: #815432;
+  /* gold-* = sıcak amber / copper */
+  --color-gold-50:  #FBF4EA;
+  --color-gold-100: #F4E1C7;
+  --color-gold-300: #E5BD8B;
+  --color-gold-500: #D9A26B;  /* amber accent (referans buton rengi) */
+  --color-gold-600: #B57F4D;
+  --color-gold-700: #8E6238;
 
-  /* sand-* = sıcak kireçtaşı */
-  --color-sand-50:  #F7F1E3;
-  --color-sand-100: #EBDFC4;
-  --color-sand-200: #DDCBA5;
-  --color-sand-300: #C9B080;
+  /* sand-* = nötr sıcak kum */
+  --color-sand-50:  #FAF6ED;
+  --color-sand-100: #F0E7D4;
+  --color-sand-200: #E6D7B9;
+  --color-sand-300: #D4BF92;
 
-  --color-cream:    #F4EEDF;  /* hafif açık bone — nötr, peach değil */
+  --color-cream:    #F6F1E6;  /* ılık off-white */
   --color-ink:      #1A1A1A;
   --color-ink-soft: #3A3A3A;
   --color-mute:     #6B6B6B;

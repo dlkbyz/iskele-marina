@@ -287,19 +287,19 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
               <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#D9A26B" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#D9A26B" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#C99060" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#C99060" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(217,162,107,0.1)' : '#F0E7D4'} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(201,144,96,0.1)' : '#EBDFC4'} vertical={false} />
                 <XAxis dataKey="ay" stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
                 <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
-                  labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
+                  contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
                 />
-                <Area type="monotone" dataKey="rezervasyon" stroke="#D9A26B" strokeWidth={2} fill="url(#goldArea)" dot={false} activeDot={{ r: 4, fill: '#E5BD8B' }} />
+                <Area type="monotone" dataKey="rezervasyon" stroke="#C99060" strokeWidth={2} fill="url(#goldArea)" dot={false} activeDot={{ r: 4, fill: '#D9A87C' }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -391,18 +391,18 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={occupancyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(217,162,107,0.08)' : '#F0E7D4'} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(201,144,96,0.08)' : '#EBDFC4'} vertical={false} />
                 <XAxis dataKey="ay" stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
                 <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} domain={[0, 100]} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
-                  labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
-                  cursor={{ fill: isDark ? 'rgba(248,245,238,0.05)' : 'rgba(22,59,52,0.04)' }}
+                  contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
+                  labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
+                  cursor={{ fill: isDark ? 'rgba(248,245,238,0.05)' : 'rgba(19,64,59,0.04)' }}
                 />
                 <Bar dataKey="oran" radius={[6, 6, 0, 0]}>
                   {occupancyData.map((_, idx) => (
-                    <Cell key={`bar-${idx}`} fill={idx === occupancyData.length - 1 ? '#D9A26B' : (isDark ? '#4D7D72' : '#99B8AF')} />
+                    <Cell key={`bar-${idx}`} fill={idx === occupancyData.length - 1 ? '#C99060' : (isDark ? '#3F756B' : '#82AFA3')} />
                   ))}
                 </Bar>
               </BarChart>
@@ -433,9 +433,9 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
                         {statusData.filter(s => s.value > 0).map((s, idx) => <Cell key={idx} fill={s.color} />)}
                       </Pie>
                       <Tooltip
-                        contentStyle={{ backgroundColor: isDark ? '#1F4B43' : '#fff', border: isDark ? '1px solid rgba(217,162,107,0.25)' : '1px solid #E6D7B9', borderRadius: '8px', fontSize: '12px' }}
-                        labelStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                        itemStyle={{ color: isDark ? '#F6F1E6' : '#1A1A1A' }}
+                        contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
+                        labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                        itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -1387,7 +1387,7 @@ function Fiyatlandirma({ isDark }) {
             console.log('Fiyat ayarları:', { taban, sure, donemler })
             alert('Değişiklikler kaydedildi (şu an yerel — Supabase bağlantısı için tablo şeması netleştirilince eklenir).')
           }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide bg-gold-500 hover:bg-gold-300 text-sea-900 transition shadow-[0_4px_12px_rgba(217,162,107,0.25)]"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-semibold tracking-wide bg-gold-500 hover:bg-gold-300 text-sea-900 transition shadow-[0_4px_12px_rgba(201,144,96,0.25)]"
         >
           <Save className="w-3.5 h-3.5" strokeWidth={2} />
           Kaydet
@@ -2681,7 +2681,7 @@ const GALERI_SLOTS = [
 ]
 const slotLabel = (key) => GALERI_SLOTS.find(s => s.key === key)?.label || ''
 
-function Galeri({ isDark, fotolar, uploadLoading, onUpload, onUpdate, onToggle, onDelete, onMove, onSlotChange }) {
+function Galeri({ isDark, fotolar, uploadLoading, onUpload, onUpdate, onToggle, onDelete, onMove, onSlotToggle }) {
   const [filter, setFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [editBaslik, setEditBaslik] = useState('')
@@ -2851,17 +2851,22 @@ function Galeri({ isDark, fotolar, uploadLoading, onUpload, onUpdate, onToggle, 
                     {allIdx + 1}
                   </span>
 
-                  {/* Sağ üst — durum + slot rozeti */}
-                  <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                  {/* Sağ üst — durum + slot rozetleri */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 max-w-[80%] flex-wrap justify-end">
                     {!f.aktif && (
                       <span className={`px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold backdrop-blur-md ${isDark ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
                         Pasif
                       </span>
                     )}
-                    {f.kullanim_yeri && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold bg-gold-500 text-sea-900">
+                    {(f.kullanim_yerleri || []).slice(0, 2).map(k => (
+                      <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold bg-gold-500 text-sea-900">
                         <Star className="w-3 h-3 fill-sea-900" strokeWidth={2} />
-                        {slotLabel(f.kullanim_yeri)}
+                        {slotLabel(k)}
+                      </span>
+                    ))}
+                    {(f.kullanim_yerleri || []).length > 2 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] tracking-[0.18em] uppercase font-bold bg-gold-500 text-sea-900">
+                        +{(f.kullanim_yerleri || []).length - 2}
                       </span>
                     )}
                   </div>
@@ -2963,23 +2968,30 @@ function Galeri({ isDark, fotolar, uploadLoading, onUpload, onUpdate, onToggle, 
                     </div>
                   )}
 
-                  {/* Slot dropdown */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className={`text-[10px] tracking-[0.22em] uppercase font-semibold shrink-0 ${isDark ? 'text-gold-300/70' : 'text-gold-700'}`}>Kullanım</span>
-                    <select
-                      value={f.kullanim_yeri || ''}
-                      onChange={(e) => onSlotChange(f, e.target.value)}
-                      className={`flex-1 min-w-0 px-2 py-1 rounded-md text-[12px] border outline-none transition ${
-                        isDark
-                          ? 'bg-sea-800 border-gold-500/30 text-cream focus:border-gold-500/60'
-                          : 'bg-white border-gold-300 text-sea-900 focus:border-gold-500'
-                      }`}
-                    >
-                      <option value="">— sadece galeri</option>
-                      {GALERI_SLOTS.map(s => (
-                        <option key={s.key} value={s.key}>{s.label}</option>
-                      ))}
-                    </select>
+                  {/* Slot çoklu chip toggle */}
+                  <div className="mt-2">
+                    <p className={`text-[10px] tracking-[0.22em] uppercase font-semibold mb-1.5 ${isDark ? 'text-gold-300/70' : 'text-gold-700'}`}>Kullanım Alanları</p>
+                    <div className="flex flex-wrap gap-1">
+                      {GALERI_SLOTS.map(s => {
+                        const active = (f.kullanim_yerleri || []).includes(s.key)
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => onSlotToggle(f, s.key)}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide transition border ${
+                              active
+                                ? 'bg-gold-500 border-gold-500 text-sea-900 hover:bg-gold-300'
+                                : (isDark
+                                    ? 'bg-sea-800/40 border-gold-500/20 text-cream/65 hover:border-gold-500/50 hover:text-cream'
+                                    : 'bg-white border-gold-300/50 text-mute hover:border-gold-500 hover:text-sea-900')
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3088,7 +3100,7 @@ export default function AdminDashboard() {
       const cnt = (key) => recent.filter(r => r.durum === key || (key === 'onaylandi' && r.durum === 'onaylandı')).length
       setStatusData([
         { name: 'Onaylandı',    value: cnt('onaylandi'),                    color: '#10B981' },
-        { name: 'Beklemede',    value: cnt('beklemede'),                    color: '#D9A26B' },
+        { name: 'Beklemede',    value: cnt('beklemede'),                    color: '#C99060' },
         { name: 'İptal edildi', value: cnt('iptal') + cnt('iptal_edildi'),  color: '#F43F5E' },
         { name: 'Reddedildi',   value: cnt('reddedildi'),                   color: '#6B6B6B' },
       ])
@@ -3215,14 +3227,15 @@ export default function AdminDashboard() {
       await loadData()
     } catch (e) { console.warn('Foto sil:', e) }
   }
-  const handleFotoSlotChange = async (f, slotKey) => {
+  const handleFotoSlotToggle = async (f, slotKey) => {
     try {
-      if (slotKey) {
-        await supabase.from('galeri').update({ kullanim_yeri: null }).eq('kullanim_yeri', slotKey).neq('id', f.id)
-      }
-      await supabase.from('galeri').update({ kullanim_yeri: slotKey || null }).eq('id', f.id)
+      const current = f.kullanim_yerleri || []
+      const next = current.includes(slotKey)
+        ? current.filter(k => k !== slotKey)
+        : [...current, slotKey]
+      await supabase.from('galeri').update({ kullanim_yerleri: next.length ? next : null }).eq('id', f.id)
       await loadData()
-    } catch (e) { console.warn('Slot atama:', e) }
+    } catch (e) { console.warn('Slot toggle:', e) }
   }
   const handleFotoMove = async (f, dir) => {
     const sorted = [...galeriFotolar].sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0))
@@ -3430,7 +3443,7 @@ export default function AdminDashboard() {
               onToggle={handleFotoToggle}
               onDelete={handleFotoDelete}
               onMove={handleFotoMove}
-              onSlotChange={handleFotoSlotChange}
+              onSlotToggle={handleFotoSlotToggle}
             />
           )}
           {activeTab !== 'dashboard' && activeTab !== 'rezervasyonlar' && activeTab !== 'takvim' && activeTab !== 'fiyatlandirma' && activeTab !== 'mesajlar' && activeTab !== 'yorumlar' && activeTab !== 'newsletter' && activeTab !== 'galeri' && (
