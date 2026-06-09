@@ -296,8 +296,8 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
                 <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
-                  labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
+                  labelStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A' }}
                 />
                 <Area type="monotone" dataKey="rezervasyon" stroke="#C99060" strokeWidth={2} fill="url(#goldArea)" dot={false} activeDot={{ r: 4, fill: '#D9A87C' }} />
               </AreaChart>
@@ -396,8 +396,8 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
                 <YAxis stroke={isDark ? 'rgba(248,245,238,0.5)' : '#6b6b6b'} style={{ fontSize: '11px' }} tickLine={false} axisLine={false} domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
-                  labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
+                  labelStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A' }}
                   cursor={{ fill: isDark ? 'rgba(248,245,238,0.05)' : 'rgba(19,64,59,0.04)' }}
                 />
                 <Bar dataKey="oran" radius={[6, 6, 0, 0]}>
@@ -434,8 +434,8 @@ function DashboardHome({ isDark, rezervasyonlar, mesajlar, monthlyData, occupanc
                       </Pie>
                       <Tooltip
                         contentStyle={{ backgroundColor: isDark ? '#154A42' : '#fff', border: isDark ? '1px solid rgba(201,144,96,0.25)' : '1px solid #DDCBA5', borderRadius: '8px', fontSize: '12px' }}
-                        labelStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
-                        itemStyle={{ color: isDark ? '#F4EEDF' : '#1A1A1A' }}
+                        labelStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A', fontWeight: 600, marginBottom: 4 }}
+                        itemStyle={{ color: isDark ? '#FAF9F6' : '#1A1A1A' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>

@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import YorumlarClient from './YorumlarClient'
+import { fetchHeroSlot } from '@/lib/heroSlot'
+
+export const revalidate = 0
 
 export default async function YorumlarPage() {
   let initialReviews = []
@@ -21,5 +24,7 @@ export default async function YorumlarPage() {
     console.error('Yorumlar sunucudan yüklenemedi:', error)
   }
 
-  return <YorumlarClient initialReviews={initialReviews} />
+  const heroImage = await fetchHeroSlot('yorumlar_hero', '/h4-rev-img-3-1536x864.jpg')
+
+  return <YorumlarClient initialReviews={initialReviews} initialHeroImage={heroImage} />
 }

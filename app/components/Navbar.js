@@ -52,10 +52,10 @@ export default function Navbar() {
         <div className="px-4 md:px-8">
           <div
             className={[
-              'relative rounded-full border backdrop-blur-xl transition-all duration-500',
+              'relative rounded-full border backdrop-blur-md transition-all duration-500',
               isScrolled
-                ? 'border-gold-300/25 bg-sea-900/75 shadow-[0_8px_40px_rgba(19,64,59,0.4)]'
-                : 'border-cream/15 bg-sea-900/40 shadow-lg',
+                ? 'border-gold-300/25 bg-sea-900/95 shadow-[0_8px_40px_rgba(19,64,59,0.5)]'
+                : 'border-gold-300/20 bg-sea-900/90 shadow-[0_6px_30px_rgba(19,64,59,0.4)]',
             ].join(' ')}
           >
             <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-cream/8 to-transparent opacity-60" />

@@ -5,7 +5,7 @@ import { Star, BadgeCheck, Quote, MessageSquare, Send, Sparkles } from 'lucide-r
 import { useLanguage } from '@/lib/LanguageContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { ChapterMarker, GoldDivider, Eyebrow, useHeroSlot } from '../components/SiteShell'
+import { ChapterMarker, GoldDivider, Eyebrow } from '../components/SiteShell'
 
 /* ---------------- StarRating (gold) ---------------- */
 function StarRating({ rating, maxStars = 5, size = 'md', interactive = false, onRate }) {
@@ -43,8 +43,8 @@ function StarRating({ rating, maxStars = 5, size = 'md', interactive = false, on
 }
 
 /* ============================================================ */
-export default function Yorumlar({ initialReviews = [] }) {
-  const heroImage = useHeroSlot('yorumlar_hero', '/h4-rev-img-3-1536x864.jpg')
+export default function Yorumlar({ initialReviews = [], initialHeroImage }) {
+  const heroImage = initialHeroImage || '/h4-rev-img-3-1536x864.jpg'
   const { language } = useLanguage()
   const tr = language === 'tr'
 
