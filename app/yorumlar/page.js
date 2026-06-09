@@ -24,7 +24,7 @@ export default async function YorumlarPage() {
     console.error('Yorumlar sunucudan yüklenemedi:', error)
   }
 
-  const heroImage = await fetchHeroSlot('yorumlar_hero', '/h4-rev-img-3-1536x864.jpg')
+  const heroImage = await fetchHeroSlot('yorumlar_hero', '/salon.png')
 
   return <YorumlarClient initialReviews={initialReviews} initialHeroImage={heroImage} />
 }

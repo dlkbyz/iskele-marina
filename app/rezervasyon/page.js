@@ -485,7 +485,7 @@ function RezervasyonContent() {
         <section className="relative h-[480px] md:h-[540px] overflow-visible">
           <div className="absolute inset-0 overflow-hidden">
             <img
-              src="/h4-rev-img-1-1536x864.jpg"
+              src="/salon.png"
               alt="Reservation hero"
               className="w-full h-full object-cover"
               style={{ objectPosition: '50% 45%' }}

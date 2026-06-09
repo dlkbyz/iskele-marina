@@ -44,7 +44,7 @@ function StarRating({ rating, maxStars = 5, size = 'md', interactive = false, on
 
 /* ============================================================ */
 export default function Yorumlar({ initialReviews = [], initialHeroImage }) {
-  const heroImage = initialHeroImage || '/h4-rev-img-3-1536x864.jpg'
+  const heroImage = initialHeroImage || '/salon.png'
   const { language } = useLanguage()
   const tr = language === 'tr'
 

@@ -4,6 +4,6 @@ import OzelliklerClient from './OzelliklerClient'
 export const revalidate = 0
 
 export default async function OzelliklerPage() {
-  const heroImage = await fetchHeroSlot('ozellikler_hero', '/h4-rev-img-2-1536x864.jpg')
+  const heroImage = await fetchHeroSlot('ozellikler_hero', '/salon.png')
   return <OzelliklerClient initialHeroImage={heroImage} />
 }

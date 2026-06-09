@@ -86,7 +86,7 @@ export const IconFacebook = (props) => (
  * Section page-header used by sub-routes (galeri, özellikler, yorumlar, iletisim).
  * Provides the same cinematic hero treatment as the home hero, but lighter.
  */
-export function PageHero({ number, label, title, subtitle, image, fallbackImage = '/h4-rev-img-3-1536x864.jpg' }) {
+export function PageHero({ number, label, title, subtitle, image, fallbackImage = '/salon.png' }) {
   return (
     <section className="relative h-[480px] md:h-[560px] overflow-hidden">
       <div className="absolute inset-0">

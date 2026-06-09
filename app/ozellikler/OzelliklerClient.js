@@ -174,7 +174,7 @@ export default function OzelliklerClient({ initialHeroImage }) {
         <section className="relative py-28 md:py-32 overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img
-              src="/h4-rev-img-3-1536x864.jpg"
+              src="/salon.png"
               alt="Complex"
               className="w-full h-full object-cover"
               style={{ objectPosition: '50% 50%' }}

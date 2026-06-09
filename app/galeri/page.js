@@ -17,7 +17,7 @@ export default async function GaleriPage() {
     console.warn('Galeri SSR fetch:', e)
   }
 
-  const heroImage = await fetchHeroSlot('galeri_hero', '/h4-rev-img-1-1536x864.jpg')
+  const heroImage = await fetchHeroSlot('galeri_hero', '/salon.png')
 
   return <GaleriClient initialFotolar={initialFotolar} initialHeroImage={heroImage} />
 }

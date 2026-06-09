@@ -21,16 +21,16 @@ export default function GaleriClient({ initialFotolar = [], initialHeroImage }) 
     { image_url: '/salon.png', baslik: tr ? 'Yaşam Alanı' : 'Living Space' },
     { image_url: '/yatak_odasi.png', baslik: tr ? 'Yatak Odası' : 'Bedroom' },
     { image_url: '/living.png', baslik: tr ? 'Oturma Odası' : 'Living Room' },
-    { image_url: '/kids_bedroom.png', baslik: tr ? 'Çocuk Odası' : 'Kids Room' },
-    { image_url: '/main_bedroom1.png', baslik: tr ? 'Suite Detayları' : 'Suite Details' },
+    { image_url: '/salon.png', baslik: tr ? 'Çocuk Odası' : 'Kids Room' },
+    { image_url: '/salon.png', baslik: tr ? 'Suite Detayları' : 'Suite Details' },
     { image_url: '/main_bedroom.png', baslik: tr ? 'TV Duvarı' : 'TV Wall' },
-    { image_url: '/h4-rev-img-1-1536x864.jpg', baslik: tr ? 'Genel Görünüm' : 'Overview' },
-    { image_url: '/h4-rev-img-2-1536x864.jpg', baslik: tr ? 'Atmosfer' : 'Atmosphere' },
-    { image_url: '/h4-rev-img-3-1536x864.jpg', baslik: tr ? 'Detay' : 'Detail' },
+    { image_url: '/salon.png', baslik: tr ? 'Genel Görünüm' : 'Overview' },
+    { image_url: '/salon.png', baslik: tr ? 'Atmosfer' : 'Atmosphere' },
+    { image_url: '/salon.png', baslik: tr ? 'Detay' : 'Detail' },
   ]
 
   const displayImages = fotolar.length > 0 ? fotolar : fallbackImages
-  const heroImage = initialHeroImage || '/h4-rev-img-1-1536x864.jpg'
+  const heroImage = initialHeroImage || '/salon.png'
 
   const openLightbox = (img, index) => {
     setSelectedImage(img.image_url)
